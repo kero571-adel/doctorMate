@@ -1,4 +1,11 @@
-import { Box, Divider, Stack, Typography, IconButton, Tooltip } from "@mui/material";
+import {
+  Box,
+  Divider,
+  Stack,
+  Typography,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -50,10 +57,10 @@ export default function NavBar() {
   return (
     <Box
       sx={{
-        width: isOpen ? "235px" : "70px",
+        width: isOpen ? "210px" : "70px",
         height: "100vh",
         backgroundColor: "primary.main",
-        position: "fixed",
+        // position: "fixed",
         left: 0,
         top: 0,
         display: "flex",
@@ -68,7 +75,7 @@ export default function NavBar() {
         direction={"row"}
         spacing={1}
         sx={{
-          justifyContent: isOpen ? "center" : "center",
+          justifyContent: "center",
           alignItems: "center",
           backgroundColor: "primary.main",
           height: "80px",
@@ -81,7 +88,7 @@ export default function NavBar() {
               width: "80px",
               height: "70px",
               position: "absolute",
-              left: "-4px",
+              left: "-10px",
               backgroundImage: "url(/assets/navBar/L-Logo.png)",
               backgroundSize: "cover",
               backgroundRepeat: "no-repeat",
@@ -101,7 +108,7 @@ export default function NavBar() {
             onClick={() => setIsOpen(!isOpen)}
             sx={{
               position: "absolute",
-              right: isOpen ? "8px" : "10px",
+              right: isOpen ? "8px" : "13px",
               color: "white",
               "&:hover": {
                 backgroundColor: "rgba(255, 255, 255, 0.1)",
@@ -181,7 +188,10 @@ export default function NavBar() {
           </Link>
         </Tooltip>
         <Tooltip title={!isOpen ? "Patients" : ""} placement="right">
-          <Link to="/patients/patientlist" style={{ textDecoration: "none", width: "100%" }}>
+          <Link
+            to="/patients/patientlist"
+            style={{ textDecoration: "none", width: "100%" }}
+          >
             <Stack
               direction={"row"}
               sx={{
@@ -228,7 +238,10 @@ export default function NavBar() {
           </Link>
         </Tooltip>
         <Tooltip title={!isOpen ? "Appointments" : ""} placement="right">
-          <Link to="/schedule" style={{ textDecoration: "none", width: "100%" }}>
+          <Link
+            to="/schedule"
+            style={{ textDecoration: "none", width: "100%" }}
+          >
             <Stack
               direction={"row"}
               sx={{
@@ -238,9 +251,7 @@ export default function NavBar() {
                 position: "relative",
               }}
             >
-              <Box
-                sx={activeIndicatorStyles(pathname.includes("/schedule"))}
-              />
+              <Box sx={activeIndicatorStyles(pathname.includes("/schedule"))} />
 
               <Stack
                 direction={"row"}
@@ -394,9 +405,7 @@ export default function NavBar() {
                 position: "relative",
               }}
             >
-              <Box
-                sx={activeIndicatorStyles(pathname === "/reports")}
-              />
+              <Box sx={activeIndicatorStyles(pathname === "/reports")} />
 
               <Stack
                 direction={"row"}
@@ -434,7 +443,9 @@ export default function NavBar() {
           paddingBottom: "10px",
         }}
       >
-        <Divider sx={{ backgroundColor: "white", height: "2px", opacity: 0.3, mb: 1 }} />
+        <Divider
+          sx={{ backgroundColor: "white", height: "2px", opacity: 0.3, mb: 1 }}
+        />
         <Stack
           sx={{
             justifyContent: "center",
@@ -444,7 +455,10 @@ export default function NavBar() {
         >
           <Box>
             <Tooltip title={!isOpen ? "Profile" : ""} placement="right">
-              <Link to="/doctorprofile" style={{ textDecoration: "none", width: "100%" }}>
+              <Link
+                to="/doctorprofile"
+                style={{ textDecoration: "none", width: "100%" }}
+              >
                 <Stack
                   direction={"row"}
                   sx={{
@@ -492,7 +506,10 @@ export default function NavBar() {
               </Link>
             </Tooltip>
             <Tooltip title={!isOpen ? "Settings" : ""} placement="right">
-              <Link to="/settings" style={{ textDecoration: "none", width: "100%" }}>
+              <Link
+                to="/settings"
+                style={{ textDecoration: "none", width: "100%" }}
+              >
                 <Stack
                   direction={"row"}
                   sx={{
@@ -501,9 +518,7 @@ export default function NavBar() {
                     position: "relative",
                   }}
                 >
-                  <Box
-                    sx={activeIndicatorStyles(pathname === "/settings")}
-                  />
+                  <Box sx={activeIndicatorStyles(pathname === "/settings")} />
 
                   <Stack
                     direction={"row"}
@@ -522,7 +537,9 @@ export default function NavBar() {
                       <Typography
                         sx={{
                           color:
-                            pathname === "/settings" ? "primary.main" : "#FFFFFF",
+                            pathname === "/settings"
+                              ? "primary.main"
+                              : "#FFFFFF",
                           fontSize: "16.87px",
                           fontWeight: "400",
                         }}
@@ -535,7 +552,10 @@ export default function NavBar() {
               </Link>
             </Tooltip>
             <Tooltip title={!isOpen ? "Help & Support" : ""} placement="right">
-              <Link to="/helpsupport" style={{ textDecoration: "none", width: "100%" }}>
+              <Link
+                to="/helpsupport"
+                style={{ textDecoration: "none", width: "100%" }}
+              >
                 <Stack
                   direction={"row"}
                   sx={{
@@ -581,7 +601,7 @@ export default function NavBar() {
                 </Stack>
               </Link>
             </Tooltip>
-            
+
             {/* Logout Button */}
             <Stack
               direction={"row"}

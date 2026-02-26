@@ -48,15 +48,15 @@ export default function Details1() {
         openMedicalModal={openMedicalModal}
         SetopenMedicalModal={SetopenMedicalModal}
       />
-      <Stack direction="row" sx={{ width: "100%" }}>
+      <Stack direction="row">
         <NavBar />
         <Box
           sx={{
-            ml: "235px",
-            width: "calc(100% - 212px)",
-            backgroundColor: "#F0F2F6",
-            minHeight: "100vh",
-            p: 2,
+            backgroundColor: "#F5F7FA",
+            padding: "20px",
+            height: "100vh",
+            overflowY: "auto",
+            flex: 1,
           }}
         >
           {/* Breadcrumb */}

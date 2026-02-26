@@ -36,13 +36,15 @@ const rows = [
 
 export default function Patients() {
   return (
-    <Stack direction={"row"} sx={{ width: "100%" }}>
+    <Stack direction="row">
       <NavBar />
       <Box
         sx={{
-          backgroundColor: "#F0F2F6",
-          marginLeft: "235px",
-          padding: { xs: "10px", md: "20px" },
+          backgroundColor: "#F5F7FA",
+          padding: "20px",
+          height: "100vh",
+          overflowY: "auto",
+          flex: 1,
         }}
       >
         <Box

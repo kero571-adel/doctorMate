@@ -35,10 +35,15 @@ import { fetchDoctorDashboard } from "../../redux/overViews/overView";
 
 export default function Dashboard() {
   const dispatch = useDispatch();
-  const { stats, todayAppointments, recentPatients, urgentAlerts, loading, error } = useSelector(
-    (state) => state.overView
-  );
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const {
+    stats,
+    todayAppointments,
+    recentPatients,
+    urgentAlerts,
+    loading,
+    error,
+  } = useSelector((state) => state.overView);
+  const userLS = JSON.parse(localStorage.getItem("user") || "{}");
 
   useEffect(() => {
     dispatch(fetchDoctorDashboard());
@@ -108,17 +113,17 @@ export default function Dashboard() {
       iconBg: "rgba(255, 255, 255, 0.2)",
     },
   ];
-
+  const { user } = useSelector((state) => state.doctor);
   return (
-    <Stack direction="row" sx={{ width: "100%" }}>
+    <Stack direction="row">
       <NavBar />
       <Box
         sx={{
           backgroundColor: "#F5F7FA",
-          marginLeft: "235px",
-          width: "calc(100% - 235px)",
-          minHeight: "100vh",
           padding: "20px",
+          height: "100vh",
+          overflowY: "auto",
+          flex: 1,
         }}
       >
         {/* Header */}
@@ -146,17 +151,21 @@ export default function Dashboard() {
             }}
           >
             <CardContent sx={{ p: 3, position: "relative", zIndex: 1 }}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+              >
                 <Stack direction="row" alignItems="center" spacing={2}>
                   <Avatar
-                    src={user?.imageUrl}
+                    src={user?.data?.imageUrl || ""}
                     sx={{ width: 64, height: 64, border: "3px solid white" }}
                   >
-                    {user?.fullName?.charAt(0) || "D"}
+                    {userLS?.fullName?.charAt(0) || "D"}
                   </Avatar>
                   <Box>
                     <Typography variant="h5" fontWeight="600">
-                      Welcome back, Dr. {user?.fullName || "Doctor"}!
+                      Welcome back, Dr. {userLS?.fullName || "Doctor"}!
                     </Typography>
                     <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
                       Here's what's happening with your practice today
@@ -199,7 +208,11 @@ export default function Dashboard() {
           {loading
             ? Array.from({ length: 5 }).map((_, index) => (
                 <Grid item xs={12} sm={6} md={2.4} key={index}>
-                  <Skeleton variant="rectangular" height={140} sx={{ borderRadius: "16px" }} />
+                  <Skeleton
+                    variant="rectangular"
+                    height={140}
+                    sx={{ borderRadius: "16px" }}
+                  />
                 </Grid>
               ))
             : statsCards.map((card, index) => (
@@ -232,9 +245,15 @@ export default function Dashboard() {
                         },
                       }}
                     >
-                      <CardContent sx={{ position: "relative", zIndex: 1, p: 3 }}>
+                      <CardContent
+                        sx={{ position: "relative", zIndex: 1, p: 3 }}
+                      >
                         <Stack spacing={2.5}>
-                          <Stack direction="row" justifyContent="space-between" alignItems="center">
+                          <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                            alignItems="center"
+                          >
                             <Box
                               sx={{
                                 width: 64,
@@ -321,13 +340,19 @@ export default function Dashboard() {
               }}
             >
               <CardContent sx={{ p: 3 }}>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={1}
+                  sx={{ mb: 3 }}
+                >
                   <Box
                     sx={{
                       width: 40,
                       height: 40,
                       borderRadius: "10px",
-                      background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                      background:
+                        "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -336,7 +361,11 @@ export default function Dashboard() {
                   >
                     <CalendarTodayIcon sx={{ color: "white", fontSize: 20 }} />
                   </Box>
-                  <Typography variant="h6" fontWeight="700" color="primary.main">
+                  <Typography
+                    variant="h6"
+                    fontWeight="700"
+                    color="primary.main"
+                  >
                     Today's Appointments
                   </Typography>
                   <Chip
@@ -344,7 +373,8 @@ export default function Dashboard() {
                     size="small"
                     sx={{
                       ml: "auto",
-                      background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                      background:
+                        "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                       color: "white",
                       fontWeight: 600,
                     }}
@@ -354,7 +384,12 @@ export default function Dashboard() {
                 {loading ? (
                   <Stack spacing={2}>
                     {[1, 2, 3].map((i) => (
-                      <Skeleton key={i} variant="rectangular" height={80} sx={{ borderRadius: "12px" }} />
+                      <Skeleton
+                        key={i}
+                        variant="rectangular"
+                        height={80}
+                        sx={{ borderRadius: "12px" }}
+                      />
                     ))}
                   </Stack>
                 ) : todayAppointments && todayAppointments.length > 0 ? (
@@ -364,7 +399,8 @@ export default function Dashboard() {
                         key={index}
                         sx={{
                           borderRadius: "16px",
-                          background: "linear-gradient(135deg, rgba(82, 172, 140, 0.05) 0%, rgba(82, 172, 140, 0.1) 100%)",
+                          background:
+                            "linear-gradient(135deg, rgba(82, 172, 140, 0.05) 0%, rgba(82, 172, 140, 0.1) 100%)",
                           border: "2px solid rgba(82, 172, 140, 0.2)",
                           transition: "all 0.3s ease",
                           "&:hover": {
@@ -375,7 +411,11 @@ export default function Dashboard() {
                         }}
                       >
                         <CardContent sx={{ p: 2.5 }}>
-                          <Stack direction="row" spacing={2} alignItems="center">
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            alignItems="center"
+                          >
                             <Avatar
                               src={appointment.patientImage}
                               sx={{
@@ -388,12 +428,30 @@ export default function Dashboard() {
                               {appointment.patientName?.charAt(0)}
                             </Avatar>
                             <Box flex={1}>
-                              <Typography variant="subtitle1" fontWeight="700" color="primary.main">
+                              <Typography
+                                variant="subtitle1"
+                                fontWeight="700"
+                                color="primary.main"
+                              >
                                 {appointment.patientName}
                               </Typography>
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <AccessTimeIcon sx={{ fontSize: 16, color: "primary.main", opacity: 0.7 }} />
-                                <Typography variant="caption" color="text.secondary" fontWeight="500">
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                              >
+                                <AccessTimeIcon
+                                  sx={{
+                                    fontSize: 16,
+                                    color: "primary.main",
+                                    opacity: 0.7,
+                                  }}
+                                />
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  fontWeight="500"
+                                >
                                   {formatTime(appointment.appointmentDate)}
                                 </Typography>
                               </Stack>
@@ -421,7 +479,8 @@ export default function Dashboard() {
                       textAlign: "center",
                       py: 6,
                       borderRadius: "16px",
-                      background: "linear-gradient(135deg, rgba(82, 172, 140, 0.05) 0%, rgba(82, 172, 140, 0.02) 100%)",
+                      background:
+                        "linear-gradient(135deg, rgba(82, 172, 140, 0.05) 0%, rgba(82, 172, 140, 0.02) 100%)",
                       border: "2px dashed rgba(82, 172, 140, 0.3)",
                     }}
                   >
@@ -430,7 +489,8 @@ export default function Dashboard() {
                         width: 64,
                         height: 64,
                         borderRadius: "50%",
-                        background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                        background:
+                          "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -438,9 +498,15 @@ export default function Dashboard() {
                         opacity: 0.8,
                       }}
                     >
-                      <CalendarTodayIcon sx={{ fontSize: 32, color: "white" }} />
+                      <CalendarTodayIcon
+                        sx={{ fontSize: 32, color: "white" }}
+                      />
                     </Box>
-                    <Typography variant="body1" fontWeight="600" color="primary.main">
+                    <Typography
+                      variant="body1"
+                      fontWeight="600"
+                      color="primary.main"
+                    >
                       No appointments scheduled for today
                     </Typography>
                   </Box>
@@ -464,13 +530,19 @@ export default function Dashboard() {
               }}
             >
               <CardContent sx={{ p: 3 }}>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={1}
+                  sx={{ mb: 3 }}
+                >
                   <Box
                     sx={{
                       width: 40,
                       height: 40,
                       borderRadius: "10px",
-                      background: "linear-gradient(135deg, #FF9800 0%, #F57C00 100%)",
+                      background:
+                        "linear-gradient(135deg, #FF9800 0%, #F57C00 100%)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -479,7 +551,11 @@ export default function Dashboard() {
                   >
                     <WarningAmberIcon sx={{ color: "white", fontSize: 20 }} />
                   </Box>
-                  <Typography variant="h6" fontWeight="700" sx={{ color: "#FF9800" }}>
+                  <Typography
+                    variant="h6"
+                    fontWeight="700"
+                    sx={{ color: "#FF9800" }}
+                  >
                     Urgent Alerts
                   </Typography>
                   <Chip
@@ -487,7 +563,8 @@ export default function Dashboard() {
                     size="small"
                     sx={{
                       ml: "auto",
-                      background: "linear-gradient(135deg, #FF9800 0%, #F57C00 100%)",
+                      background:
+                        "linear-gradient(135deg, #FF9800 0%, #F57C00 100%)",
                       color: "white",
                       fontWeight: 600,
                     }}
@@ -497,7 +574,12 @@ export default function Dashboard() {
                 {loading ? (
                   <Stack spacing={2}>
                     {[1, 2].map((i) => (
-                      <Skeleton key={i} variant="rectangular" height={80} sx={{ borderRadius: "12px" }} />
+                      <Skeleton
+                        key={i}
+                        variant="rectangular"
+                        height={80}
+                        sx={{ borderRadius: "12px" }}
+                      />
                     ))}
                   </Stack>
                 ) : urgentAlerts && urgentAlerts.length > 0 ? (
@@ -507,7 +589,8 @@ export default function Dashboard() {
                         key={index}
                         sx={{
                           borderRadius: "16px",
-                          background: "linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, rgba(245, 124, 0, 0.05) 100%)",
+                          background:
+                            "linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, rgba(245, 124, 0, 0.05) 100%)",
                           border: "2px solid rgba(255, 152, 0, 0.3)",
                           p: 2.5,
                           transition: "all 0.3s ease",
@@ -524,20 +607,31 @@ export default function Dashboard() {
                               width: 40,
                               height: 40,
                               borderRadius: "10px",
-                              background: "linear-gradient(135deg, #FF9800 0%, #F57C00 100%)",
+                              background:
+                                "linear-gradient(135deg, #FF9800 0%, #F57C00 100%)",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               boxShadow: "0 4px 12px rgba(255, 152, 0, 0.3)",
                             }}
                           >
-                            <WarningAmberIcon sx={{ color: "white", fontSize: 20 }} />
+                            <WarningAmberIcon
+                              sx={{ color: "white", fontSize: 20 }}
+                            />
                           </Box>
                           <Box flex={1}>
-                            <Typography variant="subtitle2" fontWeight="700" color="#FF9800">
+                            <Typography
+                              variant="subtitle2"
+                              fontWeight="700"
+                              color="#FF9800"
+                            >
                               {alert.title}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary" fontWeight="500">
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              fontWeight="500"
+                            >
                               {alert.message}
                             </Typography>
                           </Box>
@@ -551,7 +645,8 @@ export default function Dashboard() {
                       textAlign: "center",
                       py: 6,
                       borderRadius: "16px",
-                      background: "linear-gradient(135deg, rgba(82, 172, 140, 0.05) 0%, rgba(82, 172, 140, 0.02) 100%)",
+                      background:
+                        "linear-gradient(135deg, rgba(82, 172, 140, 0.05) 0%, rgba(82, 172, 140, 0.02) 100%)",
                       border: "2px dashed rgba(82, 172, 140, 0.3)",
                     }}
                   >
@@ -560,7 +655,8 @@ export default function Dashboard() {
                         width: 64,
                         height: 64,
                         borderRadius: "50%",
-                        background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                        background:
+                          "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -570,7 +666,12 @@ export default function Dashboard() {
                     >
                       <WarningAmberIcon sx={{ fontSize: 32, color: "white" }} />
                     </Box>
-                    <Typography variant="body1" fontWeight="600" color="primary.main" mb={0.5}>
+                    <Typography
+                      variant="body1"
+                      fontWeight="600"
+                      color="primary.main"
+                      mb={0.5}
+                    >
                       No urgent alerts at this time
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
@@ -597,13 +698,19 @@ export default function Dashboard() {
           }}
         >
           <CardContent sx={{ p: 3 }}>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={1}
+              sx={{ mb: 3 }}
+            >
               <Box
                 sx={{
                   width: 40,
                   height: 40,
                   borderRadius: "10px",
-                  background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                  background:
+                    "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -618,7 +725,11 @@ export default function Dashboard() {
             </Stack>
 
             {loading ? (
-              <Skeleton variant="rectangular" height={300} sx={{ borderRadius: "12px" }} />
+              <Skeleton
+                variant="rectangular"
+                height={300}
+                sx={{ borderRadius: "12px" }}
+              />
             ) : recentPatients && recentPatients.length > 0 ? (
               <TableContainer
                 component={Paper}
@@ -632,16 +743,65 @@ export default function Dashboard() {
                 <Table>
                   <TableHead
                     sx={{
-                      background: "linear-gradient(135deg, rgba(82, 172, 140, 0.1) 0%, rgba(82, 172, 140, 0.05) 100%)",
+                      background:
+                        "linear-gradient(135deg, rgba(82, 172, 140, 0.1) 0%, rgba(82, 172, 140, 0.05) 100%)",
                     }}
                   >
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "primary.main", fontSize: "0.95rem" }}>Patient</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "primary.main", fontSize: "0.95rem" }}>Age/Gender</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "primary.main", fontSize: "0.95rem" }}>Contact</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "primary.main", fontSize: "0.95rem" }}>Current Condition</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "primary.main", fontSize: "0.95rem" }}>Last Visit</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "primary.main", fontSize: "0.95rem" }}>Status</TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: 700,
+                          color: "primary.main",
+                          fontSize: "0.95rem",
+                        }}
+                      >
+                        Patient
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: 700,
+                          color: "primary.main",
+                          fontSize: "0.95rem",
+                        }}
+                      >
+                        Age/Gender
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: 700,
+                          color: "primary.main",
+                          fontSize: "0.95rem",
+                        }}
+                      >
+                        Contact
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: 700,
+                          color: "primary.main",
+                          fontSize: "0.95rem",
+                        }}
+                      >
+                        Current Condition
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: 700,
+                          color: "primary.main",
+                          fontSize: "0.95rem",
+                        }}
+                      >
+                        Last Visit
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          fontWeight: 700,
+                          color: "primary.main",
+                          fontSize: "0.95rem",
+                        }}
+                      >
+                        Status
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -657,7 +817,11 @@ export default function Dashboard() {
                         }}
                       >
                         <TableCell>
-                          <Stack direction="row" spacing={2} alignItems="center">
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            alignItems="center"
+                          >
                             <Avatar
                               src={patient.image}
                               sx={{
@@ -671,10 +835,18 @@ export default function Dashboard() {
                               {patient.name?.charAt(0)}
                             </Avatar>
                             <Box>
-                              <Typography variant="subtitle2" fontWeight="700" color="primary.main">
+                              <Typography
+                                variant="subtitle2"
+                                fontWeight="700"
+                                color="primary.main"
+                              >
                                 {patient.name}
                               </Typography>
-                              <Typography variant="caption" color="text.secondary" fontWeight="500">
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                fontWeight="500"
+                              >
                                 ID: {patient.patientId?.slice(0, 8)}...
                               </Typography>
                             </Box>
@@ -689,7 +861,9 @@ export default function Dashboard() {
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2" fontWeight="500">{patient.phoneNumber}</Typography>
+                          <Typography variant="body2" fontWeight="500">
+                            {patient.phoneNumber}
+                          </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {patient.email}
                           </Typography>
@@ -740,7 +914,8 @@ export default function Dashboard() {
                   textAlign: "center",
                   py: 6,
                   borderRadius: "16px",
-                  background: "linear-gradient(135deg, rgba(82, 172, 140, 0.05) 0%, rgba(82, 172, 140, 0.02) 100%)",
+                  background:
+                    "linear-gradient(135deg, rgba(82, 172, 140, 0.05) 0%, rgba(82, 172, 140, 0.02) 100%)",
                   border: "2px dashed rgba(82, 172, 140, 0.3)",
                 }}
               >
@@ -749,7 +924,8 @@ export default function Dashboard() {
                     width: 64,
                     height: 64,
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                    background:
+                      "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -759,7 +935,11 @@ export default function Dashboard() {
                 >
                   <PeopleAltIcon sx={{ fontSize: 32, color: "white" }} />
                 </Box>
-                <Typography variant="body1" fontWeight="600" color="primary.main">
+                <Typography
+                  variant="body1"
+                  fontWeight="600"
+                  color="primary.main"
+                >
                   No recent patients to display
                 </Typography>
               </Box>

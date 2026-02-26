@@ -53,17 +53,17 @@ export default function DoctorProfile() {
   }, [dispatch]);
 
   return (
-    <Stack direction={"row"} sx={{ width: "100%" }}>
-      <NavBar />
-      <Box
-        sx={{
-          marginLeft: { xs: 0, md: "235px" },
-          width: { xs: "100%", md: "calc(100% - 235px)" },
-          minHeight: "100vh",
-          background: "#F5F7FA",
-          p: { xs: 2, sm: 3, md: 4 },
-        }}
-      >
+    <Stack direction="row">
+          <NavBar />
+          <Box
+            sx={{
+              backgroundColor: "#F5F7FA",
+              padding: "20px",
+              height: "100vh",
+              overflowY: "auto",
+              flex: 1,
+            }}
+          >
         <Fade in timeout={400}>
           <Stack 
             direction={{ xs: "column", sm: "row" }} 

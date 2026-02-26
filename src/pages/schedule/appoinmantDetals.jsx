@@ -185,13 +185,16 @@ export default function AppointmentsDetails() {
   ];
 
   // Use mockup data if medical images are empty
-  const displayImages = appoinDetails?.data?.medicalImages?.length > 0
-    ? appoinDetails.data.medicalImages
-    : mockupDicomImages;
+  const displayImages =
+    appoinDetails?.data?.medicalImages?.length > 0
+      ? appoinDetails.data.medicalImages
+      : mockupDicomImages;
 
   const handleImageClick = (image) => {
     // Navigate to DICOM viewer with image data
-    navigate("/dicom/imageViwer", { state: { image, allImages: displayImages } });
+    navigate("/dicom/imageViwer", {
+      state: { image, allImages: displayImages },
+    });
   };
 
   console.log(
@@ -213,15 +216,15 @@ export default function AppointmentsDetails() {
         openDiagnosis={openDiagnosis}
         setopenDiagnosis={setOpenDiagnosis}
       />
-      <Stack direction="row" sx={{ width: "100%" }}>
+      <Stack direction="row">
         <NavBar />
         <Box
           sx={{
-            ml: "235px",
-            width: "calc(100% - 235px)",
             backgroundColor: "#F5F7FA",
-            minHeight: "100vh",
-            p: 3,
+            padding: "20px",
+            height: "100vh",
+            overflowY: "auto",
+            flex: 1,
           }}
         >
           {/* Header Card */}
@@ -269,7 +272,10 @@ export default function AppointmentsDetails() {
                       <Typography variant="h5" fontWeight="700">
                         Appointment Details
                       </Typography>
-                      <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ opacity: 0.9, mt: 0.5 }}
+                      >
                         Complete information about the appointment
                       </Typography>
                     </Box>
@@ -304,7 +310,8 @@ export default function AppointmentsDetails() {
                   {/* Header Background */}
                   <Box
                     sx={{
-                      background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                      background:
+                        "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                       width: "100%",
                       height: "120px",
                       position: "absolute",
@@ -312,9 +319,11 @@ export default function AppointmentsDetails() {
                       left: 0,
                     }}
                   />
-                  
+
                   {/* Patient Avatar & Info */}
-                  <Box sx={{ textAlign: "center", position: "relative", pt: 2 }}>
+                  <Box
+                    sx={{ textAlign: "center", position: "relative", pt: 2 }}
+                  >
                     <Box
                       sx={{
                         width: "fit-content",
@@ -345,7 +354,7 @@ export default function AppointmentsDetails() {
                         }}
                       />
                     </Box>
-                    
+
                     <Typography
                       mt={2}
                       variant="h4"
@@ -428,7 +437,8 @@ export default function AppointmentsDetails() {
                             width: 40,
                             height: 40,
                             borderRadius: "10px",
-                            background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                            background:
+                              "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -437,10 +447,18 @@ export default function AppointmentsDetails() {
                           <PhoneIcon sx={{ fontSize: 20, color: "white" }} />
                         </Box>
                         <Box>
-                          <Typography variant="caption" color="text.secondary" fontWeight="500">
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight="500"
+                          >
                             Phone Number
                           </Typography>
-                          <Typography variant="body2" fontWeight="600" color="primary.main">
+                          <Typography
+                            variant="body2"
+                            fontWeight="600"
+                            color="primary.main"
+                          >
                             {appoinDetails?.data?.patientPhone || "N/A"}
                           </Typography>
                         </Box>
@@ -461,7 +479,8 @@ export default function AppointmentsDetails() {
                             width: 40,
                             height: 40,
                             borderRadius: "10px",
-                            background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                            background:
+                              "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -470,10 +489,18 @@ export default function AppointmentsDetails() {
                           <EmailIcon sx={{ fontSize: 20, color: "white" }} />
                         </Box>
                         <Box>
-                          <Typography variant="caption" color="text.secondary" fontWeight="500">
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight="500"
+                          >
                             Email Address
                           </Typography>
-                          <Typography variant="body2" fontWeight="600" color="primary.main">
+                          <Typography
+                            variant="body2"
+                            fontWeight="600"
+                            color="primary.main"
+                          >
                             {patientDetails?.data?.basicInfo?.email || "N/A"}
                           </Typography>
                         </Box>
@@ -494,19 +521,30 @@ export default function AppointmentsDetails() {
                             width: 40,
                             height: 40,
                             borderRadius: "10px",
-                            background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                            background:
+                              "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                           }}
                         >
-                          <LocationOnIcon sx={{ fontSize: 20, color: "white" }} />
+                          <LocationOnIcon
+                            sx={{ fontSize: 20, color: "white" }}
+                          />
                         </Box>
                         <Box>
-                          <Typography variant="caption" color="text.secondary" fontWeight="500">
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight="500"
+                          >
                             Location
                           </Typography>
-                          <Typography variant="body2" fontWeight="600" color="primary.main">
+                          <Typography
+                            variant="body2"
+                            fontWeight="600"
+                            color="primary.main"
+                          >
                             New York, NY
                           </Typography>
                         </Box>
@@ -525,15 +563,24 @@ export default function AppointmentsDetails() {
                     alignItems="center"
                     mb={3}
                   >
-                    <Typography variant="h6" fontWeight="700" color="primary.main">
+                    <Typography
+                      variant="h6"
+                      fontWeight="700"
+                      color="primary.main"
+                    >
                       Appointment Summary
                     </Typography>
                     {appoinDetails?.data?.status && (
                       <Chip
-                        label={getStatusStyle(appoinDetails?.data?.status).label}
+                        label={
+                          getStatusStyle(appoinDetails?.data?.status).label
+                        }
                         sx={{
-                          background: getStatusStyle(appoinDetails?.data?.status).bg,
-                          color: getStatusStyle(appoinDetails?.data?.status).color,
+                          background: getStatusStyle(
+                            appoinDetails?.data?.status
+                          ).bg,
+                          color: getStatusStyle(appoinDetails?.data?.status)
+                            .color,
                           fontWeight: 700,
                           fontSize: "12px",
                         }}
@@ -544,29 +591,49 @@ export default function AppointmentsDetails() {
                   <Stack spacing={3}>
                     {/* Date & Time */}
                     <Box>
-                      <Stack direction="row" spacing={2} alignItems="flex-start">
+                      <Stack
+                        direction="row"
+                        spacing={2}
+                        alignItems="flex-start"
+                      >
                         <Box
                           sx={{
                             width: 48,
                             height: 48,
                             borderRadius: "12px",
-                            background: "linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%)",
+                            background:
+                              "linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                           }}
                         >
-                          <CalendarTodayIcon sx={{ color: "#3B82F6", fontSize: 24 }} />
+                          <CalendarTodayIcon
+                            sx={{ color: "#3B82F6", fontSize: 24 }}
+                          />
                         </Box>
                         <Box flex={1}>
-                          <Typography variant="caption" color="text.secondary" fontWeight="600">
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight="600"
+                          >
                             Date & Time
                           </Typography>
-                          <Typography variant="body1" fontWeight="700" color="primary.main">
+                          <Typography
+                            variant="body1"
+                            fontWeight="700"
+                            color="primary.main"
+                          >
                             {formatDate(appoinDetails?.data?.scheduledStart)}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary" fontWeight="500">
-                            {formatTime(appoinDetails?.data?.scheduledStart)} - {formatTime(appoinDetails?.data?.scheduledEnd)}
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            fontWeight="500"
+                          >
+                            {formatTime(appoinDetails?.data?.scheduledStart)} -{" "}
+                            {formatTime(appoinDetails?.data?.scheduledEnd)}
                           </Typography>
                         </Box>
                       </Stack>
@@ -576,28 +643,47 @@ export default function AppointmentsDetails() {
 
                     {/* Doctor Info */}
                     <Box>
-                      <Stack direction="row" spacing={2} alignItems="flex-start">
+                      <Stack
+                        direction="row"
+                        spacing={2}
+                        alignItems="flex-start"
+                      >
                         <Box
                           sx={{
                             width: 48,
                             height: 48,
                             borderRadius: "12px",
-                            background: "linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(236, 72, 153, 0.1) 100%)",
+                            background:
+                              "linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(236, 72, 153, 0.1) 100%)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                           }}
                         >
-                          <LocalHospitalIcon sx={{ color: "#EC4899", fontSize: 24 }} />
+                          <LocalHospitalIcon
+                            sx={{ color: "#EC4899", fontSize: 24 }}
+                          />
                         </Box>
                         <Box flex={1}>
-                          <Typography variant="caption" color="text.secondary" fontWeight="600">
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight="600"
+                          >
                             Healthcare Provider
                           </Typography>
-                          <Typography variant="body1" fontWeight="700" color="primary.main">
+                          <Typography
+                            variant="body1"
+                            fontWeight="700"
+                            color="primary.main"
+                          >
                             Dr. {appoinDetails?.data?.doctorName}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary" fontWeight="500">
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            fontWeight="500"
+                          >
                             {appoinDetails?.data?.specialty}
                           </Typography>
                         </Box>
@@ -608,29 +694,50 @@ export default function AppointmentsDetails() {
 
                     {/* Visit Type */}
                     <Box>
-                      <Stack direction="row" spacing={2} alignItems="flex-start">
+                      <Stack
+                        direction="row"
+                        spacing={2}
+                        alignItems="flex-start"
+                      >
                         <Box
                           sx={{
                             width: 48,
                             height: 48,
                             borderRadius: "12px",
-                            background: "linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%)",
+                            background:
+                              "linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                           }}
                         >
-                          <MedicalServicesIcon sx={{ color: "#8B5CF6", fontSize: 24 }} />
+                          <MedicalServicesIcon
+                            sx={{ color: "#8B5CF6", fontSize: 24 }}
+                          />
                         </Box>
                         <Box flex={1}>
-                          <Typography variant="caption" color="text.secondary" fontWeight="600">
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight="600"
+                          >
                             Reason for Visit
                           </Typography>
-                          <Typography variant="body1" fontWeight="700" color="primary.main">
+                          <Typography
+                            variant="body1"
+                            fontWeight="700"
+                            color="primary.main"
+                          >
                             {appoinDetails?.data?.reason}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary" fontWeight="500" sx={{ textTransform: "capitalize" }}>
-                            {appoinDetails?.data?.appointmentType} Call • ${appoinDetails?.data?.price}
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            fontWeight="500"
+                            sx={{ textTransform: "capitalize" }}
+                          >
+                            {appoinDetails?.data?.appointmentType} Call • $
+                            {appoinDetails?.data?.price}
                           </Typography>
                         </Box>
                       </Stack>
@@ -658,7 +765,8 @@ export default function AppointmentsDetails() {
                             width: 36,
                             height: 36,
                             borderRadius: "10px",
-                            background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+                            background:
+                              "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -666,7 +774,11 @@ export default function AppointmentsDetails() {
                         >
                           <NoteAddIcon sx={{ color: "white", fontSize: 20 }} />
                         </Box>
-                        <Typography variant="h6" fontWeight="700" color="primary.main">
+                        <Typography
+                          variant="h6"
+                          fontWeight="700"
+                          color="primary.main"
+                        >
                           Medical Records
                         </Typography>
                       </Stack>
@@ -691,7 +803,8 @@ export default function AppointmentsDetails() {
                       <Box
                         sx={{
                           p: 2.5,
-                          background: "linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(139, 92, 246, 0.02) 100%)",
+                          background:
+                            "linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(139, 92, 246, 0.02) 100%)",
                           border: "1px solid rgba(139, 92, 246, 0.2)",
                           borderRadius: "12px",
                           transition: "all 0.3s ease",
@@ -730,7 +843,10 @@ export default function AppointmentsDetails() {
                           display="block"
                           mt={1.5}
                         >
-                          Date: {formatDate(appoinDetails?.data?.medicalRecord?.recordDate)}
+                          Date:{" "}
+                          {formatDate(
+                            appoinDetails?.data?.medicalRecord?.recordDate
+                          )}
                         </Typography>
                       </Box>
                     ) : (
@@ -750,493 +866,535 @@ export default function AppointmentsDetails() {
                   </Card>
 
                   {/* Diagnoses */}
-                    <Card sx={cardStyle}>
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        mb={3}
-                      >
-                        <Stack direction="row" spacing={1.5} alignItems="center">
-                          <Box
-                            sx={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: "10px",
-                              background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <MedicalServicesIcon sx={{ color: "white", fontSize: 20 }} />
-                          </Box>
-                          <Typography variant="h6" fontWeight="700" color="primary.main">
-                            Current Diagnoses
-                          </Typography>
-                        </Stack>
-                        <Button
-                          onClick={() => setOpenDiagnosis(true)}
-                          startIcon={<AddIcon />}
-                          sx={{
-                            textTransform: "none",
-                            color: "primary.main",
-                            fontWeight: 600,
-                            fontSize: "13px",
-                            "&:hover": {
-                              backgroundColor: "rgba(82, 172, 140, 0.05)",
-                            },
-                          }}
-                        >
-                          Add New
-                        </Button>
-                      </Stack>
-
-                      {appoinDetails?.data?.diagnoses && appoinDetails?.data?.diagnoses.length > 0 ? (
-                        appoinDetails?.data?.diagnoses.map((item, index) => (
-                          <Box
-                            key={item?.id}
-                            sx={{
-                              p: 2.5,
-                              mb: 2,
-                              background: "linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%)",
-                              border: "1px solid rgba(239, 68, 68, 0.2)",
-                              borderRadius: "12px",
-                              position: "relative",
-                              transition: "all 0.3s ease",
-                              "&:hover": {
-                                transform: "translateY(-2px)",
-                                boxShadow: "0 4px 16px rgba(239, 68, 68, 0.15)",
-                              },
-                            }}
-                          >
-                            <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                              <Box flex={1}>
-                                <Typography
-                                  variant="body1"
-                                  fontWeight="700"
-                                  color="error.main"
-                                  mb={0.5}
-                                >
-                                  {item.description}
-                                </Typography>
-                                {item.icdCode && (
-                                  <Chip
-                                    label={`ICD: ${item.icdCode}`}
-                                    size="small"
-                                    sx={{
-                                      height: "20px",
-                                      fontSize: "11px",
-                                      fontWeight: 600,
-                                      backgroundColor: "rgba(239, 68, 68, 0.1)",
-                                      color: "error.main",
-                                      border: "none",
-                                      mr: 1,
-                                      mt: 0.5,
-                                    }}
-                                  />
-                                )}
-                                {item.severity && (
-                                  <Chip
-                                    label={item.severity}
-                                    size="small"
-                                    sx={{
-                                      height: "20px",
-                                      fontSize: "11px",
-                                      fontWeight: 600,
-                                      backgroundColor: item.severity === "High" ? "rgba(239, 68, 68, 0.2)" : "rgba(251, 191, 36, 0.2)",
-                                      color: item.severity === "High" ? "error.main" : "#F59E0B",
-                                      border: "none",
-                                      mt: 0.5,
-                                      textTransform: "capitalize",
-                                    }}
-                                  />
-                                )}
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                  fontWeight="500"
-                                  display="block"
-                                  mt={1.5}
-                                >
-                                  Diagnosed: {formatDate(item.createdAt)}
-                                </Typography>
-                              </Box>
-                              <Box
-                                sx={{
-                                  width: 32,
-                                  height: 32,
-                                  borderRadius: "8px",
-                                  backgroundColor: "rgba(239, 68, 68, 0.15)",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  ml: 2,
-                                }}
-                              >
-                                <Typography
-                                  sx={{
-                                    fontSize: "16px",
-                                    fontWeight: "700",
-                                    color: "error.main",
-                                  }}
-                                >
-                                  !
-                                </Typography>
-                              </Box>
-                            </Stack>
-                          </Box>
-                        ))
-                      ) : (
+                  <Card sx={cardStyle}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      mb={3}
+                    >
+                      <Stack direction="row" spacing={1.5} alignItems="center">
                         <Box
                           sx={{
-                            p: 3,
-                            textAlign: "center",
-                            backgroundColor: "rgba(82, 172, 140, 0.05)",
-                            borderRadius: "12px",
-                          }}
-                        >
-                          <Typography variant="body2" color="text.secondary">
-                            No diagnoses recorded yet
-                          </Typography>
-                        </Box>
-                      )}
-
-                      <Stack width="100%" alignItems="flex-end" mt={2}>
-                        <Button
-                          sx={{
-                            textTransform: "none",
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            color: "primary.main",
-                            "&:hover": {
-                              backgroundColor: "rgba(82, 172, 140, 0.05)",
-                            },
-                          }}
-                        >
-                          View History
-                        </Button>
-                      </Stack>
-                    </Card>
-
-                    {/* Medical Images */}
-                    <Card sx={{ ...cardStyle, mt: 3 }}>
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        mb={3}
-                      >
-                        <Stack direction="row" spacing={1.5} alignItems="center">
-                          <Box
-                            sx={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: "10px",
-                              background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <ImageIcon sx={{ color: "white", fontSize: 20 }} />
-                          </Box>
-                          <Typography variant="h6" fontWeight="700" color="primary.main">
-                            Medical Images
-                          </Typography>
-                        </Stack>
-                        <Button
-                          size="small"
-                          startIcon={<UploadIcon />}
-                          variant="contained"
-                          sx={{
-                            textTransform: "none",
-                            color: "white",
-                            background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
-                            fontWeight: 600,
-                            fontSize: "13px",
-                            px: 2,
-                            py: 0.75,
+                            width: 36,
+                            height: 36,
                             borderRadius: "10px",
-                            boxShadow: "0 4px 12px rgba(82, 172, 140, 0.3)",
-                            "&:hover": {
-                              background: "linear-gradient(135deg, #3D8B6F 0%, #2E6B55 100%)",
-                              boxShadow: "0 6px 16px rgba(82, 172, 140, 0.4)",
-                            },
+                            background:
+                              "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
                           }}
-                          onClick={() => navigate("/medicalimaging")}
                         >
-                          Upload
-                        </Button>
+                          <MedicalServicesIcon
+                            sx={{ color: "white", fontSize: 20 }}
+                          />
+                        </Box>
+                        <Typography
+                          variant="h6"
+                          fontWeight="700"
+                          color="primary.main"
+                        >
+                          Current Diagnoses
+                        </Typography>
                       </Stack>
-
-                      <Box
+                      <Button
+                        onClick={() => setOpenDiagnosis(true)}
+                        startIcon={<AddIcon />}
                         sx={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
-                          gap: 2,
+                          textTransform: "none",
+                          color: "primary.main",
+                          fontWeight: 600,
+                          fontSize: "13px",
+                          "&:hover": {
+                            backgroundColor: "rgba(82, 172, 140, 0.05)",
+                          },
                         }}
                       >
-                        {displayImages?.map((item) => (
-                          <Box
-                            key={item.id}
-                            onClick={() => handleImageClick(item)}
-                            sx={{
-                              width: "100%",
-                              paddingTop: "100%", // 1:1 aspect ratio
-                              position: "relative",
-                              overflow: "hidden",
-                              borderRadius: "12px",
-                              cursor: "pointer",
-                              transition: "all 0.3s ease",
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                              "&:hover": {
-                                transform: "scale(1.05)",
-                                boxShadow: "0 4px 16px rgba(82, 172, 140, 0.3)",
-                              },
-                            }}
-                          >
-                            <img
-                              src={item.viewerUrl}
-                              alt={item.fileName || item.description}
-                              style={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover",
-                              }}
-                            />
-                            {item.description && (
-                              <Box
-                                sx={{
-                                  position: "absolute",
-                                  bottom: 0,
-                                  left: 0,
-                                  right: 0,
-                                  background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
-                                  color: "white",
-                                  padding: "8px",
-                                  fontSize: "10px",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                {item.description}
-                              </Box>
-                            )}
-                          </Box>
-                        ))}
+                        Add New
+                      </Button>
+                    </Stack>
 
+                    {appoinDetails?.data?.diagnoses &&
+                    appoinDetails?.data?.diagnoses.length > 0 ? (
+                      appoinDetails?.data?.diagnoses.map((item, index) => (
                         <Box
-                          onClick={() => navigate("/medicalimaging")}
+                          key={item?.id}
                           sx={{
-                            width: "100%",
-                            paddingTop: "100%",
-                            position: "relative",
+                            p: 2.5,
+                            mb: 2,
+                            background:
+                              "linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%)",
+                            border: "1px solid rgba(239, 68, 68, 0.2)",
                             borderRadius: "12px",
-                            border: "2px dashed rgba(82, 172, 140, 0.3)",
-                            backgroundColor: "rgba(82, 172, 140, 0.05)",
-                            cursor: "pointer",
+                            position: "relative",
                             transition: "all 0.3s ease",
                             "&:hover": {
-                              backgroundColor: "rgba(82, 172, 140, 0.1)",
-                              borderColor: "rgba(82, 172, 140, 0.5)",
-                              transform: "scale(1.05)",
+                              transform: "translateY(-2px)",
+                              boxShadow: "0 4px 16px rgba(239, 68, 68, 0.15)",
                             },
                           }}
                         >
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              top: "50%",
-                              left: "50%",
-                              transform: "translate(-50%, -50%)",
-                              textAlign: "center",
-                            }}
+                          <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                            alignItems="flex-start"
                           >
-                            <AddAPhotoIcon
-                              sx={{ fontSize: 32, color: "primary.main", mb: 0.5 }}
-                            />
-                            <Typography
-                              variant="caption"
+                            <Box flex={1}>
+                              <Typography
+                                variant="body1"
+                                fontWeight="700"
+                                color="error.main"
+                                mb={0.5}
+                              >
+                                {item.description}
+                              </Typography>
+                              {item.icdCode && (
+                                <Chip
+                                  label={`ICD: ${item.icdCode}`}
+                                  size="small"
+                                  sx={{
+                                    height: "20px",
+                                    fontSize: "11px",
+                                    fontWeight: 600,
+                                    backgroundColor: "rgba(239, 68, 68, 0.1)",
+                                    color: "error.main",
+                                    border: "none",
+                                    mr: 1,
+                                    mt: 0.5,
+                                  }}
+                                />
+                              )}
+                              {item.severity && (
+                                <Chip
+                                  label={item.severity}
+                                  size="small"
+                                  sx={{
+                                    height: "20px",
+                                    fontSize: "11px",
+                                    fontWeight: 600,
+                                    backgroundColor:
+                                      item.severity === "High"
+                                        ? "rgba(239, 68, 68, 0.2)"
+                                        : "rgba(251, 191, 36, 0.2)",
+                                    color:
+                                      item.severity === "High"
+                                        ? "error.main"
+                                        : "#F59E0B",
+                                    border: "none",
+                                    mt: 0.5,
+                                    textTransform: "capitalize",
+                                  }}
+                                />
+                              )}
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                fontWeight="500"
+                                display="block"
+                                mt={1.5}
+                              >
+                                Diagnosed: {formatDate(item.createdAt)}
+                              </Typography>
+                            </Box>
+                            <Box
                               sx={{
-                                color: "primary.main",
-                                fontWeight: 600,
-                                display: "block",
+                                width: 32,
+                                height: 32,
+                                borderRadius: "8px",
+                                backgroundColor: "rgba(239, 68, 68, 0.15)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                ml: 2,
                               }}
                             >
-                              Add Image
-                            </Typography>
-                          </Box>
+                              <Typography
+                                sx={{
+                                  fontSize: "16px",
+                                  fontWeight: "700",
+                                  color: "error.main",
+                                }}
+                              >
+                                !
+                              </Typography>
+                            </Box>
+                          </Stack>
                         </Box>
-                      </Box>
-                    </Card>
-
-                    {/* Prescriptions */}
-                    <Card sx={{ ...cardStyle, mt: 3 }}>
-                      {/* Header */}
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        mb={3}
-                      >
-                        <Stack direction="row" spacing={1.5} alignItems="center">
-                          <Box
-                            sx={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: "10px",
-                              background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <LinkIcon sx={{ color: "white", fontSize: 20 }} />
-                          </Box>
-                          <Typography variant="h6" fontWeight="700" color="primary.main">
-                            Prescriptions
-                          </Typography>
-                        </Stack>
-
-                        <Button
-                          onClick={() => setopenAddPrescription(true)}
-                          startIcon={<AddIcon />}
-                          sx={{
-                            textTransform: "none",
-                            color: "#10B981",
-                            fontWeight: 600,
-                            fontSize: "13px",
-                            "&:hover": {
-                              backgroundColor: "rgba(16, 185, 129, 0.05)",
-                            },
-                          }}
-                        >
-                          Add New
-                        </Button>
-                      </Stack>
-
-                      {/* Table Header */}
+                      ))
+                    ) : (
                       <Box
                         sx={{
-                          display: "grid",
-                          gridTemplateColumns: "2fr 1fr 2fr 1fr",
-                          gap: 2,
-                          pb: 2,
-                          borderBottom: "2px solid rgba(82, 172, 140, 0.1)",
+                          p: 3,
+                          textAlign: "center",
+                          backgroundColor: "rgba(82, 172, 140, 0.05)",
+                          borderRadius: "12px",
                         }}
                       >
-                        <Typography
-                          fontWeight={700}
-                          fontSize="12px"
-                          color="text.secondary"
-                          letterSpacing="0.5px"
-                        >
-                          MEDICATION
-                        </Typography>
-                        <Typography
-                          fontWeight={700}
-                          fontSize="12px"
-                          color="text.secondary"
-                          letterSpacing="0.5px"
-                        >
-                          DOSAGE
-                        </Typography>
-                        <Typography
-                          fontWeight={700}
-                          fontSize="12px"
-                          color="text.secondary"
-                          letterSpacing="0.5px"
-                        >
-                          FREQUENCY
-                        </Typography>
-                        <Typography
-                          fontWeight={700}
-                          fontSize="12px"
-                          color="text.secondary"
-                          letterSpacing="0.5px"
-                        >
-                          STATUS
+                        <Typography variant="body2" color="text.secondary">
+                          No diagnoses recorded yet
                         </Typography>
                       </Box>
+                    )}
 
-                      {/* Rows */}
-                      <Stack spacing={0} mt={2}>
-                        {appoinDetails?.data?.prescriptions?.map((prescription) =>
-                          prescription?.medications?.map((item, index) => (
-                            <Box
-                              key={item.id || index}
-                              sx={{
-                                display: "grid",
-                                gridTemplateColumns: "2fr 1fr 2fr 1fr",
-                                gap: 2,
-                                alignItems: "center",
-                                py: 2,
-                                borderBottom: "1px solid rgba(82, 172, 140, 0.05)",
-                                transition: "all 0.2s ease",
-                                "&:hover": {
-                                  backgroundColor: "rgba(82, 172, 140, 0.03)",
-                                  borderRadius: "8px",
-                                },
-                              }}
-                            >
-                              <Typography fontWeight={600} fontSize="13px" color="primary.main">
-                                {item.drugName}
-                              </Typography>
-                              <Typography
-                                fontWeight={500}
-                                fontSize="13px"
-                                color="text.secondary"
-                              >
-                                {item.dosage}
-                              </Typography>
-                              <Typography
-                                fontWeight={500}
-                                fontSize="13px"
-                                color="text.secondary"
-                              >
-                                {item.frequency}
-                              </Typography>
+                    <Stack width="100%" alignItems="flex-end" mt={2}>
+                      <Button
+                        sx={{
+                          textTransform: "none",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          color: "primary.main",
+                          "&:hover": {
+                            backgroundColor: "rgba(82, 172, 140, 0.05)",
+                          },
+                        }}
+                      >
+                        View History
+                      </Button>
+                    </Stack>
+                  </Card>
 
-                              <Chip
-                                label="Active"
-                                size="small"
-                                sx={{
-                                  width: "fit-content",
-                                  height: "24px",
-                                  backgroundColor: "rgba(59, 130, 246, 0.1)",
-                                  color: "#1D4ED8",
-                                  fontWeight: 600,
-                                  fontSize: "11px",
-                                  border: "1px solid #1D4ED8",
-                                }}
-                              />
-                            </Box>
-                          ))
-                        )}
-                      </Stack>
-
-                      {/* Footer */}
-                      <Stack width="100%" alignItems="flex-end" mt={3}>
-                        <Button
+                  {/* Medical Images */}
+                  <Card sx={{ ...cardStyle, mt: 3 }}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      mb={3}
+                    >
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        <Box
                           sx={{
-                            textTransform: "none",
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            color: "#10B981",
+                            width: 36,
+                            height: 36,
+                            borderRadius: "10px",
+                            background:
+                              "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <ImageIcon sx={{ color: "white", fontSize: 20 }} />
+                        </Box>
+                        <Typography
+                          variant="h6"
+                          fontWeight="700"
+                          color="primary.main"
+                        >
+                          Medical Images
+                        </Typography>
+                      </Stack>
+                      <Button
+                        size="small"
+                        startIcon={<UploadIcon />}
+                        variant="contained"
+                        sx={{
+                          textTransform: "none",
+                          color: "white",
+                          background:
+                            "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                          fontWeight: 600,
+                          fontSize: "13px",
+                          px: 2,
+                          py: 0.75,
+                          borderRadius: "10px",
+                          boxShadow: "0 4px 12px rgba(82, 172, 140, 0.3)",
+                          "&:hover": {
+                            background:
+                              "linear-gradient(135deg, #3D8B6F 0%, #2E6B55 100%)",
+                            boxShadow: "0 6px 16px rgba(82, 172, 140, 0.4)",
+                          },
+                        }}
+                        onClick={() => navigate("/medicalimaging")}
+                      >
+                        Upload
+                      </Button>
+                    </Stack>
+
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fill, minmax(110px, 1fr))",
+                        gap: 2,
+                      }}
+                    >
+                      {displayImages?.map((item) => (
+                        <Box
+                          key={item.id}
+                          onClick={() => handleImageClick(item)}
+                          sx={{
+                            width: "100%",
+                            paddingTop: "100%", // 1:1 aspect ratio
+                            position: "relative",
+                            overflow: "hidden",
+                            borderRadius: "12px",
+                            cursor: "pointer",
+                            transition: "all 0.3s ease",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                             "&:hover": {
-                              backgroundColor: "rgba(16, 185, 129, 0.05)",
+                              transform: "scale(1.05)",
+                              boxShadow: "0 4px 16px rgba(82, 172, 140, 0.3)",
                             },
                           }}
                         >
-                          View History
-                        </Button>
+                          <img
+                            src={item.viewerUrl}
+                            alt={item.fileName || item.description}
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                          {item.description && (
+                            <Box
+                              sx={{
+                                position: "absolute",
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                background:
+                                  "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
+                                color: "white",
+                                padding: "8px",
+                                fontSize: "10px",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {item.description}
+                            </Box>
+                          )}
+                        </Box>
+                      ))}
+
+                      <Box
+                        onClick={() => navigate("/medicalimaging")}
+                        sx={{
+                          width: "100%",
+                          paddingTop: "100%",
+                          position: "relative",
+                          borderRadius: "12px",
+                          border: "2px dashed rgba(82, 172, 140, 0.3)",
+                          backgroundColor: "rgba(82, 172, 140, 0.05)",
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                          "&:hover": {
+                            backgroundColor: "rgba(82, 172, 140, 0.1)",
+                            borderColor: "rgba(82, 172, 140, 0.5)",
+                            transform: "scale(1.05)",
+                          },
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: "50%",
+                            left: "50%",
+                            transform: "translate(-50%, -50%)",
+                            textAlign: "center",
+                          }}
+                        >
+                          <AddAPhotoIcon
+                            sx={{
+                              fontSize: 32,
+                              color: "primary.main",
+                              mb: 0.5,
+                            }}
+                          />
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "primary.main",
+                              fontWeight: 600,
+                              display: "block",
+                            }}
+                          >
+                            Add Image
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Card>
+
+                  {/* Prescriptions */}
+                  <Card sx={{ ...cardStyle, mt: 3 }}>
+                    {/* Header */}
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      mb={3}
+                    >
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        <Box
+                          sx={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: "10px",
+                            background:
+                              "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <LinkIcon sx={{ color: "white", fontSize: 20 }} />
+                        </Box>
+                        <Typography
+                          variant="h6"
+                          fontWeight="700"
+                          color="primary.main"
+                        >
+                          Prescriptions
+                        </Typography>
                       </Stack>
-                    </Card>
-                  </Stack>
-                </Fade>
+
+                      <Button
+                        onClick={() => setopenAddPrescription(true)}
+                        startIcon={<AddIcon />}
+                        sx={{
+                          textTransform: "none",
+                          color: "#10B981",
+                          fontWeight: 600,
+                          fontSize: "13px",
+                          "&:hover": {
+                            backgroundColor: "rgba(16, 185, 129, 0.05)",
+                          },
+                        }}
+                      >
+                        Add New
+                      </Button>
+                    </Stack>
+
+                    {/* Table Header */}
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: "2fr 1fr 2fr 1fr",
+                        gap: 2,
+                        pb: 2,
+                        borderBottom: "2px solid rgba(82, 172, 140, 0.1)",
+                      }}
+                    >
+                      <Typography
+                        fontWeight={700}
+                        fontSize="12px"
+                        color="text.secondary"
+                        letterSpacing="0.5px"
+                      >
+                        MEDICATION
+                      </Typography>
+                      <Typography
+                        fontWeight={700}
+                        fontSize="12px"
+                        color="text.secondary"
+                        letterSpacing="0.5px"
+                      >
+                        DOSAGE
+                      </Typography>
+                      <Typography
+                        fontWeight={700}
+                        fontSize="12px"
+                        color="text.secondary"
+                        letterSpacing="0.5px"
+                      >
+                        FREQUENCY
+                      </Typography>
+                      <Typography
+                        fontWeight={700}
+                        fontSize="12px"
+                        color="text.secondary"
+                        letterSpacing="0.5px"
+                      >
+                        STATUS
+                      </Typography>
+                    </Box>
+
+                    {/* Rows */}
+                    <Stack spacing={0} mt={2}>
+                      {appoinDetails?.data?.prescriptions?.map((prescription) =>
+                        prescription?.medications?.map((item, index) => (
+                          <Box
+                            key={item.id || index}
+                            sx={{
+                              display: "grid",
+                              gridTemplateColumns: "2fr 1fr 2fr 1fr",
+                              gap: 2,
+                              alignItems: "center",
+                              py: 2,
+                              borderBottom:
+                                "1px solid rgba(82, 172, 140, 0.05)",
+                              transition: "all 0.2s ease",
+                              "&:hover": {
+                                backgroundColor: "rgba(82, 172, 140, 0.03)",
+                                borderRadius: "8px",
+                              },
+                            }}
+                          >
+                            <Typography
+                              fontWeight={600}
+                              fontSize="13px"
+                              color="primary.main"
+                            >
+                              {item.drugName}
+                            </Typography>
+                            <Typography
+                              fontWeight={500}
+                              fontSize="13px"
+                              color="text.secondary"
+                            >
+                              {item.dosage}
+                            </Typography>
+                            <Typography
+                              fontWeight={500}
+                              fontSize="13px"
+                              color="text.secondary"
+                            >
+                              {item.frequency}
+                            </Typography>
+
+                            <Chip
+                              label="Active"
+                              size="small"
+                              sx={{
+                                width: "fit-content",
+                                height: "24px",
+                                backgroundColor: "rgba(59, 130, 246, 0.1)",
+                                color: "#1D4ED8",
+                                fontWeight: 600,
+                                fontSize: "11px",
+                                border: "1px solid #1D4ED8",
+                              }}
+                            />
+                          </Box>
+                        ))
+                      )}
+                    </Stack>
+
+                    {/* Footer */}
+                    <Stack width="100%" alignItems="flex-end" mt={3}>
+                      <Button
+                        sx={{
+                          textTransform: "none",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          color: "#10B981",
+                          "&:hover": {
+                            backgroundColor: "rgba(16, 185, 129, 0.05)",
+                          },
+                        }}
+                      >
+                        View History
+                      </Button>
+                    </Stack>
+                  </Card>
+                </Stack>
+              </Fade>
             </Grid>
 
             {/* RIGHT COLUMN */}
@@ -1252,12 +1410,18 @@ export default function AppointmentsDetails() {
                       alignItems="center"
                       mb={4}
                     >
-                      <Typography variant="h6" fontWeight="700" color="primary.main">
+                      <Typography
+                        variant="h6"
+                        fontWeight="700"
+                        color="primary.main"
+                      >
                         Session
                       </Typography>
 
                       {/* Online Dot */}
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
                         <Box
                           sx={{
                             width: 12,
@@ -1288,7 +1452,8 @@ export default function AppointmentsDetails() {
                         sx={{
                           fontSize: "56px",
                           fontWeight: "700",
-                          background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                          background:
+                            "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                           backgroundClip: "text",
                           WebkitBackgroundClip: "text",
                           WebkitTextFillColor: "transparent",
@@ -1321,11 +1486,13 @@ export default function AppointmentsDetails() {
                           textTransform: "none",
                           fontSize: "15px",
                           fontWeight: 600,
-                          background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                          background:
+                            "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                           color: "white",
                           boxShadow: "0 4px 16px rgba(82, 172, 140, 0.3)",
                           "&:hover": {
-                            background: "linear-gradient(135deg, #3D8B6F 0%, #2E6B55 100%)",
+                            background:
+                              "linear-gradient(135deg, #3D8B6F 0%, #2E6B55 100%)",
                             boxShadow: "0 6px 20px rgba(82, 172, 140, 0.4)",
                             transform: "translateY(-2px)",
                           },
@@ -1363,21 +1530,33 @@ export default function AppointmentsDetails() {
                   {/**Quick Notes */}
                   <Card sx={cardStyle}>
                     {/* Header */}
-                    <Stack direction="row" spacing={1.5} alignItems="center" mb={3}>
+                    <Stack
+                      direction="row"
+                      spacing={1.5}
+                      alignItems="center"
+                      mb={3}
+                    >
                       <Box
                         sx={{
                           width: 36,
                           height: 36,
                           borderRadius: "10px",
-                          background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
+                          background:
+                            "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                         }}
                       >
-                        <StickyNote2Icon sx={{ color: "white", fontSize: 20 }} />
+                        <StickyNote2Icon
+                          sx={{ color: "white", fontSize: 20 }}
+                        />
                       </Box>
-                      <Typography variant="h6" fontWeight="700" color="primary.main">
+                      <Typography
+                        variant="h6"
+                        fontWeight="700"
+                        color="primary.main"
+                      >
                         Quick Notes
                       </Typography>
                     </Stack>
@@ -1422,11 +1601,13 @@ export default function AppointmentsDetails() {
                           borderRadius: "10px",
                           textTransform: "none",
                           fontWeight: 600,
-                          background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                          background:
+                            "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                           color: "white",
                           boxShadow: "0 4px 12px rgba(82, 172, 140, 0.3)",
                           "&:hover": {
-                            background: "linear-gradient(135deg, #3D8B6F 0%, #2E6B55 100%)",
+                            background:
+                              "linear-gradient(135deg, #3D8B6F 0%, #2E6B55 100%)",
                             boxShadow: "0 6px 16px rgba(82, 172, 140, 0.4)",
                             transform: "translateY(-2px)",
                           },
@@ -1463,7 +1644,11 @@ export default function AppointmentsDetails() {
                       <Box flex={1}>
                         <Typography
                           variant="body1"
-                          sx={{ fontSize: "15px", fontWeight: "700", color: "primary.main" }}
+                          sx={{
+                            fontSize: "15px",
+                            fontWeight: "700",
+                            color: "primary.main",
+                          }}
                         >
                           John Doe
                         </Typography>

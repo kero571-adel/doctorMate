@@ -45,6 +45,10 @@ export const signUp = createAsyncThunk(
     { fullName, email, phoneNumber, role, password },
     { rejectWithValue }
   ) => {
+    console.log("fullName = ", fullName);
+    console.log("email = ", email);
+    console.log("phoneNumber = ", phoneNumber);
+    console.log("role = ", role);
     try {
       const response = await axios.post(
         "https://doctormate.runasp.net/api/Register",

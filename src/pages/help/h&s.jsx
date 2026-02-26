@@ -20,15 +20,15 @@ import NavBar from "../../components/navBar";
 import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
 export default function HelpSupport() {
   return (
-    <Stack direction={"row"} sx={{ width: "100%" }}>
+    <Stack direction="row">
       <NavBar />
       <Box
         sx={{
-          backgroundColor: "#F0F2F6",
-          marginLeft: "235px",
-          width: "calc(100% - 212px)",
-          minHeight: "100vh",
-          padding: " 0 10px ",
+          backgroundColor: "#F5F7FA",
+          padding: "20px",
+          height: "100vh",
+          overflowY: "auto",
+          flex: 1,
         }}
       >
         <Paper sx={{ p: "13px", mb: 1, borderRadius: "10px" }}>
@@ -484,7 +484,7 @@ export default function HelpSupport() {
                     mb: 6,
                     borderRadius: "10px",
                     border: "1px solid #D9D9D9",
-                    p: .5,
+                    p: 0.5,
                   }}
                 >
                   <AccordionSummary expandIcon={<ExpandMoreIcon />}>

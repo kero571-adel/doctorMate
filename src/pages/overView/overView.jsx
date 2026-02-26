@@ -35,9 +35,14 @@ import { fetchDoctorDashboard } from "../../redux/overViews/overView";
 
 export default function OverView() {
   const dispatch = useDispatch();
-  const { stats, todayAppointments, recentPatients, urgentAlerts, loading, error } = useSelector(
-    (state) => state.overView
-  );
+  const {
+    stats,
+    todayAppointments,
+    recentPatients,
+    urgentAlerts,
+    loading,
+    error,
+  } = useSelector((state) => state.overView);
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   useEffect(() => {
@@ -110,15 +115,15 @@ export default function OverView() {
   ];
 
   return (
-    <Stack direction="row" sx={{ width: "100%" }}>
+    <Stack direction="row">
       <NavBar />
       <Box
         sx={{
           backgroundColor: "#F5F7FA",
-          marginLeft: "235px",
-          width: "calc(100% - 235px)",
-          minHeight: "100vh",
           padding: "20px",
+          height: "100vh",
+          overflowY: "auto",
+          flex: 1,
         }}
       >
         {/* Header */}
@@ -133,7 +138,11 @@ export default function OverView() {
             }}
           >
             <CardContent sx={{ p: 3 }}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+              >
                 <Stack direction="row" alignItems="center" spacing={2}>
                   <Avatar
                     src={user?.imageUrl}
@@ -177,7 +186,11 @@ export default function OverView() {
           {loading
             ? Array.from({ length: 5 }).map((_, index) => (
                 <Grid item xs={12} sm={6} md={2.4} key={index}>
-                  <Skeleton variant="rectangular" height={140} sx={{ borderRadius: "16px" }} />
+                  <Skeleton
+                    variant="rectangular"
+                    height={140}
+                    sx={{ borderRadius: "16px" }}
+                  />
                 </Grid>
               ))
             : statsCards.map((card, index) => (
@@ -255,7 +268,12 @@ export default function OverView() {
               }}
             >
               <CardContent>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={1}
+                  sx={{ mb: 2 }}
+                >
                   <CalendarTodayIcon color="primary" />
                   <Typography variant="h6" fontWeight="600">
                     Today's Appointments
@@ -271,7 +289,12 @@ export default function OverView() {
                 {loading ? (
                   <Stack spacing={2}>
                     {[1, 2, 3].map((i) => (
-                      <Skeleton key={i} variant="rectangular" height={80} sx={{ borderRadius: "12px" }} />
+                      <Skeleton
+                        key={i}
+                        variant="rectangular"
+                        height={80}
+                        sx={{ borderRadius: "12px" }}
+                      />
                     ))}
                   </Stack>
                 ) : todayAppointments && todayAppointments.length > 0 ? (
@@ -291,7 +314,11 @@ export default function OverView() {
                         }}
                       >
                         <CardContent sx={{ p: 2 }}>
-                          <Stack direction="row" spacing={2} alignItems="center">
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            alignItems="center"
+                          >
                             <Avatar
                               src={appointment.patientImage}
                               sx={{ width: 48, height: 48 }}
@@ -302,9 +329,18 @@ export default function OverView() {
                               <Typography variant="subtitle1" fontWeight="600">
                                 {appointment.patientName}
                               </Typography>
-                              <Stack direction="row" spacing={1} alignItems="center">
-                                <AccessTimeIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                                <Typography variant="caption" color="text.secondary">
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                              >
+                                <AccessTimeIcon
+                                  sx={{ fontSize: 16, color: "text.secondary" }}
+                                />
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
                                   {formatTime(appointment.appointmentDate)}
                                 </Typography>
                               </Stack>
@@ -312,7 +348,11 @@ export default function OverView() {
                             <Chip
                               label={appointment.status || "Scheduled"}
                               size="small"
-                              color={appointment.status === "Completed" ? "success" : "warning"}
+                              color={
+                                appointment.status === "Completed"
+                                  ? "success"
+                                  : "warning"
+                              }
                             />
                           </Stack>
                         </CardContent>
@@ -327,8 +367,12 @@ export default function OverView() {
                       color: "text.secondary",
                     }}
                   >
-                    <CalendarTodayIcon sx={{ fontSize: 48, opacity: 0.3, mb: 2 }} />
-                    <Typography variant="body1">No appointments scheduled for today</Typography>
+                    <CalendarTodayIcon
+                      sx={{ fontSize: 48, opacity: 0.3, mb: 2 }}
+                    />
+                    <Typography variant="body1">
+                      No appointments scheduled for today
+                    </Typography>
                   </Box>
                 )}
               </CardContent>
@@ -345,7 +389,12 @@ export default function OverView() {
               }}
             >
               <CardContent>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={1}
+                  sx={{ mb: 2 }}
+                >
                   <WarningAmberIcon color="warning" />
                   <Typography variant="h6" fontWeight="600">
                     Urgent Alerts
@@ -361,7 +410,12 @@ export default function OverView() {
                 {loading ? (
                   <Stack spacing={2}>
                     {[1, 2].map((i) => (
-                      <Skeleton key={i} variant="rectangular" height={80} sx={{ borderRadius: "12px" }} />
+                      <Skeleton
+                        key={i}
+                        variant="rectangular"
+                        height={80}
+                        sx={{ borderRadius: "12px" }}
+                      />
                     ))}
                   </Stack>
                 ) : urgentAlerts && urgentAlerts.length > 0 ? (
@@ -387,9 +441,15 @@ export default function OverView() {
                       color: "text.secondary",
                     }}
                   >
-                    <WarningAmberIcon sx={{ fontSize: 48, opacity: 0.3, mb: 2 }} />
-                    <Typography variant="body1">No urgent alerts at this time</Typography>
-                    <Typography variant="caption">All patients are stable</Typography>
+                    <WarningAmberIcon
+                      sx={{ fontSize: 48, opacity: 0.3, mb: 2 }}
+                    />
+                    <Typography variant="body1">
+                      No urgent alerts at this time
+                    </Typography>
+                    <Typography variant="caption">
+                      All patients are stable
+                    </Typography>
                   </Box>
                 )}
               </CardContent>
@@ -406,7 +466,12 @@ export default function OverView() {
           }}
         >
           <CardContent>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={1}
+              sx={{ mb: 3 }}
+            >
               <PeopleAltIcon color="primary" />
               <Typography variant="h6" fontWeight="600">
                 Recent Patients
@@ -414,7 +479,11 @@ export default function OverView() {
             </Stack>
 
             {loading ? (
-              <Skeleton variant="rectangular" height={300} sx={{ borderRadius: "12px" }} />
+              <Skeleton
+                variant="rectangular"
+                height={300}
+                sx={{ borderRadius: "12px" }}
+              />
             ) : recentPatients && recentPatients.length > 0 ? (
               <TableContainer
                 component={Paper}
@@ -430,7 +499,9 @@ export default function OverView() {
                       <TableCell sx={{ fontWeight: 600 }}>Patient</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Age/Gender</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Contact</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Current Condition</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        Current Condition
+                      </TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Last Visit</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
                     </TableRow>
@@ -447,15 +518,25 @@ export default function OverView() {
                         }}
                       >
                         <TableCell>
-                          <Stack direction="row" spacing={2} alignItems="center">
-                            <Avatar src={patient.image} sx={{ width: 40, height: 40 }}>
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            alignItems="center"
+                          >
+                            <Avatar
+                              src={patient.image}
+                              sx={{ width: 40, height: 40 }}
+                            >
                               {patient.name?.charAt(0)}
                             </Avatar>
                             <Box>
                               <Typography variant="subtitle2" fontWeight="600">
                                 {patient.name}
                               </Typography>
-                              <Typography variant="caption" color="text.secondary">
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
                                 ID: {patient.patientId?.slice(0, 8)}...
                               </Typography>
                             </Box>
@@ -470,7 +551,9 @@ export default function OverView() {
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2">{patient.phoneNumber}</Typography>
+                          <Typography variant="body2">
+                            {patient.phoneNumber}
+                          </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {patient.email}
                           </Typography>
@@ -520,7 +603,9 @@ export default function OverView() {
                 }}
               >
                 <PeopleAltIcon sx={{ fontSize: 48, opacity: 0.3, mb: 2 }} />
-                <Typography variant="body1">No recent patients to display</Typography>
+                <Typography variant="body1">
+                  No recent patients to display
+                </Typography>
               </Box>
             )}
           </CardContent>

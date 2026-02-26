@@ -35,8 +35,11 @@ import NavBar from "../../components/navBar";
 
 export default function PatientList() {
   const dispatch = useDispatch();
-  const { patients, pagination, loading, error } = useSelector((state) => state.patients);
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const { patients, pagination, loading, error } = useSelector(
+    (state) => state.patients
+  );
+  const userLS = JSON.parse(localStorage.getItem("user") || "{}");
+  const {user} = useSelector((state) => state.doctor);
 
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -100,15 +103,15 @@ export default function PatientList() {
   };
 
   return (
-    <Stack direction="row" sx={{ width: "100%" }}>
+    <Stack direction="row">
       <NavBar />
       <Box
         sx={{
           backgroundColor: "#F5F7FA",
-          marginLeft: "235px",
-          width: "calc(100% - 235px)",
-          minHeight: "100vh",
           padding: "20px",
+          height: "100vh",
+          overflowY: "auto",
+          flex: 1,
         }}
       >
         {/* Header Card */}
@@ -136,7 +139,11 @@ export default function PatientList() {
             }}
           >
             <CardContent sx={{ p: 3, position: "relative", zIndex: 1 }}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+              >
                 <Stack direction="row" alignItems="center" spacing={2}>
                   <Box
                     sx={{
@@ -173,7 +180,7 @@ export default function PatientList() {
                     <RefreshIcon />
                   </IconButton>
                   <Avatar
-                    src={user?.imageUrl}
+                    src={user?.data?.imageUrl}
                     sx={{
                       width: 48,
                       height: 48,
@@ -181,7 +188,7 @@ export default function PatientList() {
                       boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
                     }}
                   >
-                    {user?.fullName?.charAt(0) || "D"}
+                    {userLS?.fullName?.charAt(0) || "D"}
                   </Avatar>
                 </Stack>
               </Stack>
@@ -256,13 +263,15 @@ export default function PatientList() {
               <Stack direction="row" spacing={1}>
                 <IconButton
                   sx={{
-                    background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                    background:
+                      "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                     color: "white",
                     borderRadius: "12px",
                     width: 44,
                     height: 44,
                     "&:hover": {
-                      background: "linear-gradient(135deg, #3D8B6F 0%, #2E7A5F 100%)",
+                      background:
+                        "linear-gradient(135deg, #3D8B6F 0%, #2E7A5F 100%)",
                     },
                   }}
                 >
@@ -270,13 +279,15 @@ export default function PatientList() {
                 </IconButton>
                 <IconButton
                   sx={{
-                    background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                    background:
+                      "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                     color: "white",
                     borderRadius: "12px",
                     width: 44,
                     height: 44,
                     "&:hover": {
-                      background: "linear-gradient(135deg, #3D8B6F 0%, #2E7A5F 100%)",
+                      background:
+                        "linear-gradient(135deg, #3D8B6F 0%, #2E7A5F 100%)",
                     },
                   }}
                 >
@@ -289,10 +300,18 @@ export default function PatientList() {
             <Stack
               direction="row"
               spacing={3}
-              sx={{ mt: 2, pt: 2, borderTop: "1px solid rgba(82, 172, 140, 0.1)" }}
+              sx={{
+                mt: 2,
+                pt: 2,
+                borderTop: "1px solid rgba(82, 172, 140, 0.1)",
+              }}
             >
               <Box>
-                <Typography variant="caption" color="text.secondary" fontWeight="500">
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  fontWeight="500"
+                >
                   Total Patients
                 </Typography>
                 <Typography variant="h6" fontWeight="700" color="primary.main">
@@ -300,7 +319,11 @@ export default function PatientList() {
                 </Typography>
               </Box>
               <Box>
-                <Typography variant="caption" color="text.secondary" fontWeight="500">
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  fontWeight="500"
+                >
                   Current Page
                 </Typography>
                 <Typography variant="h6" fontWeight="700" color="primary.main">
@@ -309,10 +332,18 @@ export default function PatientList() {
               </Box>
               {searchQuery && (
                 <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="500">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    fontWeight="500"
+                  >
                     Search Results
                   </Typography>
-                  <Typography variant="h6" fontWeight="700" color="primary.main">
+                  <Typography
+                    variant="h6"
+                    fontWeight="700"
+                    color="primary.main"
+                  >
                     {patients.length}
                   </Typography>
                 </Box>
@@ -334,11 +365,19 @@ export default function PatientList() {
             <Table>
               <TableHead
                 sx={{
-                  background: "linear-gradient(135deg, rgba(82, 172, 140, 0.1) 0%, rgba(82, 172, 140, 0.05) 100%)",
+                  background:
+                    "linear-gradient(135deg, rgba(82, 172, 140, 0.1) 0%, rgba(82, 172, 140, 0.05) 100%)",
                 }}
               >
                 <TableRow>
-                  {["PATIENT", "AGE", "PHONE", "LAST VISIT", "STATUS", "ACTIONS"].map((header) => (
+                  {[
+                    "PATIENT",
+                    "AGE",
+                    "PHONE",
+                    "LAST VISIT",
+                    "STATUS",
+                    "ACTIONS",
+                  ].map((header) => (
                     <TableCell
                       key={header}
                       sx={{
@@ -393,10 +432,18 @@ export default function PatientList() {
                             {patient.name?.charAt(0) || "?"}
                           </Avatar>
                           <Box>
-                            <Typography variant="subtitle2" fontWeight="700" color="primary.main">
+                            <Typography
+                              variant="subtitle2"
+                              fontWeight="700"
+                              color="primary.main"
+                            >
                               {patient.name || "N/A"}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary" fontWeight="500">
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              fontWeight="500"
+                            >
                               ID: {patient.id?.slice(0, 8)}...
                             </Typography>
                           </Box>
@@ -477,7 +524,8 @@ export default function PatientList() {
                           textAlign: "center",
                           py: 6,
                           borderRadius: "16px",
-                          background: "linear-gradient(135deg, rgba(82, 172, 140, 0.05) 0%, rgba(82, 172, 140, 0.02) 100%)",
+                          background:
+                            "linear-gradient(135deg, rgba(82, 172, 140, 0.05) 0%, rgba(82, 172, 140, 0.02) 100%)",
                           border: "2px dashed rgba(82, 172, 140, 0.3)",
                           margin: 2,
                         }}
@@ -487,7 +535,8 @@ export default function PatientList() {
                             width: 64,
                             height: 64,
                             borderRadius: "50%",
-                            background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                            background:
+                              "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -495,10 +544,19 @@ export default function PatientList() {
                             opacity: 0.8,
                           }}
                         >
-                          <PeopleAltIcon sx={{ fontSize: 32, color: "white" }} />
+                          <PeopleAltIcon
+                            sx={{ fontSize: 32, color: "white" }}
+                          />
                         </Box>
-                        <Typography variant="body1" fontWeight="600" color="primary.main" mb={0.5}>
-                          {searchQuery ? "No patients found" : "No patients to display"}
+                        <Typography
+                          variant="body1"
+                          fontWeight="600"
+                          color="primary.main"
+                          mb={0.5}
+                        >
+                          {searchQuery
+                            ? "No patients found"
+                            : "No patients to display"}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {searchQuery
@@ -522,13 +580,21 @@ export default function PatientList() {
                 justifyContent: "space-between",
                 alignItems: "center",
                 borderTop: "1px solid rgba(82, 172, 140, 0.1)",
-                background: "linear-gradient(135deg, rgba(82, 172, 140, 0.02) 0%, rgba(82, 172, 140, 0.05) 100%)",
+                background:
+                  "linear-gradient(135deg, rgba(82, 172, 140, 0.02) 0%, rgba(82, 172, 140, 0.05) 100%)",
               }}
             >
-              <Typography variant="body2" color="text.secondary" fontWeight="500">
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                fontWeight="500"
+              >
                 Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-                {Math.min(pagination.page * pagination.limit, pagination.totalItems)} of{" "}
-                {pagination.totalItems} patients
+                {Math.min(
+                  pagination.page * pagination.limit,
+                  pagination.totalItems
+                )}{" "}
+                of {pagination.totalItems} patients
               </Typography>
               <Pagination
                 count={pagination.totalPages}
@@ -540,7 +606,8 @@ export default function PatientList() {
                     borderRadius: "12px",
                     fontWeight: 600,
                     "&.Mui-selected": {
-                      background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                      background:
+                        "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                       color: "white",
                     },
                   },

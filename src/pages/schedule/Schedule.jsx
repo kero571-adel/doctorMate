@@ -44,7 +44,7 @@ export default function Schedule() {
   const [timeReady, settimeReady] = useState(false);
   const dispatch = useDispatch();
   const { data, loading, error } = useSelector((state) => state.schedule);
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const userLS = JSON.parse(localStorage.getItem("user") || "{}");
 
   const [btnHeader, setbtnHeader] = useState({
     Upcoming: true,
@@ -101,17 +101,17 @@ export default function Schedule() {
     const target = combineDateTime(appointmentDate, appointmentTime);
     const diffInMs = target - now;
     const totalHours = Math.floor(Math.abs(diffInMs) / (1000 * 60 * 60));
-    
+
     if (totalHours >= 24) return null;
-    
+
     const hours = totalHours;
     const minutes = Math.floor((Math.abs(diffInMs) / (1000 * 60)) % 60);
     let parts = [];
-    
+
     if (hours > 0) parts.push(`${hours} hour${hours > 1 ? "s" : ""}`);
     if (minutes > 0) parts.push(`${minutes} minute${minutes !== 1 ? "s" : ""}`);
     if (parts.length === 0) parts.push("less than a minute");
-    
+
     const result = parts.join(" ");
     return diffInMs > 0 ? `In ${result}` : `${result} ago`;
   };
@@ -206,16 +206,17 @@ export default function Schedule() {
   useEffect(() => {
     dispatch(appointmentsDoctor({ page, limit: 10 }));
   }, [dispatch, page]);
+  const { user } = useSelector((state) => state.doctor);
   return (
-    <Stack direction="row" sx={{ width: "100%" }}>
+    <Stack direction="row">
       <NavBar />
       <Box
         sx={{
           backgroundColor: "#F5F7FA",
-          marginLeft: "235px",
-          width: "calc(100% - 235px)",
-          minHeight: "100vh",
           padding: "20px",
+          height: "100vh",
+          overflowY: "auto",
+          flex: 1,
         }}
       >
         {/* Header Card */}
@@ -267,10 +268,7 @@ export default function Schedule() {
                     <Typography variant="h5" fontWeight="700">
                       Appointments Schedule
                     </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{ opacity: 0.9, mt: 0.5 }}
-                    >
+                    <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
                       Manage your patient appointments and sessions
                     </Typography>
                   </Box>
@@ -287,7 +285,7 @@ export default function Schedule() {
                     <Refresh />
                   </IconButton>
                   <Avatar
-                    src={user?.imageUrl}
+                    src={user?.data?.imageUrl}
                     sx={{
                       width: 48,
                       height: 48,
@@ -295,7 +293,7 @@ export default function Schedule() {
                       boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
                     }}
                   >
-                    {user?.fullName?.charAt(0) || "D"}
+                    {userLS?.fullName?.charAt(0) || "D"}
                   </Avatar>
                 </Stack>
               </Stack>
@@ -517,7 +515,8 @@ export default function Schedule() {
                   Current Page
                 </Typography>
                 <Typography variant="h6" fontWeight="700" color="primary.main">
-                  {data?.data?.pagination?.page || 1} / {data?.data?.pagination?.totalPages || 1}
+                  {data?.data?.pagination?.page || 1} /{" "}
+                  {data?.data?.pagination?.totalPages || 1}
                 </Typography>
               </Box>
             </Stack>
@@ -555,7 +554,12 @@ export default function Schedule() {
                   </Stack>
                   <Skeleton variant="text" width="100%" height={20} />
                   <Skeleton variant="text" width="80%" height={20} />
-                  <Skeleton variant="rectangular" width="100%" height={40} sx={{ mt: 2, borderRadius: "12px" }} />
+                  <Skeleton
+                    variant="rectangular"
+                    width="100%"
+                    height={40}
+                    sx={{ mt: 2, borderRadius: "12px" }}
+                  />
                 </Card>
               </Grid>
             ))}
@@ -592,27 +596,28 @@ export default function Schedule() {
                         }}
                       >
                         {/* Ready Badge */}
-                        {timeStatus && session.status?.toLowerCase() === "confirmed" && (
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              top: -12,
-                              left: 20,
-                              px: 2,
-                              py: 0.5,
-                              borderRadius: "8px",
-                              background:
-                                "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
-                              color: "white",
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              boxShadow: "0 2px 8px rgba(82, 172, 140, 0.4)",
-                              zIndex: 10,
-                            }}
-                          >
-                            Ready to Start
-                          </Box>
-                        )}
+                        {timeStatus &&
+                          session.status?.toLowerCase() === "confirmed" && (
+                            <Box
+                              sx={{
+                                position: "absolute",
+                                top: -12,
+                                left: 20,
+                                px: 2,
+                                py: 0.5,
+                                borderRadius: "8px",
+                                background:
+                                  "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                                color: "white",
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                boxShadow: "0 2px 8px rgba(82, 172, 140, 0.4)",
+                                zIndex: 10,
+                              }}
+                            >
+                              Ready to Start
+                            </Box>
+                          )}
 
                         {/* Header: Patient Info & Status */}
                         <Stack
@@ -621,7 +626,11 @@ export default function Schedule() {
                           alignItems="flex-start"
                           mb={2}
                         >
-                          <Stack direction="row" spacing={2} alignItems="center">
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            alignItems="center"
+                          >
                             <Avatar
                               src={session?.patient?.image}
                               sx={{
@@ -705,7 +714,11 @@ export default function Schedule() {
 
                         {/* Appointment Details */}
                         <Stack spacing={1.5} mb={2}>
-                          <Stack direction="row" spacing={2} alignItems="center">
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            alignItems="center"
+                          >
                             <CalendarToday
                               sx={{ fontSize: 18, color: "primary.main" }}
                             />
@@ -717,7 +730,11 @@ export default function Schedule() {
                               {formatDate(session?.appointmentDate)}
                             </Typography>
                           </Stack>
-                          <Stack direction="row" spacing={2} alignItems="center">
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            alignItems="center"
+                          >
                             <AccessTime
                               sx={{ fontSize: 18, color: "primary.main" }}
                             />
@@ -729,7 +746,11 @@ export default function Schedule() {
                               {formatTime(session.appointmentTime)}
                             </Typography>
                           </Stack>
-                          <Stack direction="row" spacing={2} alignItems="center">
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            alignItems="center"
+                          >
                             <ChatBubbleOutline
                               sx={{ fontSize: 18, color: "primary.main" }}
                             />
@@ -741,7 +762,11 @@ export default function Schedule() {
                               {session.reason}
                             </Typography>
                           </Stack>
-                          <Stack direction="row" spacing={2} alignItems="center">
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            alignItems="center"
+                          >
                             {session.appointmentType === "video" ? (
                               <VideoCall
                                 sx={{ fontSize: 18, color: "primary.main" }}
@@ -805,7 +830,8 @@ export default function Schedule() {
                                 "&:hover": {
                                   background:
                                     "linear-gradient(135deg, #3D8B6F 0%, #2E7A5F 100%)",
-                                  boxShadow: "0 6px 16px rgba(82, 172, 140, 0.4)",
+                                  boxShadow:
+                                    "0 6px 16px rgba(82, 172, 140, 0.4)",
                                 },
                               }}
                             >
@@ -888,8 +914,7 @@ export default function Schedule() {
                 width: 80,
                 height: 80,
                 borderRadius: "50%",
-                background:
-                  "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -965,7 +990,9 @@ export default function Schedule() {
         </Menu>
 
         {/* Footer */}
-        <Box sx={{ mt: 4, py: 2, textAlign: "center", color: "text.secondary" }}>
+        <Box
+          sx={{ mt: 4, py: 2, textAlign: "center", color: "text.secondary" }}
+        >
           <Typography variant="caption">
             © 2026 DoctorMate | Your Digital Healthcare Partner
           </Typography>

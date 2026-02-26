@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import { Snackbar, Alert } from "@mui/material";
 import NavBar from "../../components/navBar";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PersonIcon from "@mui/icons-material/Person";
@@ -79,24 +79,29 @@ export default function Settings() {
       // Parse workingTime if it exists
       // Expected format: "Sunday, Tuesday, Thursday from 6 PM to 10 PM"
       if (user.data.workingTime) {
-        const workingTimeStr = typeof user.data.workingTime === 'string' 
-          ? user.data.workingTime 
-          : `${user.data.workingTime?.start || ""} - ${user.data.workingTime?.end || ""}`;
-        
+        const workingTimeStr =
+          typeof user.data.workingTime === "string"
+            ? user.data.workingTime
+            : `${user.data.workingTime?.start || ""} - ${
+                user.data.workingTime?.end || ""
+              }`;
+
         // Try to parse the working time string
         const daysMatch = workingTimeStr.match(/^([^f]+) from/);
-        const timeMatch = workingTimeStr.match(/from ([\d:]+ [AP]M) to ([\d:]+ [AP]M)/);
-        
+        const timeMatch = workingTimeStr.match(
+          /from ([\d:]+ [AP]M) to ([\d:]+ [AP]M)/
+        );
+
         if (daysMatch) {
           const daysStr = daysMatch[1].trim();
-          const parsedDays = daysStr.split(',').map(d => d.trim());
+          const parsedDays = daysStr.split(",").map((d) => d.trim());
           setSelectedDays(parsedDays);
         }
-        
+
         if (timeMatch) {
           const startTimeStr = timeMatch[1];
           const endTimeStr = timeMatch[2];
-          
+
           // Parse time strings to dayjs objects
           setdate({
             startTime: dayjs(startTimeStr, "h A"),
@@ -184,15 +189,15 @@ export default function Settings() {
     setDisabled(allEmpty);
   }, [form, selectedDays, date]);
   return (
-    <Stack direction={"row"} sx={{ width: "100%" }}>
+    <Stack direction="row">
       <NavBar />
       <Box
         sx={{
           backgroundColor: "#F5F7FA",
-          marginLeft: { xs: 0, md: "235px" },
-          width: { xs: "100%", md: "calc(100% - 235px)" },
-          minHeight: "100vh",
-          p: { xs: 2, sm: 3, md: 4 },
+          padding: "20px",
+          height: "100vh",
+          overflowY: "auto",
+          flex: 1,
         }}
       >
         <Snackbar
@@ -263,7 +268,8 @@ export default function Settings() {
                 boxShadow: "0 4px 12px rgba(107, 114, 128, 0.3)",
                 whiteSpace: "nowrap",
                 "&:hover": {
-                  background: "linear-gradient(135deg, #4B5563 0%, #374151 100%)",
+                  background:
+                    "linear-gradient(135deg, #4B5563 0%, #374151 100%)",
                   boxShadow: "0 6px 16px rgba(107, 114, 128, 0.4)",
                 },
               }}
@@ -318,7 +324,8 @@ export default function Settings() {
                       position: "absolute",
                       bottom: 10,
                       right: 10,
-                      background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                      background:
+                        "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                       borderRadius: "50%",
                       width: { xs: 32, md: 40 },
                       height: { xs: 32, md: 40 },
@@ -372,7 +379,8 @@ export default function Settings() {
                     htmlFor="upload-photo"
                     startIcon={<CameraAltIcon />}
                     sx={{
-                      background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                      background:
+                        "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                       fontSize: { xs: "14px", sm: "16px" },
                       fontWeight: "600",
                       color: "white",
@@ -382,7 +390,8 @@ export default function Settings() {
                       borderRadius: "12px",
                       boxShadow: "0 4px 12px rgba(82, 172, 140, 0.3)",
                       "&:hover": {
-                        background: "linear-gradient(135deg, #3D8B6F 0%, #2E6B55 100%)",
+                        background:
+                          "linear-gradient(135deg, #3D8B6F 0%, #2E6B55 100%)",
                         boxShadow: "0 6px 16px rgba(82, 172, 140, 0.4)",
                         transform: "translateY(-2px)",
                       },
@@ -423,7 +432,9 @@ export default function Settings() {
                   <TextField
                     fullWidth
                     value={form.fullName}
-                    onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, fullName: e.target.value })
+                    }
                     placeholder="Enter your full name"
                     sx={{
                       "& .MuiOutlinedInput-root": {
@@ -435,7 +446,7 @@ export default function Settings() {
                     }}
                   />
                 </Grid>
-            {/* <Grid size={{ xs: 12, md: 6 }}>
+                {/* <Grid size={{ xs: 12, md: 6 }}>
               <FormLabel
                 sx={{ fontWeight: "400", fontSize: "20px", color: "#555555" }}
               >
@@ -463,7 +474,9 @@ export default function Settings() {
                     type="number"
                     fullWidth
                     value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, phone: e.target.value })
+                    }
                     placeholder="Enter phone number"
                     sx={{
                       "& .MuiOutlinedInput-root": {
@@ -521,7 +534,9 @@ export default function Settings() {
                     Address
                   </FormLabel>
                   <TextField
-                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, address: e.target.value })
+                    }
                     value={form.address}
                     fullWidth
                     multiline
@@ -542,7 +557,9 @@ export default function Settings() {
               {/* Working Schedule */}
               <Box mt={5}>
                 <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-                  <CalendarTodayIcon sx={{ color: "primary.main", fontSize: 28 }} />
+                  <CalendarTodayIcon
+                    sx={{ color: "primary.main", fontSize: 28 }}
+                  />
                   <Typography
                     variant="h6"
                     fontWeight="700"
@@ -567,7 +584,10 @@ export default function Settings() {
                   {days.map((day) => {
                     const checked = selectedDays.includes(day);
                     return (
-                      <Grid key={day} size={{ xs: 6, sm: 4, md: 3, lg: 12/7 }}>
+                      <Grid
+                        key={day}
+                        size={{ xs: 6, sm: 4, md: 3, lg: 12 / 7 }}
+                      >
                         <Box
                           onClick={() => toggleDay(day)}
                           sx={{
@@ -699,7 +719,9 @@ export default function Settings() {
               {/* Consultation Fee */}
               <Box mt={5}>
                 <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-                  <AttachMoneyIcon sx={{ color: "primary.main", fontSize: 28 }} />
+                  <AttachMoneyIcon
+                    sx={{ color: "primary.main", fontSize: 28 }}
+                  />
                   <Typography
                     variant="h6"
                     fontWeight="700"
@@ -768,9 +790,7 @@ export default function Settings() {
                 </Button>
                 <Button
                   variant="contained"
-                  startIcon={
-                    loading ? null : <SaveIcon />
-                  }
+                  startIcon={loading ? null : <SaveIcon />}
                   onClick={handleSave}
                   disabled={disabled || loading}
                   sx={{
@@ -797,7 +817,8 @@ export default function Settings() {
                         disabled || loading
                           ? "none"
                           : "0 6px 16px rgba(82, 172, 140, 0.4)",
-                      transform: disabled || loading ? "none" : "translateY(-2px)",
+                      transform:
+                        disabled || loading ? "none" : "translateY(-2px)",
                     },
                     "&.Mui-disabled": {
                       color: "rgba(0, 0, 0, 0.26)",

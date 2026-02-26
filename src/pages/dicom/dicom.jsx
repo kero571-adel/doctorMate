@@ -81,15 +81,15 @@ const exams = [
 
 export default function Dicom() {
   return (
-    <Stack direction={"row"} sx={{ width: "100%" }}>
+    <Stack direction="row">
       <NavBar />
       <Box
         sx={{
-          backgroundColor: "#9CE3CA",
-          marginLeft: "235px",
-          width: "calc(100% - 212px)",
-          minHeight: "100vh",
-          padding: 2,
+          backgroundColor: "#F5F7FA",
+          padding: "20px",
+          height: "100vh",
+          overflowY: "auto",
+          flex: 1,
         }}
       >
         {/* Header */}

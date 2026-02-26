@@ -190,14 +190,15 @@ export default function Message() {
     }, 2000);
   }, [search]);
   return (
-    <Stack direction={"row"} sx={{ width: "100%" }}>
+    <Stack direction="row">
       <NavBar />
       <Box
         sx={{
-          marginLeft: "235px",
-          width: "calc(100% - 212px)",
-          minHeight: "100vh",
-          padding: 4,
+          backgroundColor: "#F5F7FA",
+          padding: "20px",
+          height: "100vh",
+          overflowY: "auto",
+          flex: 1,
         }}
       >
         {/** Header */}
