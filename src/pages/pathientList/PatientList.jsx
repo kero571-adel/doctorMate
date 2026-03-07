@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -26,26 +25,27 @@ import SearchIcon from "@mui/icons-material/Search";
 import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { useSelector, useDispatch } from "react-redux";
 import { patientsList } from "../../redux/patientList/patientList";
 import NavBar from "../../components/navBar";
-
+import { useNavigate } from "react-router-dom";
+import { setpatientDet } from "../../redux/patientList/patientList";
+import { setpatientDet2 } from "../../redux/patientList/patientList";
+import { getDataDoctor } from "../../redux/doctor/doctor";
 export default function PatientList() {
   const dispatch = useDispatch();
   const { patients, pagination, loading, error } = useSelector(
     (state) => state.patients
   );
   const userLS = JSON.parse(localStorage.getItem("user") || "{}");
-  const {user} = useSelector((state) => state.doctor);
+  const { user } = useSelector((state) => state.doctor);
 
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-
+  const navigate = useNavigate();
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -58,6 +58,7 @@ export default function PatientList() {
   // Fetch patients when page or search changes
   useEffect(() => {
     dispatch(patientsList({ page, limit: 10, search: debouncedSearch }));
+    dispatch(getDataDoctor());
   }, [dispatch, page, debouncedSearch]);
 
   const handlePageChange = (event, value) => {
@@ -143,33 +144,45 @@ export default function PatientList() {
               <Stack
                 direction="row"
                 alignItems="center"
+                flexWrap={"wrap"}
                 justifyContent="space-between"
               >
-                <Stack direction="row" alignItems="center" spacing={2}>
+                <Stack
+                  direction="row"
+                  sx={{ alignItems: { xs: "", sm: "center" } }}
+                  spacing={2}
+                >
                   <Box
                     sx={{
-                      width: 56,
-                      height: 56,
+                      width: { xs: 46, sm: 56 },
+                      height: { xs: 46, sm: 56 },
                       borderRadius: "14px",
-                      backgroundColor: "rgba(255, 255, 255, 0.2)",
+                      backgroundColor: {
+                        xs: "",
+                        md: "rgba(255, 255, 255, 0.2)",
+                      },
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       backdropFilter: "blur(10px)",
                     }}
                   >
-                    <PeopleAltIcon sx={{ fontSize: 28, color: "white" }} />
+                    <PeopleAltIcon
+                      sx={{ fontSize: { xs: 20, sm: 28 }, color: "white" }}
+                    />
                   </Box>
                   <Box>
-                    <Typography variant="h5" fontWeight="700">
-                      Patient List
-                    </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                    <Typography fontWeight="700">Patient List</Typography>
+                    <Typography sx={{ opacity: 0.9, mt: 0.5 }}>
                       Manage and view patient records
                     </Typography>
                   </Box>
                 </Stack>
-                <Stack direction="row" spacing={1}>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ justifyContent: "space-between", width: "100%", mt: 1 }}
+                >
                   <IconButton
                     onClick={handleRefresh}
                     sx={{
@@ -183,8 +196,8 @@ export default function PatientList() {
                   <Avatar
                     src={user?.data?.imageUrl}
                     sx={{
-                      width: 48,
-                      height: 48,
+                      width: 40,
+                      height: 40,
                       border: "3px solid white",
                       boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
                     }}
@@ -478,42 +491,28 @@ export default function PatientList() {
                           }}
                         />
                       </TableCell>
-                      <TableCell>
-                        <Stack direction="row" spacing={0.5}>
-                          <IconButton
-                            size="small"
-                            sx={{
-                              color: "primary.main",
-                              "&:hover": {
-                                backgroundColor: "rgba(82, 172, 140, 0.1)",
-                              },
-                            }}
-                          >
-                            <VisibilityIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            sx={{
-                              color: "#FFA726",
-                              "&:hover": {
-                                backgroundColor: "rgba(255, 167, 38, 0.1)",
-                              },
-                            }}
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            sx={{
-                              color: "#EF5350",
-                              "&:hover": {
-                                backgroundColor: "rgba(239, 83, 80, 0.1)",
-                              },
-                            }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Stack>
+                      <TableCell sx={{ textAlign: "center" }}>
+                        <IconButton
+                          onClick={() => {
+                            dispatch(setpatientDet(patient));
+                            const currentIndex = patients.findIndex(
+                              (p) => p.id === patient.id
+                            );
+                            const nextPatient =
+                              patients[currentIndex + 1] || null;
+                            dispatch(setpatientDet2(nextPatient));
+                            navigate("/patientlist/patient");
+                          }}
+                          size="small"
+                          sx={{
+                            color: "primary.main",
+                            "&:hover": {
+                              backgroundColor: "rgba(82, 172, 140, 0.1)",
+                            },
+                          }}
+                        >
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
                       </TableCell>
                     </TableRow>
                   ))
@@ -589,6 +588,12 @@ export default function PatientList() {
                 variant="body2"
                 color="text.secondary"
                 fontWeight="500"
+                sx={{
+                  fontSize: {
+                    xs: 10,
+                    sm: 14,
+                  },
+                }}
               >
                 Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
                 {Math.min(
@@ -605,7 +610,8 @@ export default function PatientList() {
                 sx={{
                   "& .MuiPaginationItem-root": {
                     borderRadius: "12px",
-                    fontWeight: 600,
+                    fontWeight: 500,
+                    fontSize: { xs: 10, sm: 14 },
                     "&.Mui-selected": {
                       background:
                         "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",

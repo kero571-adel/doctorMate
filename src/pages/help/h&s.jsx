@@ -32,7 +32,7 @@ export default function HelpSupport() {
         }}
       >
         <Paper sx={{ p: "13px", mb: 1, borderRadius: "10px" }}>
-          <Typography sx={{ fontSize: 20, fontWeight: 500 }}>
+          <Typography sx={{ fontSize: { xs: 18, md: 20 }, fontWeight: 500 }}>
             Help & Support
           </Typography>
           <Typography sx={{ color: "#777" }}>
@@ -66,7 +66,11 @@ export default function HelpSupport() {
                   }}
                 />
                 <Typography
-                  sx={{ fontSize: "23.27px", fontWeight: 600, mb: 1 }}
+                  sx={{
+                    fontSize: { xs: "20px", md: "23.27px" },
+                    fontWeight: 600,
+                    mb: 1,
+                  }}
                 >
                   How to Use the System
                 </Typography>
@@ -77,7 +81,7 @@ export default function HelpSupport() {
                 <Typography
                   sx={{
                     fontWeight: 500,
-                    fontSize: "16px",
+                    fontSize: { xs: "14px", md: "16px" },
                     mb: 1,
                     color: "#616161",
                   }}
@@ -193,7 +197,13 @@ export default function HelpSupport() {
               <Box
                 sx={{ paddingLeft: 2, borderLeft: "3px solid #D9D9D9", mb: 5 }}
               >
-                <Typography sx={{ fontWeight: 500, fontSize: "16px", mb: 1 }}>
+                <Typography
+                  sx={{
+                    fontWeight: 500,
+                    fontSize: { xs: "14px", md: "16px" },
+                    mb: 1,
+                  }}
+                >
                   Managing Clinics
                 </Typography>
                 <Stack
@@ -280,7 +290,13 @@ export default function HelpSupport() {
               <Box
                 sx={{ paddingLeft: 2, borderLeft: "3px solid #D9D9D9", mb: 5 }}
               >
-                <Typography sx={{ fontWeight: 500, fontSize: "16px", mb: 1 }}>
+                <Typography
+                  sx={{
+                    fontWeight: 500,
+                    fontSize: { xs: "14px", md: "16px" },
+                    mb: 1,
+                  }}
+                >
                   Viewing Patient History
                 </Typography>
                 <Stack
@@ -512,7 +528,7 @@ export default function HelpSupport() {
               sx={{
                 display: "flex",
                 alignItems: "center",
-                fontSize: 23.27,
+                fontSize: { xs: 20, md: 23.27 },
                 fontWeight: 600,
                 mb: 2,
               }}
@@ -532,7 +548,7 @@ export default function HelpSupport() {
                 {
                   icon: (
                     <ForumOutlinedIcon
-                      sx={{ color: "primary.main", fontSize: "40px" }}
+                      sx={{ color: "primary.main", fontSize: {xs:"30px", md:"40px"} }}
                     />
                   ),
                   title: "Live Chat",
@@ -541,7 +557,7 @@ export default function HelpSupport() {
                 {
                   icon: (
                     <EmailIcon
-                      sx={{ color: "primary.main", fontSize: "40px" }}
+                      sx={{ color: "primary.main", fontSize: {xs:"30px", md:"40px"} }}
                     />
                   ),
                   title: "Email Support",
@@ -550,7 +566,7 @@ export default function HelpSupport() {
                 {
                   icon: (
                     <PhoneIcon
-                      sx={{ color: "primary.main", fontSize: "40px" }}
+                      sx={{ color: "primary.main", fontSize: {xs:"30px", md:"40px"} }}
                     />
                   ),
                   title: "Phone Support",
@@ -602,7 +618,7 @@ export default function HelpSupport() {
                         backgroundColor: "primary.main",
                         textTransform: "none",
                         color: "white",
-                        fontSize: "22.03px",
+                        fontSize: {xs:"16px", md:"22.03px"},
                         fontWeight: "400",
                       }}
                     >

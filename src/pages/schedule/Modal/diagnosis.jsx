@@ -46,8 +46,6 @@ export default function AddDiagnosis({ openDiagnosis, setopenDiagnosis }) {
     (state) => state.schedule.selectedPatient
   );
   const medicalRecordId = useSelector((state) => state.medical.data);
-  console.log("selectedPatient: ", selectedPatient?.id);
-  console.log("medicalRecordId: ", medicalRecordId?.data?.id);
   const dispatch = useDispatch();
   const [description, setDescription] = useState("");
   const [icdCode, setIcdCode] = useState("");

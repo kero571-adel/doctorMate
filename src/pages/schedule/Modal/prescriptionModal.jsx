@@ -52,7 +52,6 @@ export default function AddPrescription({
       durationDays: 7,
     },
   ]);
-  console.log("medications: ", medications);
   const handleClose = () => {
     setopenAddPrescription(false);
     setMedications([

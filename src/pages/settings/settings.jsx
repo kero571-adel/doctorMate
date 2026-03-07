@@ -220,8 +220,8 @@ export default function Settings() {
           <Stack
             direction={{ xs: "column", sm: "row" }}
             justifyContent="space-between"
-            alignItems={{ xs: "stretch", sm: "center" }}
-            spacing={{ xs: 2, sm: 0 }}
+            alignItems="center"
+            spacing={{ xs: 1, sm: 2 }}
             mb={3}
           >
             <Box
@@ -261,8 +261,9 @@ export default function Settings() {
                 color: "white",
                 textTransform: "none",
                 fontWeight: 600,
-                px: 3,
+                px: 2,
                 py: 1.5,
+                ml: 1,
                 borderRadius: "12px",
                 background: "linear-gradient(135deg, #6B7280 0%, #4B5563 100%)",
                 boxShadow: "0 4px 12px rgba(107, 114, 128, 0.3)",
@@ -407,7 +408,7 @@ export default function Settings() {
                 <Stack direction="row" spacing={1} alignItems="center" mb={2}>
                   <PersonIcon sx={{ color: "primary.main", fontSize: 28 }} />
                   <Typography
-                    variant="h6"
+                    fontSize={{ xs: "15px", sm: "24px" }}
                     fontWeight="700"
                     color="primary.main"
                   >
@@ -561,7 +562,9 @@ export default function Settings() {
                     sx={{ color: "primary.main", fontSize: 28 }}
                   />
                   <Typography
-                    variant="h6"
+                    sx={{
+                      fontSize: { xs: "15px", md: "24px" },
+                    }}
                     fontWeight="700"
                     color="primary.main"
                   >
@@ -723,7 +726,7 @@ export default function Settings() {
                     sx={{ color: "primary.main", fontSize: 28 }}
                   />
                   <Typography
-                    variant="h6"
+                    sx={{ fontSize: { xs: "15px", sm: "26px" } }}
                     fontWeight="700"
                     color="primary.main"
                   >

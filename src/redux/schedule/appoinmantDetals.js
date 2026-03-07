@@ -5,10 +5,21 @@ export const getPatientDetals = createAsyncThunk(
   async ({ id }, { rejectWithValue }) => {
     try {
       console.log("id: ", id);
-      const response = await api.get(
-        `/doctor/patients/${id}/details`
-      );
-      console.log("response.data: ", response.data.data);
+      const response = await api.get(`/doctor/patients/${id}/details`);
+      console.log("getPatientDetals response.data: ", response.data.data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || "حدث خطأ");
+    }
+  }
+);
+export const getPatientDetals2 = createAsyncThunk(
+  "patientdet/getPatientDetals2",
+  async ({ id }, { rejectWithValue }) => {
+    try {
+      console.log("id: ", id);
+      const response = await api.get(`/doctor/patients/${id}/details`);
+      console.log("getPatientDetals response.data: ", response.data.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || "حدث خطأ");
@@ -18,12 +29,22 @@ export const getPatientDetals = createAsyncThunk(
 export const getAppDetById = createAsyncThunk(
   "patientdet/getAppDetById",
   async ({ id }, { rejectWithValue }) => {
-      console.log(" getAppDetById id: ", id);
+    console.log(" getAppDetById id: ", id);
     try {
-      const response = await api.get(
-        // `https://doctormate.runasp.net/api/appointments/${id}/details`,
-        `/appointments/${id}/details`
-      );
+      const response = await api.get(`/appointments/${id}/details`);
+      console.log("response.data: ", response.data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || "حدث خطأ");
+    }
+  }
+);
+export const getAppDetById2 = createAsyncThunk(
+  "patientdet/getAppDetById2",
+  async ({ id }, { rejectWithValue }) => {
+    console.log(" getAppDetById id: ", id);
+    try {
+      const response = await api.get(`/appointments/${id}/details`);
       console.log("response.data: ", response.data);
       return response.data;
     } catch (error) {
@@ -35,6 +56,7 @@ const patientdet = createSlice({
   name: "patientdet",
   initialState: {
     datapatient: null,
+    dataApp2: null,
     dataApp: null,
     loading: false,
     error: null,
@@ -54,6 +76,19 @@ const patientdet = createSlice({
         state.error = action.payload;
       });
     builder
+      .addCase(getPatientDetals2.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getPatientDetals2.fulfilled, (state, action) => {
+        state.loading = false;
+        state.datapatient2 = action.payload;
+      })
+      .addCase(getPatientDetals2.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+    builder
       .addCase(getAppDetById.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -63,6 +98,19 @@ const patientdet = createSlice({
         state.dataApp = action.payload;
       })
       .addCase(getAppDetById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+    builder
+      .addCase(getAppDetById2.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getAppDetById2.fulfilled, (state, action) => {
+        state.loading = false;
+        state.dataApp2 = action.payload;
+      })
+      .addCase(getAppDetById2.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

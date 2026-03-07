@@ -32,7 +32,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import NavBar from "../../components/navBar";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchDoctorDashboard } from "../../redux/overViews/overView";
-
+import { getDataDoctor } from "../../redux/doctor/doctor";
 export default function Dashboard() {
   const dispatch = useDispatch();
   const {
@@ -47,6 +47,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     dispatch(fetchDoctorDashboard());
+    dispatch(getDataDoctor());
   }, [dispatch]);
 
   const formatDate = (dateString) => {
@@ -73,7 +74,7 @@ export default function Dashboard() {
   // Stats cards configuration with primary theme colors
   const statsCards = [
     {
-      icon: <CalendarTodayIcon sx={{ fontSize: 32 }} />,
+      icon: <CalendarTodayIcon sx={{ fontSize: { xs: 24, sm: 32 } }} />,
       title: "Total Appointments",
       value: stats?.totalAppointments?.total || 0,
       subtitle: `${stats?.totalAppointments?.today || 0} today`,
@@ -81,7 +82,7 @@ export default function Dashboard() {
       iconBg: "rgba(255, 255, 255, 0.2)",
     },
     {
-      icon: <EventAvailableIcon sx={{ fontSize: 32 }} />,
+      icon: <EventAvailableIcon sx={{ fontSize: { xs: 24, sm: 32 } }} />,
       title: "Upcoming",
       value: stats?.totalAppointments?.upcoming || 0,
       subtitle: `${stats?.totalAppointments?.completed || 0} completed`,
@@ -89,7 +90,7 @@ export default function Dashboard() {
       iconBg: "rgba(255, 255, 255, 0.2)",
     },
     {
-      icon: <PeopleAltIcon sx={{ fontSize: 32 }} />,
+      icon: <PeopleAltIcon sx={{ fontSize: { xs: 24, sm: 32 } }} />,
       title: "Total Patients",
       value: stats?.totalPatients || 0,
       subtitle: "Registered patients",
@@ -97,7 +98,7 @@ export default function Dashboard() {
       iconBg: "rgba(255, 255, 255, 0.2)",
     },
     {
-      icon: <AssignmentIcon sx={{ fontSize: 32 }} />,
+      icon: <AssignmentIcon sx={{ fontSize: { xs: 24, sm: 32 } }} />,
       title: "Diagnoses",
       value: stats?.totalDiagnoses || 0,
       subtitle: `${stats?.totalPrescriptions || 0} prescriptions`,
@@ -105,7 +106,7 @@ export default function Dashboard() {
       iconBg: "rgba(255, 255, 255, 0.2)",
     },
     {
-      icon: <StarIcon sx={{ fontSize: 32 }} />,
+      icon: <StarIcon sx={{ fontSize: { xs: 24, sm: 32 } }} />,
       title: "Average Rating",
       value: stats?.averageRating?.toFixed(1) || "0.0",
       subtitle: `${stats?.totalReviews || 0} reviews`,
@@ -152,36 +153,59 @@ export default function Dashboard() {
           >
             <CardContent sx={{ p: 3, position: "relative", zIndex: 1 }}>
               <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
+                sx={{
+                  flexDirection: { xs: "column", md: "row" },
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
               >
-                <Stack direction="row" alignItems="center" spacing={2}>
+                <Stack
+                  sx={{
+                    flexDirection: { xs: "column", md: "row" },
+                    alignItems: "center",
+                    justifyContent: { xs: "center", md: "space-between" },
+                    textAlign: { xs: "center", md: "left" },
+                    gap: 2,
+                  }}
+                >
                   <Avatar
                     src={user?.data?.imageUrl || ""}
-                    sx={{ width: 64, height: 64, border: "3px solid white" }}
+                    sx={{
+                      width: 64,
+                      height: 64,
+                      border: "3px solid white",
+                      ml: { xs: 0, md: 2 },
+                    }}
                   >
                     {userLS?.fullName?.charAt(0) || "D"}
                   </Avatar>
                   <Box>
-                    <Typography variant="h5" fontWeight="600">
+                    <Typography fontWeight="600">
                       Welcome back, Dr. {userLS?.fullName || "Doctor"}!
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                    <Typography sx={{ opacity: 0.9, mt: 0.5 }}>
                       Here's what's happening with your practice today
                     </Typography>
                   </Box>
                 </Stack>
-                <IconButton
-                  onClick={() => dispatch(fetchDoctorDashboard())}
+                <Stack
                   sx={{
-                    color: "white",
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                    "&:hover": { backgroundColor: "rgba(255,255,255,0.3)" },
+                    width: { xs: "100%", md: "auto" },
+                    alignItems: "end",
+                    mt: { xs: 2, md: "" },
                   }}
                 >
-                  <RefreshIcon />
-                </IconButton>
+                  <IconButton
+                    onClick={() => dispatch(fetchDoctorDashboard())}
+                    sx={{
+                      color: "white",
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      "&:hover": { backgroundColor: "rgba(255,255,255,0.3)" },
+                    }}
+                  >
+                    <RefreshIcon />
+                  </IconButton>
+                </Stack>
               </Stack>
             </CardContent>
           </Card>
@@ -204,7 +228,16 @@ export default function Dashboard() {
         )}
 
         {/* Stats Cards */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Stack
+          spacing={2}
+          sx={{
+            flexDirection: { xs: "column", sm: "row" },
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 3,
+          }}
+        >
           {loading
             ? Array.from({ length: 5 }).map((_, index) => (
                 <Grid item xs={12} sm={6} md={2.4} key={index}>
@@ -216,7 +249,15 @@ export default function Dashboard() {
                 </Grid>
               ))
             : statsCards.map((card, index) => (
-                <Grid item xs={12} sm={6} md={2.4} key={index}>
+                <Stack
+                  direction={"row"}
+                  sx={{
+                    mb: 4,
+                    width: "200px",
+                    height: "270px",
+                  }}
+                  key={index}
+                >
                   <Fade in timeout={300 * (index + 1)}>
                     <Card
                       sx={{
@@ -226,7 +267,9 @@ export default function Dashboard() {
                         boxShadow: "0 4px 20px rgba(82, 172, 140, 0.3)",
                         height: "100%",
                         overflow: "hidden",
+                        width: "200px",
                         position: "relative",
+                        textAlign: "center",
                         transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
                         "&:hover": {
                           transform: "translateY(-8px) scale(1.02)",
@@ -248,7 +291,13 @@ export default function Dashboard() {
                       <CardContent
                         sx={{ position: "relative", zIndex: 1, p: 3 }}
                       >
-                        <Stack spacing={2.5}>
+                        <Stack
+                          spacing={2.5}
+                          sx={{
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
                           <Stack
                             direction="row"
                             justifyContent="space-between"
@@ -309,6 +358,7 @@ export default function Dashboard() {
                                 opacity: 0.8,
                                 display: "flex",
                                 alignItems: "center",
+                                justifyContent: "center",
                                 gap: 0.5,
                               }}
                             >
@@ -319,9 +369,9 @@ export default function Dashboard() {
                       </CardContent>
                     </Card>
                   </Fade>
-                </Grid>
+                </Stack>
               ))}
-        </Grid>
+        </Stack>
 
         {/* Two Column Layout */}
         <Grid container spacing={3}>
@@ -362,7 +412,9 @@ export default function Dashboard() {
                     <CalendarTodayIcon sx={{ color: "white", fontSize: 20 }} />
                   </Box>
                   <Typography
-                    variant="h6"
+                    sx={{
+                      fontSize: { xs: "1.0rem", md: "1.25rem" },
+                    }}
                     fontWeight="700"
                     color="primary.main"
                   >
@@ -499,7 +551,7 @@ export default function Dashboard() {
                       }}
                     >
                       <CalendarTodayIcon
-                        sx={{ fontSize: 32, color: "white" }}
+                        sx={{ fontSize: { xs: 24, md: 32 }, color: "white" }}
                       />
                     </Box>
                     <Typography
@@ -552,9 +604,11 @@ export default function Dashboard() {
                     <WarningAmberIcon sx={{ color: "white", fontSize: 20 }} />
                   </Box>
                   <Typography
-                    variant="h6"
                     fontWeight="700"
-                    sx={{ color: "#FF9800" }}
+                    sx={{
+                      color: "#FF9800",
+                      fontSize: { xs: "1.00rem", md: "1.25rem" },
+                    }}
                   >
                     Urgent Alerts
                   </Typography>
@@ -664,11 +718,14 @@ export default function Dashboard() {
                         opacity: 0.8,
                       }}
                     >
-                      <WarningAmberIcon sx={{ fontSize: 32, color: "white" }} />
+                      <WarningAmberIcon
+                        sx={{ fontSize: { xs: 24, md: 32 }, color: "white" }}
+                      />
                     </Box>
                     <Typography
                       variant="body1"
                       fontWeight="600"
+                      sx={{ fontSize: { xs: ".8rem", md: "1.25rem" } }}
                       color="primary.main"
                       mb={0.5}
                     >
@@ -719,7 +776,13 @@ export default function Dashboard() {
               >
                 <PeopleAltIcon sx={{ color: "white", fontSize: 20 }} />
               </Box>
-              <Typography variant="h6" fontWeight="700" color="primary.main">
+              <Typography
+                sx={{
+                  fontSize: { xs: "1.0rem", md: "1.25rem" },
+                }}
+                fontWeight="700"
+                color="primary.main"
+              >
                 Recent Patients
               </Typography>
             </Stack>
@@ -737,7 +800,7 @@ export default function Dashboard() {
                 sx={{
                   borderRadius: "16px",
                   border: "2px solid rgba(82, 172, 140, 0.2)",
-                  overflow: "hidden",
+                  overflow: "auto",
                 }}
               >
                 <Table>
@@ -847,7 +910,7 @@ export default function Dashboard() {
                                 color="text.secondary"
                                 fontWeight="500"
                               >
-                                ID: {patient.patientId?.slice(0, 8)}...
+                                ID: {patient.patientId?.slice(-6)}...
                               </Typography>
                             </Box>
                           </Stack>
@@ -870,6 +933,7 @@ export default function Dashboard() {
                         </TableCell>
                         <TableCell>
                           <Typography
+                            title={patient.currentCondition}
                             variant="body2"
                             sx={{
                               maxWidth: 250,
@@ -881,8 +945,12 @@ export default function Dashboard() {
                             {patient.currentCondition || "N/A"}
                           </Typography>
                         </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight="500">
+                        <TableCell sx={{ whiteSpace: "nowrap" }}>
+                          <Typography
+                            variant="body2"
+                            fontWeight="500"
+                            fontSize="0.7rem"
+                          >
                             {formatDate(patient.lastAppointmentDate)}
                           </Typography>
                         </TableCell>
@@ -933,7 +1001,9 @@ export default function Dashboard() {
                     opacity: 0.8,
                   }}
                 >
-                  <PeopleAltIcon sx={{ fontSize: 32, color: "white" }} />
+                  <PeopleAltIcon
+                    sx={{ fontSize: { xs: 24, md: 32 }, color: "white" }}
+                  />
                 </Box>
                 <Typography
                   variant="body1"

@@ -18,11 +18,11 @@ import { logout } from "../redux/auth/authSlice";
 import { useState } from "react";
 
 export default function NavBar() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const { pathname } = useLocation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
+  console.log("isOpen = ", isOpen);
   const handleLogout = () => {
     dispatch(logout());
     navigate("/logIn");
@@ -57,12 +57,13 @@ export default function NavBar() {
   return (
     <Box
       sx={{
-        width: { xs: "70px", sm: isOpen ? "210px" : "70px" },
+        width: isOpen ? "210px" : "70px",
         height: "100vh",
         backgroundColor: "primary.main",
         left: 0,
         top: 0,
         display: "flex",
+        position: isOpen ? { xs: "fixed", md: "static" } : "static",
         flexDirection: "column",
         boxShadow: "4px 0 10px rgba(0, 0, 0, 0.1)",
         zIndex: 1000,

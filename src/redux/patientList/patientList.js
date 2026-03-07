@@ -12,7 +12,7 @@ export const patientsList = createAsyncThunk(
       if (search) {
         params.append("search", search);
       }
-      
+
       const response = await api.get(`/doctor/patients?${params.toString()}`);
       console.log("Patients Data:", response.data);
       return response.data;
@@ -23,8 +23,6 @@ export const patientsList = createAsyncThunk(
     }
   }
 );
-
-// ========================== Slice ==========================
 const patients = createSlice({
   name: "patients",
   initialState: {
@@ -35,12 +33,23 @@ const patients = createSlice({
       totalItems: 0,
       totalPages: 0,
     },
+    patientDet: null,
+    patientDet2: null,
     loading: false,
     error: null,
   },
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    setpatientDet: (state, action) => {
+      state.patientDet = action.payload; 
+    },
+    setpatientDet2: (state, action) => {
+      state.patientDet2 = action.payload;
+    },
+    setclearpatientDet: (state) => {
+      state.patientDet = null;
     },
   },
   extraReducers: (builder) => {
@@ -62,5 +71,6 @@ const patients = createSlice({
   },
 });
 
-export const { clearError } = patients.actions;
+export const { clearError, setpatientDet, setclearpatientDet,setpatientDet2 } =
+  patients.actions;
 export default patients.reducer;

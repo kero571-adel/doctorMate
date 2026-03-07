@@ -36,7 +36,11 @@ const style = {
     display: "none",
   },
 };
-export default function BasicModal({ openMedicalModal, SetopenMedicalModal }) {
+export default function BasicModal({
+  openMedicalModal,
+  SetopenMedicalModal,
+  id,
+}) {
   const selectedPatient = useSelector(
     (state) => state.schedule.selectedPatient
   );
@@ -54,7 +58,7 @@ export default function BasicModal({ openMedicalModal, SetopenMedicalModal }) {
     }
   };
   const handleSave = async () => {
-    const patientId = selectedPatient?.patient?.id;
+    const patientId = id ? id : selectedPatient?.patient?.id;
     try {
       await dispatch(
         addmedical({
@@ -235,12 +239,12 @@ export default function BasicModal({ openMedicalModal, SetopenMedicalModal }) {
         open={openSnack}
         autoHideDuration={3000}
         onClose={() => setOpenSnack(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
         <Alert
           onClose={() => setOpenSnack(false)}
           severity="success"
-          sx={{ width: '100%' }}
+          sx={{ width: "100%" }}
         >
           Medical record added successfully!
         </Alert>

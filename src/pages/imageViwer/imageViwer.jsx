@@ -53,6 +53,7 @@ import {
   ViewList,
 } from "@mui/icons-material";
 import { setSelectedPatient } from "../../redux/schedule/schedule";
+import { useSelector, useDispatch } from "react-redux";
 export default function DicomViewer() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -66,20 +67,23 @@ export default function DicomViewer() {
   const [tool, setTool] = useState("pan");
   const [viewMode, setViewMode] = useState("grid");
   const imageRef = useRef(null);
-
+  const medicalImages = useSelector(
+    (state) => state.dataSliceImgViwer.mediclImage
+  );
+  const userInfo = useSelector((state) => state.dataSliceImgViwer.userInfo);
+  console.log("userInfo: ", userInfo);
+  console.log("medicalImages: ", medicalImages);
   // Get images from navigation state or use default
   const receivedImages = location.state?.allImages || [];
   const selectedImage = location.state?.image;
-
-  const patientInfo = {
-    name: "John Doe",
-    age: 52,
-    gender: "Male",
-    bloodType: "O+",
-    patientId: "P-245889",
-    lastVisit: "12 Oct 2025",
+  const patientInfo = userInfo || {
+    name: "_",
+    age: _,
+    gender: "_",
+    bloodType: "_",
+    id: "_",
+    lastVisit: "_",
   };
-
   // Add DICOM file to default images
   const dicomFile = {
     src: "/assets/IMG-0001-00001.dcm",
@@ -89,13 +93,12 @@ export default function DicomViewer() {
     uploadDate: new Date().toISOString(),
     isDicom: true,
   };
-
   // Convert DICOM images to the format expected by the viewer
   const images =
-    receivedImages.length > 0
+    medicalImages.length > 0
       ? [
           dicomFile,
-          ...receivedImages.map((img) => ({
+          ...medicalImages.map((img) => ({
             src: img.viewerUrl,
             thumbnail: img.viewerUrl,
             description: img.description || img.fileName,
@@ -121,15 +124,15 @@ export default function DicomViewer() {
 
   // Set initial image based on selected image
   useEffect(() => {
-    if (selectedImage && receivedImages.length > 0) {
-      const index = receivedImages.findIndex(
+    if (selectedImage && medicalImages.length > 0) {
+      const index = medicalImages.findIndex(
         (img) => img.id === selectedImage.id
       );
       if (index !== -1) {
         setCurrentImage(index + 1); // +1 because we added dicomFile at beginning
       }
     }
-  }, [selectedImage, receivedImages]);
+  }, [selectedImage, medicalImages]);
 
   const handlePrevious = () => {
     setCurrentImage((prev) => (prev > 0 ? prev - 1 : images.length - 1));
@@ -838,7 +841,7 @@ export default function DicomViewer() {
                   },
                   {
                     label: "Patient ID",
-                    value: patientInfo.patientId,
+                    value: patientInfo.id.slice(-6),
                     icon: <Badge />,
                     color: "#9c27b0",
                   },
@@ -864,6 +867,7 @@ export default function DicomViewer() {
                         alignItems: "center",
                         gap: 2,
                         justifyContent: "space-between",
+                        textAlign: { xs: "center", sm: "left" },
                       }}
                     >
                       <Box

@@ -66,6 +66,9 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 } */
-#root{
+#root {
   width: 100%;
+}
+.css-l3ke5n-MuiStack-root > :not(style) ~ :not(style) {
+  margin-left: 0 !important;
 }

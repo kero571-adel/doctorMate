@@ -4,7 +4,7 @@ import api from "../../utils/api";
 // ========================== overViewSec2 profile ==========================
 export const appointmentsDoctor = createAsyncThunk(
   "schedule/appointmentsDoctor", // عدّل الاسم هنا كمان
-  async ({ page = 1, limit = 10 }, { rejectWithValue }) => {
+  async ({ page, limit }, { rejectWithValue }) => {
     try {
       const response = await api.get(
         `/appointments/Doctor?page=${page}&limit=${limit}`
@@ -19,25 +19,23 @@ export const appointmentsDoctor = createAsyncThunk(
   }
 );
 export const appointmentsStatus = createAsyncThunk(
-  "schudule/appointmentsStatus",
+  "schedule/appointmentsStatus",
   async ({ status, id }, { rejectWithValue }) => {
     try {
-      const response = await api.put(
-        `/appointments/${id}/status`,
-        {
-          status: status,
-        }
-      );
-      console.log("response.data = ", response.data);
+      const response = await api.put(`/appointments/${id}/status`, {
+        status: status,
+      });
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data || "فشل في استكمال بيانات الحساب"
+        error.response?.data?.message ||
+          error.response?.data?.error ||
+          "فشل في استكمال بيانات الحساب"
       );
     }
   }
 );
-// ========================== Slice ==========================
+
 const schudule = createSlice({
   name: "schedule",
   initialState: {
@@ -45,10 +43,14 @@ const schudule = createSlice({
     loading: false,
     error: null,
     selectedPatient: null,
+    selectedPatient2: null,
   },
   reducers: {
     setSelectedPatient: (state, action) => {
       state.selectedPatient = action.payload;
+    },
+    setSelectedPatient2: (state, action) => {
+      state.selectedPatient2 = action.payload;
     },
     clearSelectedPatient: (state) => {
       state.selectedPatient = null;
@@ -93,5 +95,6 @@ const schudule = createSlice({
       });
   },
 });
-export const { setSelectedPatient, clearSelectedPatient } = schudule.actions;
+export const { setSelectedPatient, clearSelectedPatient, setSelectedPatient2 } =
+  schudule.actions;
 export default schudule.reducer;

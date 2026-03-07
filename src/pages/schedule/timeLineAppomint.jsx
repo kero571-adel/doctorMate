@@ -20,18 +20,28 @@ import {
   CardContent,
   Divider,
   Fade,
+  Container,
 } from "@mui/material";
+import { Pagination, Stack as MuiStack } from "@mui/material";
 import { format } from "date-fns";
 import { enUS } from "date-fns/locale";
 import EventIcon from "@mui/icons-material/Event";
 import VideoCallIcon from "@mui/icons-material/VideoCall";
-import PersonIcon from "@mui/icons-material/Person";
 import CancelIcon from "@mui/icons-material/Cancel";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PhoneIcon from "@mui/icons-material/Phone";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import { useTheme, useMediaQuery } from "@mui/material";
+import { useSelector } from "react-redux";
+// ==================== Responsive Config ====================
+const getResponsiveValues = (theme) => ({
+  isXs: useMediaQuery(theme.breakpoints.down("xs")),
+  isSm: useMediaQuery(theme.breakpoints.down("sm")),
+  isMd: useMediaQuery(theme.breakpoints.down("md")),
+  isTablet: useMediaQuery(theme.breakpoints.between("sm", "md")),
+});
 
 // ==================== Helpers ====================
 
@@ -112,22 +122,31 @@ const getAppointmentTypeConfig = (type) => {
 };
 
 // Patient Avatar with fallback
-const PatientAvatar = ({ patient }) => {
+const PatientAvatar = ({ patient, size = "md" }) => {
   const hasValidImage =
     patient?.image &&
     !patient.image.includes("Default") &&
     !patient.image.startsWith("//");
 
+  const sizeMap = {
+    sm: { xs: 36, sm: 40, md: 44 },
+    md: { xs: 40, sm: 48, md: 56 },
+    lg: { xs: 48, sm: 56, md: 64 },
+  };
+
+  const size_value = sizeMap[size];
+
   return (
     <Avatar
       src={hasValidImage ? patient.image.trim() : undefined}
       sx={{
-        width: 56,
-        height: 56,
+        width: size_value,
+        height: size_value,
         bgcolor: hasValidImage ? "transparent" : "primary.main",
         border: "3px solid",
         borderColor: "primary.main",
         boxShadow: "0 4px 12px rgba(82, 172, 140, 0.3)",
+        flexShrink: 0,
       }}
     >
       {!hasValidImage && patient?.name?.charAt(0).toUpperCase()}
@@ -136,7 +155,7 @@ const PatientAvatar = ({ patient }) => {
 };
 
 // ==================== Timeline Row Component ====================
-const TimelineAppointmentRow = ({ appointment, isFirst, isLast }) => {
+const TimelineAppointmentRow = ({ appointment, isFirst, isLast, isMobile }) => {
   const {
     patient,
     status,
@@ -152,20 +171,176 @@ const TimelineAppointmentRow = ({ appointment, isFirst, isLast }) => {
   );
   const statusConfig = getStatusConfig(status);
   const typeConfig = getAppointmentTypeConfig(appointmentType);
-  const StatusIcon = statusConfig.icon.type;
+
+  if (isMobile) {
+    return (
+      <Box
+        sx={{
+          border: "1px solid rgba(82, 172, 140, 0.2)",
+          borderRadius: "6px",
+          p: "8px",
+          mb: "6px",
+          boxShadow: "0 2px 8px rgba(82, 172, 140, 0.08)",
+          transition: "all 0.3s ease",
+          "&:active": {
+            boxShadow: "0 4px 12px rgba(82, 172, 140, 0.15)",
+            transform: "translateY(-2px)",
+          },
+          backgroundColor: "background.paper",
+          width: "100%",
+        }}
+      >
+        <Stack spacing="4px">
+          {/* Time */}
+          <Stack direction="row" spacing={0.25} alignItems="center">
+            <AccessTimeIcon
+              sx={{
+                fontSize: 12,
+                color: "primary.main",
+                flexShrink: 0,
+              }}
+            />
+            <Typography
+              fontWeight="700"
+              color="primary.main"
+              sx={{
+                fontSize: "0.6rem",
+                whiteSpace: "nowrap",
+                lineHeight: 1,
+              }}
+            >
+              {time}
+            </Typography>
+          </Stack>
+
+          {/* Patient */}
+          <Stack direction="row" spacing={2} alignItems="flex-start">
+            <Avatar
+              src={patient?.image}
+              sx={{
+                width: 28,
+                height: 28,
+                flexShrink: 0,
+                bgcolor: "primary.main",
+                fontSize: "0.7rem",
+                fontWeight: 700,
+              }}
+            >
+              {patient?.name?.charAt(0)}
+            </Avatar>
+            <Box sx={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
+              <Typography
+                fontWeight="700"
+                sx={{
+                  fontSize: "0.7rem",
+                  lineHeight: 1,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {patient?.name}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  fontSize: "0.6rem",
+                  mt: "1px",
+                  lineHeight: 1,
+                }}
+              >
+                {shortDate}
+              </Typography>
+            </Box>
+          </Stack>
+
+          {/* Status */}
+          <Chip
+            icon={statusConfig.icon}
+            label={statusConfig.label}
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 1,
+              background: statusConfig.bg,
+              color: statusConfig.text,
+              border: `1px solid ${statusConfig.border}`,
+              width: "fit-content",
+              fontWeight: 700,
+              fontSize: "0.6rem",
+              height: "20px",
+              px: "4px",
+              "& .MuiChip-icon": {
+                fontSize: "10px",
+                color: statusConfig.text,
+              },
+              "& .MuiChip-label": {
+                px: "4px",
+              },
+            }}
+          />
+
+          {/* Type */}
+          <Stack direction="row" spacing={0.25} alignItems="center">
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                color: typeConfig.color,
+                fontSize: "0.65rem",
+                flexShrink: 0,
+              }}
+            >
+              {typeConfig.icon}
+            </Box>
+            <Typography
+              fontWeight="600"
+              sx={{
+                fontSize: "0.65rem",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                lineHeight: 1,
+              }}
+            >
+              {typeConfig.label}
+            </Typography>
+          </Stack>
+
+          {/* Reason */}
+          <Typography
+            variant="body2"
+            sx={{
+              fontSize: "0.6rem",
+              color: "text.secondary",
+              lineHeight: 1.2,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              display: "-webkit-box",
+              WebkitLineClamp: 1,
+              WebkitBoxOrient: "vertical",
+            }}
+          >
+            {reason || "No reason"}
+          </Typography>
+        </Stack>
+      </Box>
+    );
+  }
 
   return (
     <TableRow
       sx={{
         position: "relative",
         "&:hover": {
-          backgroundColor: "rgba(82, 172, 140, 0.04)",
+          backgroundColor: "rgba(82, 172, 140, 0.03)",
           "& .timeline-dot": {
-            transform: "scale(1.2)",
+            transform: "scale(1.15)",
           },
           "& .appointment-card": {
-            transform: "translateX(4px)",
-            boxShadow: "0 6px 20px rgba(82, 172, 140, 0.2)",
+            transform: "translateX(3px)",
+            boxShadow: "0 6px 20px rgba(82, 172, 140, 0.15)",
           },
         },
         transition: "all 0.3s ease",
@@ -174,24 +349,51 @@ const TimelineAppointmentRow = ({ appointment, isFirst, isLast }) => {
       {/* Timeline Column with Time */}
       <TableCell
         sx={{
-          width: 180,
+          width: { xs: "60px", sm: "110px", md: "160px", lg: "180px" },
           verticalAlign: "top",
-          pt: 3,
-          pb: 3,
+          pt: { xs: 1, sm: 2, md: 2.5, lg: 3 },
+          pb: { xs: 1, sm: 2, md: 2.5, lg: 3 },
           borderBottom: isLast ? "none" : "1px solid rgba(82, 172, 140, 0.1)",
           position: "relative",
+          px: { xs: 0.5, sm: 1, md: 1.5, lg: 2 },
         }}
       >
-        <Stack alignItems="flex-end" spacing={0.5} mr={2}>
+        <Stack
+          alignItems="flex-end"
+          spacing={0.25}
+          mr={{ xs: 0.5, sm: 1, md: 1.5, lg: 2 }}
+        >
           <Typography
             variant="h6"
             fontWeight="700"
             color="primary.main"
-            sx={{ lineHeight: 1 }}
+            sx={{
+              lineHeight: 1,
+              fontSize: {
+                xs: "0.75rem",
+                sm: "0.95rem",
+                md: "1.1rem",
+                lg: "1.25rem",
+              },
+              whiteSpace: "nowrap",
+            }}
           >
             {time}
           </Typography>
-          <Typography variant="caption" color="text.secondary" fontWeight="500">
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            fontWeight="500"
+            sx={{
+              fontSize: {
+                xs: "0.6rem",
+                sm: "0.7rem",
+                md: "0.75rem",
+                lg: "0.8rem",
+              },
+              whiteSpace: "nowrap",
+            }}
+          >
             {shortDate}
           </Typography>
         </Stack>
@@ -201,22 +403,27 @@ const TimelineAppointmentRow = ({ appointment, isFirst, isLast }) => {
           className="timeline-dot"
           sx={{
             position: "absolute",
-            right: -12,
-            top: 24,
-            width: 24,
-            height: 24,
             borderRadius: "50%",
             background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
-            border: "4px solid white",
+            border: "3px solid white",
             boxShadow: "0 0 0 2px rgba(82, 172, 140, 0.3)",
             zIndex: 2,
             transition: "transform 0.3s ease",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            width: { xs: 10, sm: 16, md: 20, lg: 24 },
+            height: { xs: 10, sm: 16, md: 20, lg: 24 },
+            right: { xs: -5, sm: -8, md: -10, lg: -12 },
+            top: { xs: 12, sm: 18, md: 22, lg: 24 },
           }}
         >
-          <AccessTimeIcon sx={{ fontSize: 12, color: "white" }} />
+          <AccessTimeIcon
+            sx={{
+              fontSize: { xs: 4, sm: 8, md: 10, lg: 12 },
+              color: "white",
+            }}
+          />
         </Box>
 
         {/* Timeline Line */}
@@ -225,10 +432,11 @@ const TimelineAppointmentRow = ({ appointment, isFirst, isLast }) => {
             sx={{
               position: "absolute",
               right: -1,
-              top: 48,
+              top: { xs: 24, sm: 40, md: 48, lg: 48 },
               bottom: 0,
               width: 2,
-              background: "linear-gradient(180deg, rgba(82, 172, 140, 0.3) 0%, rgba(82, 172, 140, 0.1) 100%)",
+              background:
+                "linear-gradient(180deg, rgba(82, 172, 140, 0.3) 0%, rgba(82, 172, 140, 0.1) 100%)",
               zIndex: 1,
             }}
           />
@@ -239,46 +447,96 @@ const TimelineAppointmentRow = ({ appointment, isFirst, isLast }) => {
       <TableCell
         sx={{
           verticalAlign: "top",
-          pt: 2,
-          pb: 3,
+          pt: { xs: 0.75, sm: 1.5, md: 2, lg: 2 },
+          pb: { xs: 0.75, sm: 1.5, md: 2.5, lg: 3 },
           borderBottom: isLast ? "none" : "1px solid rgba(82, 172, 140, 0.1)",
+          px: { xs: 0.5, sm: 1, md: 1.5, lg: 2 },
+          minWidth: 0,
+          overflow: "hidden",
         }}
       >
         <Card
           className="appointment-card"
           sx={{
-            borderRadius: "16px",
-            border: "1px solid rgba(82, 172, 140, 0.2)",
-            boxShadow: "0 2px 12px rgba(82, 172, 140, 0.12)",
+            borderRadius: { xs: "8px", sm: "12px", md: "14px", lg: "16px" },
+            border: "1px solid rgba(82, 172, 140, 0.15)",
+            boxShadow: "0 2px 10px rgba(82, 172, 140, 0.1)",
             transition: "all 0.3s ease",
-            overflow: "visible",
+            overflow: "hidden",
             position: "relative",
+            backgroundColor: "background.paper",
+            width: "100%",
           }}
         >
-          <CardContent sx={{ p: 2.5, "&:last-child": { pb: 2.5 } }}>
+          <CardContent
+            sx={{
+              p: { xs: "10px", sm: "12px", md: "16px", lg: "20px" },
+              "&:last-child": {
+                pb: { xs: "10px", sm: "12px", md: "16px", lg: "20px" },
+              },
+            }}
+          >
             {/* Patient Info & Status */}
             <Stack
-              direction="row"
+              direction={{ xs: "column", sm: "row" }}
               justifyContent="space-between"
-              alignItems="flex-start"
-              mb={2}
+              alignItems={{ xs: "flex-start", sm: "flex-start" }}
+              mb={{ xs: "8px", sm: "10px", md: "12px", lg: "16px" }}
+              spacing={{ xs: "8px", sm: "8px", md: "12px" }}
             >
-              <Stack direction="row" spacing={2} alignItems="center" flex={1}>
-                <PatientAvatar patient={patient} />
-                <Box>
-                  <Typography variant="h6" fontWeight="700" color="primary.main">
+              <Stack
+                direction="row"
+                spacing={{ xs: "6px", sm: "8px", md: "10px", lg: "12px" }}
+                alignItems="center"
+                flex={1}
+                minWidth={0}
+              >
+                <PatientAvatar patient={patient} size="sm" />
+                <Box sx={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
+                  <Typography
+                    variant="h6"
+                    fontWeight="700"
+                    color="primary.main"
+                    sx={{
+                      fontSize: {
+                        xs: "0.75rem",
+                        sm: "0.85rem",
+                        md: "0.95rem",
+                        lg: "1rem",
+                      },
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      lineHeight: 1.2,
+                    }}
+                  >
                     {patient?.name || "Unknown Patient"}
                   </Typography>
-                  <Stack direction="row" spacing={1} alignItems="center" mt={0.5}>
+                  <Stack
+                    direction="row"
+                    spacing={{ xs: "3px", sm: "4px" }}
+                    alignItems="center"
+                    mt="2px"
+                    flexWrap="wrap"
+                    useFlexGap
+                  >
                     <Chip
-                      label={`ID: ${patient?.id?.slice(-6)}`}
+                      label={`ID: ${patient?.id?.slice(-4)}`}
                       size="small"
                       sx={{
-                        height: 22,
-                        fontSize: "11px",
+                        height: { xs: 16, sm: 18, md: 20 },
+                        fontSize: {
+                          xs: "7px",
+                          sm: "8px",
+                          md: "9px",
+                          lg: "10px",
+                        },
                         fontWeight: 600,
                         bgcolor: "rgba(82, 172, 140, 0.1)",
                         color: "primary.main",
+                        "& .MuiChip-label": {
+                          px: "4px",
+                        },
                       }}
                     />
                     {patient?.age && (
@@ -286,9 +544,17 @@ const TimelineAppointmentRow = ({ appointment, isFirst, isLast }) => {
                         label={`${patient.age}y`}
                         size="small"
                         sx={{
-                          height: 22,
-                          fontSize: "11px",
+                          height: { xs: 16, sm: 18, md: 20 },
+                          fontSize: {
+                            xs: "7px",
+                            sm: "8px",
+                            md: "9px",
+                            lg: "10px",
+                          },
                           fontWeight: 600,
+                          "& .MuiChip-label": {
+                            px: "4px",
+                          },
                         }}
                       />
                     )}
@@ -297,10 +563,18 @@ const TimelineAppointmentRow = ({ appointment, isFirst, isLast }) => {
                         label={patient.gender}
                         size="small"
                         sx={{
-                          height: 22,
-                          fontSize: "11px",
+                          height: { xs: 16, sm: 18, md: 20 },
+                          fontSize: {
+                            xs: "7px",
+                            sm: "8px",
+                            md: "9px",
+                            lg: "10px",
+                          },
                           fontWeight: 600,
                           textTransform: "capitalize",
+                          "& .MuiChip-label": {
+                            px: "4px",
+                          },
                         }}
                       />
                     )}
@@ -315,65 +589,162 @@ const TimelineAppointmentRow = ({ appointment, isFirst, isLast }) => {
                 sx={{
                   background: statusConfig.bg,
                   color: statusConfig.text,
+                  gap: 1,
                   fontWeight: 700,
-                  fontSize: "12px",
-                  height: "32px",
+                  fontSize: { xs: "7px", sm: "9px", md: "10px", lg: "11px" },
+                  height: { xs: "22px", sm: "24px", md: "28px", lg: "30px" },
                   border: `1px solid ${statusConfig.border}`,
                   "& .MuiChip-icon": {
                     color: statusConfig.text,
+                    fontSize: {
+                      xs: "10px",
+                      sm: "12px",
+                      md: "14px",
+                      lg: "16px",
+                    },
                   },
+                  "& .MuiChip-label": {
+                    px: "4px",
+                  },
+                  flexShrink: 0,
+                  alignSelf: { xs: "flex-start", sm: "flex-start" },
                 }}
               />
             </Stack>
 
-            <Divider sx={{ my: 1.5 }} />
+            <Divider
+              sx={{ my: { xs: "6px", sm: "8px", md: "10px", lg: "12px" } }}
+            />
 
             {/* Appointment Details */}
-            <Stack spacing={1.5}>
-              <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack spacing={{ xs: "6px", sm: "8px", md: "10px", lg: "12px" }}>
+              <Stack
+                direction="row"
+                spacing={{ xs: "6px", sm: "8px" }}
+                alignItems="center"
+              >
                 <Box
                   sx={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: "8px",
+                    width: { xs: 20, sm: 24, md: 28, lg: 32 },
+                    height: { xs: 20, sm: 24, md: 28, lg: 32 },
+                    borderRadius: "6px",
                     bgcolor: typeConfig.bg,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    flexShrink: 0,
                   }}
                 >
-                  {typeConfig.icon}
+                  <Box
+                    sx={{
+                      fontSize: {
+                        xs: "10px",
+                        sm: "12px",
+                        md: "14px",
+                        lg: "16px",
+                      },
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    {typeConfig.icon}
+                  </Box>
                 </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="500">
-                    Appointment Type
+                <Box sx={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    fontWeight="500"
+                    sx={{
+                      fontSize: {
+                        xs: "0.6rem",
+                        sm: "0.65rem",
+                        md: "0.7rem",
+                        lg: "0.75rem",
+                      },
+                    }}
+                  >
+                    Type
                   </Typography>
-                  <Typography variant="body2" fontWeight="600" color={typeConfig.color}>
+                  <Typography
+                    variant="body2"
+                    fontWeight="600"
+                    color={typeConfig.color}
+                    sx={{
+                      fontSize: {
+                        xs: "0.7rem",
+                        sm: "0.75rem",
+                        md: "0.8rem",
+                        lg: "0.85rem",
+                      },
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {typeConfig.label}
                   </Typography>
                 </Box>
               </Stack>
 
-              <Stack direction="row" spacing={1.5} alignItems="center">
+              <Stack
+                direction="row"
+                spacing={{ xs: "6px", sm: "8px" }}
+                alignItems="flex-start"
+              >
                 <Box
                   sx={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: "8px",
+                    width: { xs: 20, sm: 24, md: 28, lg: 32 },
+                    height: { xs: 20, sm: 24, md: 28, lg: 32 },
+                    borderRadius: "6px",
                     bgcolor: "rgba(82, 172, 140, 0.1)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    flexShrink: 0,
                   }}
                 >
-                  <EventIcon sx={{ fontSize: 18, color: "primary.main" }} />
+                  <EventIcon
+                    sx={{
+                      fontSize: { xs: 10, sm: 12, md: 14, lg: 16 },
+                      color: "primary.main",
+                    }}
+                  />
                 </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight="500">
+                <Box sx={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    fontWeight="500"
+                    sx={{
+                      fontSize: {
+                        xs: "0.6rem",
+                        sm: "0.65rem",
+                        md: "0.7rem",
+                        lg: "0.75rem",
+                      },
+                    }}
+                  >
                     Reason
                   </Typography>
-                  <Typography variant="body2" fontWeight="600" color="text.primary">
-                    {reason || "No reason specified"}
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      fontSize: {
+                        xs: "0.65rem",
+                        sm: "0.7rem",
+                        md: "0.75rem",
+                        lg: "0.8rem",
+                      },
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {reason || "No reason"}
                   </Typography>
                 </Box>
               </Stack>
@@ -391,7 +762,13 @@ const AppointmentScheduleTable = ({
   loading = false,
   error = null,
   onRefresh,
+  setPage,
+  page,
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { data } = useSelector((state) => state.schedule);
+  const totalPages = data?.data?.pagination?.totalPages || 1;
   // Group appointments by date
   const groupedAppointments =
     appointments?.reduce((acc, apt) => {
@@ -412,13 +789,20 @@ const AppointmentScheduleTable = ({
     return (
       <Card
         sx={{
-          borderRadius: "20px",
-          boxShadow: "0 4px 20px rgba(82, 172, 140, 0.15)",
-          border: "1px solid rgba(82, 172, 140, 0.2)",
+          borderRadius: { xs: "16px", sm: "18px", md: "20px" },
+          boxShadow: "0 4px 20px rgba(82, 172, 140, 0.12)",
+          border: "1px solid rgba(82, 172, 140, 0.15)",
           mb: 3,
         }}
       >
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", p: 6 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            p: { xs: 4, sm: 5, md: 6, lg: 8 },
+          }}
+        >
           <CircularProgress sx={{ color: "primary.main" }} />
         </Box>
       </Card>
@@ -432,9 +816,10 @@ const AppointmentScheduleTable = ({
         severity="error"
         sx={{
           mb: 3,
-          borderRadius: "16px",
+          borderRadius: { xs: "12px", sm: "14px", md: "16px" },
           border: "2px solid #f44336",
-          boxShadow: "0 4px 20px rgba(244, 67, 54, 0.2)",
+          boxShadow: "0 4px 20px rgba(244, 67, 54, 0.15)",
+          fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem" },
         }}
         action={
           <IconButton color="inherit" size="small" onClick={onRefresh}>
@@ -452,33 +837,52 @@ const AppointmentScheduleTable = ({
     return (
       <Card
         sx={{
-          borderRadius: "20px",
-          boxShadow: "0 4px 20px rgba(82, 172, 140, 0.15)",
-          border: "1px solid rgba(82, 172, 140, 0.2)",
+          borderRadius: { xs: "16px", sm: "18px", md: "20px" },
+          boxShadow: "0 4px 20px rgba(82, 172, 140, 0.12)",
+          border: "1px solid rgba(82, 172, 140, 0.15)",
           mb: 3,
-          p: 6,
+          p: { xs: 3, sm: 4, md: 5, lg: 6 },
           textAlign: "center",
         }}
       >
         <Box
           sx={{
-            width: 80,
-            height: 80,
+            width: { xs: 60, sm: 70, md: 80, lg: 100 },
+            height: { xs: 60, sm: 70, md: 80, lg: 100 },
             borderRadius: "50%",
             background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            margin: "0 auto 24px",
-            opacity: 0.8,
+            margin: "0 auto 16px",
+            opacity: 0.85,
           }}
         >
-          <EventIcon sx={{ fontSize: 40, color: "white" }} />
+          <EventIcon
+            sx={{
+              fontSize: { xs: 28, sm: 32, md: 40, lg: 50 },
+              color: "white",
+            }}
+          />
         </Box>
-        <Typography variant="h6" fontWeight="700" color="primary.main" mb={1}>
+        <Typography
+          variant="h6"
+          fontWeight="700"
+          color="primary.main"
+          mb={1}
+          sx={{
+            fontSize: { xs: "1rem", sm: "1.1rem", md: "1.25rem", lg: "1.4rem" },
+          }}
+        >
           No Appointments Today
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{
+            fontSize: { xs: "0.8rem", sm: "0.85rem", md: "0.9rem", lg: "1rem" },
+          }}
+        >
           Patient appointments will appear here once scheduled
         </Typography>
       </Card>
@@ -488,41 +892,83 @@ const AppointmentScheduleTable = ({
   return (
     <Card
       sx={{
-        borderRadius: "20px",
-        boxShadow: "0 4px 20px rgba(82, 172, 140, 0.15)",
-        border: "1px solid rgba(82, 172, 140, 0.2)",
+        borderRadius: { xs: "12px", sm: "18px", md: "20px" },
+        boxShadow: "0 4px 20px rgba(82, 172, 140, 0.12)",
+        border: "1px solid rgba(82, 172, 140, 0.15)",
         mb: 3,
         overflow: "hidden",
       }}
     >
-      <CardContent sx={{ p: 4 }}>
+      <CardContent
+        sx={{ p: { xs: "12px", sm: "16px", md: "20px", lg: "24px" } }}
+      >
         {/* Header */}
         <Stack
-          direction="row"
-          alignItems="center"
+          direction={{ xs: "column", sm: "row" }}
+          alignItems={{ xs: "flex-start", sm: "center" }}
           justifyContent="space-between"
-          mb={4}
+          mb={{ xs: "16px", sm: "20px", md: "24px", lg: "28px" }}
+          spacing={{ xs: "10px", sm: "12px" }}
         >
-          <Stack direction="row" alignItems="center" spacing={2}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={{ xs: "8px", sm: "12px", md: "16px" }}
+          >
             <Box
               sx={{
-                width: 48,
-                height: 48,
-                borderRadius: "12px",
+                width: { xs: 32, sm: 40, md: 44, lg: 48 },
+                height: { xs: 32, sm: 40, md: 44, lg: 48 },
+                borderRadius: "10px",
                 background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                flexShrink: 0,
               }}
             >
-              <EventIcon sx={{ fontSize: 24, color: "white" }} />
+              <EventIcon
+                sx={{
+                  fontSize: { xs: 16, sm: 20, md: 22, lg: 24 },
+                  color: "white",
+                }}
+              />
             </Box>
-            <Box>
-              <Typography variant="h5" fontWeight="700" color="primary.main">
-                Daily Schedule Timeline
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Typography
+                variant="h5"
+                fontWeight="700"
+                color="primary.main"
+                sx={{
+                  fontSize: {
+                    xs: "0.9rem",
+                    sm: "1rem",
+                    md: "1.1rem",
+                    lg: "1.25rem",
+                  },
+                  lineHeight: 1.1,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Daily Schedule
               </Typography>
-              <Typography variant="body2" color="text.secondary" fontWeight="500">
-                Organized view of today's appointments
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                fontWeight="500"
+                sx={{
+                  fontSize: {
+                    xs: "0.65rem",
+                    sm: "0.75rem",
+                    md: "0.8rem",
+                    lg: "0.85rem",
+                  },
+                  mt: "2px",
+                }}
+              >
+                Today's appointments
               </Typography>
             </Box>
           </Stack>
@@ -532,18 +978,23 @@ const AppointmentScheduleTable = ({
               sx={{
                 background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                 color: "white",
+                width: { xs: 36, sm: 40, md: 44 },
+                height: { xs: 36, sm: 40, md: 44 },
                 "&:hover": {
-                  background: "linear-gradient(135deg, #3D8B6F 0%, #2E7A5F 100%)",
+                  background:
+                    "linear-gradient(135deg, #3D8B6F 0%, #2E7A5F 100%)",
                 },
+                flexShrink: 0,
+                fontSize: { xs: "16px", sm: "20px" },
               }}
             >
-              <RefreshIcon />
+              <RefreshIcon fontSize="inherit" />
             </IconButton>
           )}
         </Stack>
 
         {/* Timeline Display */}
-        <Stack spacing={4}>
+        <Stack spacing={{ xs: "16px", sm: "20px", md: "24px", lg: "28px" }}>
           {sortedDates.map((dateKey, dateIndex) => {
             const { date: formattedDate } = formatAppointmentTime(
               dateKey,
@@ -553,80 +1004,158 @@ const AppointmentScheduleTable = ({
 
             return (
               <Fade in timeout={300 * (dateIndex + 1)} key={dateKey}>
-                <Box>
+                <Box sx={{ overflow: "hidden" }}>
                   {/* Date Header */}
                   <Stack
                     direction="row"
                     alignItems="center"
-                    spacing={2}
+                    spacing={{ xs: "8px", sm: "10px", md: "12px" }}
                     sx={{
-                      mb: 3,
-                      pb: 2,
-                      borderBottom: "2px solid rgba(82, 172, 140, 0.2)",
+                      mb: { xs: "10px", sm: "12px", md: "16px", lg: "18px" },
+                      pb: { xs: "8px", sm: "10px", md: "12px", lg: "14px" },
+                      borderBottom: "2px solid rgba(82, 172, 140, 0.15)",
+                      flexWrap: "wrap",
+                      useFlexGap: true,
                     }}
                   >
                     <Box
                       sx={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: "10px",
-                        background: "linear-gradient(135deg, rgba(82, 172, 140, 0.2) 0%, rgba(82, 172, 140, 0.1) 100%)",
+                        width: { xs: 32, sm: 34, md: 36, lg: 40 },
+                        height: { xs: 32, sm: 34, md: 36, lg: 40 },
+                        borderRadius: "8px",
+                        background:
+                          "linear-gradient(135deg, rgba(82, 172, 140, 0.15) 0%, rgba(82, 172, 140, 0.08) 100%)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
+                        flexShrink: 0,
                       }}
                     >
-                      <EventIcon sx={{ fontSize: 20, color: "primary.main" }} />
+                      <EventIcon
+                        sx={{
+                          fontSize: { xs: 16, sm: 18, md: 20, lg: 22 },
+                          color: "primary.main",
+                        }}
+                      />
                     </Box>
-                    <Typography variant="h6" fontWeight="700" color="primary.main">
+                    <Typography
+                      variant="h6"
+                      fontWeight="700"
+                      color="primary.main"
+                      sx={{
+                        fontSize: {
+                          xs: "0.55rem",
+                          sm: "0.95rem",
+                          md: "1rem",
+                          lg: "1.1rem",
+                        },
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
                       {formattedDate}
                     </Typography>
                     <Chip
-                      label={`${dayAppointments.length} Appointment${
-                        dayAppointments.length !== 1 ? "s" : ""
-                      }`}
+                      label={`${dayAppointments.length}`}
                       size="small"
                       sx={{
-                        background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                        background:
+                          "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                         color: "white",
                         fontWeight: 700,
-                        fontSize: "11px",
-                        height: 24,
+                        fontSize: { xs: "9px", sm: "10px", md: "11px" },
+                        height: { xs: 20, sm: 22, md: 24 },
+                        "& .MuiChip-label": {
+                          px: "6px",
+                        },
                       }}
                     />
                   </Stack>
-
+                  {/* ===== Mobile View ===== */}
+                  {isMobile && (
+                    <Box sx={{ mt: { xs: "8px", sm: "10px" } }}>
+                      {dayAppointments.map((appointment, index) => (
+                        <TimelineAppointmentRow
+                          key={appointment.id}
+                          appointment={appointment}
+                          isFirst={index === 0}
+                          isLast={index === dayAppointments.length - 1}
+                          isMobile={true}
+                        />
+                      ))}
+                    </Box>
+                  )}
                   {/* Timeline Table */}
-                  <TableContainer
-                    sx={{
-                      borderRadius: "16px",
-                      border: "1px solid rgba(82, 172, 140, 0.15)",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <Table>
-                      <TableBody>
-                        {dayAppointments
-                          .sort((a, b) =>
-                            a.appointmentTime.localeCompare(b.appointmentTime)
-                          )
-                          .map((appointment, index) => (
-                            <TimelineAppointmentRow
-                              key={appointment.id}
-                              appointment={appointment}
-                              isFirst={index === 0}
-                              isLast={index === dayAppointments.length - 1}
-                            />
-                          ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                  {!isMobile && (
+                    <TableContainer
+                      sx={{
+                        borderRadius: { xs: "10px", sm: "12px", md: "14px" },
+                        border: "1px solid rgba(82, 172, 140, 0.12)",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Table>
+                        <TableBody>
+                          {dayAppointments
+                            .sort((a, b) =>
+                              a.appointmentTime.localeCompare(b.appointmentTime)
+                            )
+                            .map((appointment, index) => (
+                              <TimelineAppointmentRow
+                                key={appointment.id}
+                                appointment={appointment}
+                                isFirst={index === 0}
+                                isLast={index === dayAppointments.length - 1}
+                                isMobile={isMobile}
+                              />
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  )}
                 </Box>
               </Fade>
             );
           })}
         </Stack>
       </CardContent>
+      {/* ================= Pagination ================= */}
+      {totalPages > 1 && (
+        <Box
+          sx={{
+       
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={(event, value) => {
+              setPage(value);
+            }}
+            shape="rounded"
+            color="white"
+            siblingCount={1}
+            boundaryCount={1}
+            sx={{
+              color: "white",
+              mb:2,
+              "& .MuiPaginationItem-root": {
+                fontWeight: 600,
+              },
+              "& .Mui-selected": {
+                background:
+                  "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%) !important",
+                color: "#fff",
+              },
+            }}
+          />
+        </Box>
+      )}
     </Card>
   );
 };

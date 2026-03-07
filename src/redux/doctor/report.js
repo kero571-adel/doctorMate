@@ -29,7 +29,7 @@ const report = createSlice({
       })
       .addCase(getReport.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload;
+        state.data = action.payload;
       })
       .addCase(getReport.rejected, (state, action) => {
         state.loading = false;

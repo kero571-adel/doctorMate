@@ -10,7 +10,8 @@ import diagnosesReducer from "./schedule/addDiagnoses";
 import prescriptionsReducer from "./schedule/addpresipration";
 import patientdetReducer from "./schedule/appoinmantDetals";
 import getRportReducer from "./doctor/report";
-
+import addMedicalImgReducer from "./schedule/addMedicalImg";
+import dataSliceImgViwerReucer from "./imageViwer/data";
 export const store = configureStore({
   reducer: {
     overView: overViewReducer,
@@ -24,5 +25,7 @@ export const store = configureStore({
     prescriptions: prescriptionsReducer,
     patientdet: patientdetReducer,
     report: getRportReducer,
+    MedicalImg: addMedicalImgReducer,
+    dataSliceImgViwer: dataSliceImgViwerReucer,
   },
 });

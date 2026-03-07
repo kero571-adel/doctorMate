@@ -12,6 +12,7 @@ import {
   Grid,
   InputAdornment,
   useTheme,
+  useMediaQuery,
   alpha,
 } from "@mui/material";
 import {
@@ -30,125 +31,242 @@ import {
   ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
 import InfoOutlineIcon from "@mui/icons-material/InfoOutline";
-// مكون رئيسي يجمع الصفحات التلاتة
+
 const Message = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // الحالة الحالية (عشان نشوف المراحل التلاتة)
-  // 'waiting' | 'active' | 'ended'
   const [sessionState, setSessionState] = useState("active");
 
-  // دالة عشان نغير المراحل عشان التجربة
   const handleNextStage = () => {
     if (sessionState === "waiting") setSessionState("active");
     else if (sessionState === "active") setSessionState("ended");
     else setSessionState("waiting");
   };
 
-  return (
-    <Box
-      sx={{
-        minHeight: "100vh",
+  // 🔹 Responsive Styles Helper
+  const responsiveStyles = {
+    container: {
+      minHeight: "100vh",
+      bgcolor: "#F9FAFB",
+      fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+      display: "flex",
+      flexDirection: "column",
+    },
+    header: {
+      bgcolor: "white",
+      px: { xs: 2, sm: 3, md: 4 },
+      py: { xs: 1.5, md: 2 },
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: { xs: "flex-start", md: "center" },
+      flexDirection: { xs: "column", md: "row" },
+      gap: { xs: 2, md: 0 },
+      borderBottom: "1px solid #E5E7EB",
+      position: "sticky",
+      top: 0,
+      zIndex: 1100,
+    },
+    userInfo: {
+      display: "flex",
+      alignItems: "center",
+      gap: { xs: 1.5, md: 2 },
+      width: "100%",
+    },
+    avatarContainer: {
+      position: "relative",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: { xs: 48, md: 56 },
+      height: { xs: 48, md: 56 },
+      borderRadius: "50%",
+      p: { xs: 0.5, md: 1 },
+    },
+    avatar: {
+      width: { xs: 50, md: 58 },
+      height: { xs: 50, md: 58 },
+    },
+    statusDot: {
+      position: "absolute",
+      bottom: { xs: 1, md: 2 },
+      right: { xs: 1, md: 2 },
+      width: { xs: 10, md: 12 },
+      height: { xs: 10, md: 12 },
+      bgcolor:
+        sessionState === "active"
+          ? "#10B981"
+          : sessionState === "waiting"
+          ? "#FBBF24"
+          : "#6B7280",
+      borderRadius: "50%",
+      border: "2px solid white",
+    },
+    headerActions: {
+      display: "flex",
+      alignItems: "center",
+      gap: { xs: 1, md: 2 },
+      width: { xs: "100%", md: "auto" },
+      justifyContent: { xs: "space-between", md: "flex-end" },
+      flexWrap: "wrap",
+    },
+    contentContainer: {
+      flex: 1,
+      display: "flex",
+      flexDirection: "column",
+      px: { xs: 2, sm: 3, md: 4 },
+      py: { xs: 2, md: 4 },
+      pb: { xs: 0, md: 0 },
+      overflow: "hidden",
+    },
+    waitingCard: {
+      p: { xs: 3, md: 5 },
+      width: "100%",
+      maxWidth: { xs: "100%", sm: 450, md: 500 },
+      mx: "auto",
+      textAlign: "center",
+      border: "1px solid #F3F4F6",
+      mt: { xs: 4, md: 8 },
+    },
+    chatContainer: {
+      flex: 1,
+      overflowY: "auto",
+      display: "flex",
+      flexDirection: "column",
+      gap: { xs: 1.5, md: 2 },
+      pb: { xs: 10, md: 2 }, // Space for fixed input on mobile
+    },
+    messageBubble: {
+      patient: {
+        p: { xs: 1.5, md: 2 },
+        bgcolor: "white",
+        border: "1px solid #E5E7EB",
+        maxWidth: { xs: "85%", md: "60%" },
+        borderRadius: "12px 12px 12px 0",
+        boxShadow: "none",
+      },
+      doctor: {
+        p: { xs: 1.5, md: 2 },
+        bgcolor: "primary.main",
+        color: "white",
+        borderRadius: "12px 12px 0 12px",
+        maxWidth: { xs: "85%", md: "60%" },
+        boxShadow: "none",
+      },
+    },
+    inputArea: {
+      position: { xs: "fixed", md: "relative" },
+      bottom: { xs: 0, md: "auto" },
+      left: { xs: 0, md: "auto" },
+      right: { xs: 0, md: "auto" },
+      px: { xs: 2, md: 4 },
+      py: { xs: 2, md: 3 },
+      bgcolor: "white",
+      borderTop: "1px solid #E5E7EB",
+      zIndex: 1000,
+      width: "100%", // ← 100% على كل الشاشات
+      boxSizing: "border-box", // ← عشان الـ padding مايؤثرش على العرض
+    },
+    textField: {
+      "& .MuiOutlinedInput-root": {
+        borderRadius: { xs: 2, md: 3 },
         bgcolor: "#F9FAFB",
-        fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-      }}
-    >
-      {/* شريط تحكم علوي للتجربة فقط */}
-      <Box
-        sx={{
-          p: 2,
-          textAlign: "center",
-          bgcolor: "#eee",
-          position: "sticky",
-          top: 0,
-          zIndex: 1000,
-        }}
-      >
-        <Typography variant="caption" color="text.secondary" sx={{ mr: 2 }}>
-          Current Stage: <strong>{sessionState.toUpperCase()}</strong>
-        </Typography>
-        <Button
-          variant="contained"
-          size="small"
-          onClick={handleNextStage}
-          sx={{ bgcolor: "primary.main" }}
-        >
-          Switch Stage (Waiting → Active → Ended)
-        </Button>
-      </Box>
+        "& fieldset": { border: "none" },
+      },
+    },
+    readOnlyBanner: {
+      p: { xs: 1.5, md: 2 },
+      bgcolor: "#F9FAFB",
+      borderRadius: { xs: 2, md: 3 },
+      display: "flex",
+      alignItems: { xs: "flex-start", md: "center" },
+      justifyContent: "space-between",
+      flexDirection: { xs: "column", md: "row" },
+      gap: { xs: 2, md: 0 },
+      border: "1px solid #E5E7EB",
+    },
+    waitingInput: {
+      "& .MuiOutlinedInput-root": {
+        borderRadius: { xs: 2, md: 3 },
+        bgcolor: "#F9FAFB",
+        "& fieldset": { border: "none" },
+      },
+    },
+  };
 
-      {/* Header مشترك */}
-      <Box
-        sx={{
-          bgcolor: "white",
-          px: 4,
-          py: 2,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderBottom: "1px solid #E5E7EB",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Box
-            sx={{
-              position: "relative",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 56,
-              height: 56,
-              borderRadius: "50%",
-              // background: "linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%)",
-              p: 1,
-            }}
+  return (
+    <Box sx={responsiveStyles.container}>
+      {/* 🔹 Debug Control Bar (Hide on mobile for cleaner UX) */}
+      {!isSmallMobile && (
+        <Box
+          sx={{
+            p: { xs: 1, md: 2 },
+            textAlign: "center",
+            bgcolor: "#eee",
+            position: "sticky",
+            top: 0,
+            zIndex: 1200,
+            display: { xs: "none", md: "block" },
+          }}
+        >
+          <Typography variant="caption" color="text.secondary" sx={{ mr: 2 }}>
+            Current Stage: <strong>{sessionState.toUpperCase()}</strong>
+          </Typography>
+          <Button
+            variant="contained"
+            size="small"
+            onClick={handleNextStage}
+            sx={{ bgcolor: "primary.main" }}
           >
+            Switch Stage (Waiting → Active → Ended)
+          </Button>
+        </Box>
+      )}
+
+      {/* 🔹 Header - Responsive */}
+      <Box sx={responsiveStyles.header}>
+        <Box sx={responsiveStyles.userInfo}>
+          <Box sx={responsiveStyles.avatarContainer}>
             <Avatar
               src="https://i.pravatar.cc/150?img=5"
-              sx={{
-                width: 58,
-                height: 58,
-              
-              }}
+              sx={responsiveStyles.avatar}
             />
-            <Box
-              sx={{
-                position: "absolute",
-                bottom: 2,
-                right: 2,
-                width: 12,
-                height: 12,
-                bgcolor: sessionState === "active" ? "#10B981" : sessionState === "waiting" ? "#FBBF24" : "#6B7280",
-                borderRadius: "50%",
-                border: "2px solid white",
-              }}
-            />
+            <Box sx={responsiveStyles.statusDot} />
           </Box>
-          <Box>
-            <Typography variant="h6" fontWeight="bold">
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant={isMobile ? "subtitle1" : "h6"}
+              fontWeight="bold"
+              noWrap
+            >
               Mia Hamm
             </Typography>
             <Box
               sx={{
                 display: "flex",
                 alignItems: "center",
-                gap: 1,
+                gap: 0.5,
                 color: "text.secondary",
-                fontSize: "0.875rem",
+                fontSize: { xs: "0.75rem", md: "0.875rem" },
+                flexWrap: "wrap",
               }}
             >
-              {sessionState === "waiting" ? (
+              {sessionState === "waiting" && (
                 <>
                   <span>General Consultation</span>
                   <span>•</span>
                 </>
-              ) : (
-                ""
               )}
-              {sessionState === "active" || sessionState === "waiting" ? (
+              {(sessionState === "active" || sessionState === "waiting") && (
                 <span>10:00 AM - 10:30 AM</span>
-              ) : (
-                "Follow-up Consultation"
+              )}
+              {sessionState === "ended" && (
+                <>
+                  <span>Follow-up Consultation</span>
+                  <span>•</span>
+                  <span>Oct 24, 10:00 AM - 10:30 AM</span>
+                </>
               )}
               {sessionState === "active" && (
                 <>
@@ -164,35 +282,35 @@ const Message = () => {
                   >
                     <Box
                       sx={{
-                        width: 8,
-                        height: 8,
+                        width: { xs: 6, md: 8 },
+                        height: { xs: 6, md: 8 },
                         borderRadius: "50%",
                         bgcolor: "#2474ED",
                       }}
                     />
-                    Session Active
+                    <Typography
+                      variant="caption"
+                      sx={{ display: { xs: "none", sm: "inline" } }}
+                    >
+                      Session Active
+                    </Typography>
                   </Box>
-                </>
-              )}
-              {sessionState === "ended" && (
-                <>
-                  <span>•</span>
-                  <span>Oct 24, 10:00 AM - 10:30 AM</span>
                 </>
               )}
             </Box>
           </Box>
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={responsiveStyles.headerActions}>
           {sessionState === "waiting" && (
             <Chip
               label="Waiting for patient"
+              size={isMobile ? "small" : "medium"}
               sx={{
                 bgcolor: "#FFF7ED",
                 color: "#C2410C",
                 fontWeight: 500,
-                "& .MuiChip-label": { px: 3 },
+                "& .MuiChip-label": { px: { xs: 2, md: 3 } },
               }}
             />
           )}
@@ -200,70 +318,88 @@ const Message = () => {
           {sessionState === "ended" && (
             <Chip
               label="Session Ended"
+              size={isMobile ? "small" : "medium"}
               sx={{
                 bgcolor: "#F3F4F6",
                 color: "#6B7280",
                 fontWeight: 500,
-
-                "& .MuiChip-label": { px: 3 },
+                "& .MuiChip-label": { px: { xs: 2, md: 3 } },
               }}
             />
           )}
 
-          {/* <IconButton>
-            <InfoIcon sx={{ color: "#9CA3AF" }} />
-          </IconButton> */}
-
           {sessionState === "waiting" && (
-            <IconButton>
-              <HistoryIcon sx={{ color: "#9CA3AF" }} />
+            <IconButton size={isMobile ? "small" : "medium"}>
+              <HistoryIcon
+                sx={{ color: "#9CA3AF", fontSize: { xs: 20, md: 24 } }}
+              />
             </IconButton>
           )}
 
           {sessionState === "active" && (
             <>
               <Button
-                startIcon={<MedicalRecordIcon />}
+                startIcon={
+                  <MedicalRecordIcon fontSize={isMobile ? "small" : "medium"} />
+                }
+                size={isMobile ? "small" : "medium"}
                 sx={{
                   color: "#4B5563",
                   textTransform: "none",
                   border: "1px solid #E5E7EB",
                   borderRadius: 1,
+                  fontSize: { xs: "0.75rem", md: "0.875rem" },
+                  px: { xs: 1, md: 2 },
                 }}
               >
-                Medical Record
+                <Typography
+                  variant="caption"
+                  sx={{ display: { xs: "none", sm: "inline" } }}
+                >
+                  Medical Record
+                </Typography>
               </Button>
               <Button
-                startIcon={<EndCallIcon />}
+                startIcon={
+                  <EndCallIcon fontSize={isMobile ? "small" : "medium"} />
+                }
+                size={isMobile ? "small" : "medium"}
                 sx={{
                   bgcolor: "#FEF2F2",
                   color: "#DC2626",
                   textTransform: "none",
                   borderRadius: 1,
                   "&:hover": { bgcolor: "#FEE2E2" },
+                  fontSize: { xs: "0.75rem", md: "0.875rem" },
+                  px: { xs: 1, md: 2 },
                 }}
                 onClick={() => setSessionState("ended")}
               >
-                End Session
+                <Typography
+                  variant="caption"
+                  sx={{ display: { xs: "none", sm: "inline" } }}
+                >
+                  End Session
+                </Typography>
               </Button>
             </>
           )}
 
           {sessionState === "ended" && (
             <>
-              <IconButton >
-                <DownloadIcon />
+              <IconButton size={isMobile ? "small" : "medium"}>
+                <DownloadIcon sx={{ fontSize: { xs: 20, md: 24 } }} />
               </IconButton>
-              <IconButton>
-                <PrintIcon />
+              <IconButton size={isMobile ? "small" : "medium"}>
+                <PrintIcon sx={{ fontSize: { xs: 20, md: 24 } }} />
               </IconButton>
             </>
           )}
         </Box>
       </Box>
 
-      {/* محتوى الصفحة */}
-      <Box sx={{ mx: "auto", py: 4, pb: 0 }}>
+      {/* 🔹 Main Content Area */}
+      <Box sx={responsiveStyles.contentContainer}>
         {/* ================= PAGE 1: WAITING ROOM ================= */}
         {sessionState === "waiting" && (
           <Box
@@ -271,39 +407,43 @@ const Message = () => {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              mt: 8,
+              flex: 1,
             }}
           >
-            <Paper
-              elevation={0}
-              sx={{
-                p: 5,
-                width: "100%",
-                maxWidth: 500,
-                textAlign: "center",
-                border: "1px solid #F3F4F6",
-              }}
-            >
+            <Paper elevation={0} sx={responsiveStyles.waitingCard}>
               <Box
                 sx={{
-                  width: 64,
-                  height: 64,
+                  width: { xs: 56, md: 64 },
+                  height: { xs: 56, md: 64 },
                   borderRadius: "50%",
                   bgcolor: "#ECFDF5",
                   mx: "auto",
-                  mb: 2,
+                  mb: { xs: 1.5, md: 2 },
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <AccessTimeIcon sx={{ color: "#10B981", fontSize: 32 }} />
+                <AccessTimeIcon
+                  sx={{
+                    color: "#10B981",
+                    fontSize: { xs: 28, md: 32 },
+                  }}
+                />
               </Box>
 
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
+              <Typography
+                variant={isMobile ? "subtitle1" : "h6"}
+                fontWeight="bold"
+                gutterBottom
+              >
                 Patient has not joined yet
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: { xs: 3, md: 4 } }}
+              >
                 You are ready for the session. The secure room is open, and we
                 will notify you immediately once Sarah Johnson connects.
               </Typography>
@@ -312,8 +452,8 @@ const Message = () => {
                 sx={{
                   bgcolor: "#F9FAFB",
                   borderRadius: 2,
-                  p: 2,
-                  mb: 3,
+                  p: { xs: 1.5, md: 2 },
+                  mb: { xs: 2, md: 3 },
                   textAlign: "left",
                 }}
               >
@@ -321,7 +461,7 @@ const Message = () => {
                   sx={{
                     display: "flex",
                     justifyContent: "space-between",
-                    mb: 2,
+                    mb: { xs: 1, md: 2 },
                   }}
                 >
                   <Box
@@ -339,7 +479,7 @@ const Message = () => {
                     10:00 AM
                   </Typography>
                 </Box>
-                <Divider sx={{ mb: 2 }} />
+                <Divider sx={{ my: { xs: 1, md: 2 } }} />
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Box
                     sx={{
@@ -359,14 +499,16 @@ const Message = () => {
               </Box>
 
               <Button
-                startIcon={<NotificationsIcon />}
+                startIcon={<NotificationsIcon fontSize="small" />}
+                size={isMobile ? "small" : "medium"}
                 sx={{
                   color: "#059669",
                   textTransform: "none",
-                  mb: 4,
+                  mb: { xs: 3, md: 4 },
+                  fontSize: { xs: "0.75rem", md: "0.875rem" },
                 }}
               >
-                Send reminder to patient
+                Send reminder
               </Button>
 
               <Typography
@@ -391,24 +533,14 @@ const Message = () => {
             sx={{
               display: "flex",
               flexDirection: "column",
-              height: "calc(100vh - 180px)",
+              flex: 1,
+              minHeight: 0,
             }}
           >
-            {/* منطقة الشات */}
-            <Box
-              sx={{
-                flex: 1,
-                overflowY: "auto",
-                px: 4,
-                py: 2,
-                pb: 0,
-                display: "flex",
-                flexDirection: "column",
-                gap: 2,
-              }}
-            >
-              {/* رسالة النظام */}
-              <Box sx={{ textAlign: "center", my: 2 }}>
+            {/* Chat Messages Area */}
+            <Box sx={responsiveStyles.chatContainer}>
+              {/* System Message */}
+              <Box sx={{ textAlign: "center", my: { xs: 1, md: 2 } }}>
                 <Chip
                   label={
                     sessionState === "active"
@@ -416,11 +548,16 @@ const Message = () => {
                       : "Session started Oct 24, 10:00 AM"
                   }
                   size="small"
-                  sx={{ bgcolor: "#F3F4F6", color: "#6B7280", height: 24 }}
+                  sx={{
+                    bgcolor: "#F3F4F6",
+                    color: "#6B7280",
+                    height: 24,
+                    fontSize: { xs: "0.65rem", md: "0.75rem" },
+                  }}
                 />
               </Box>
 
-              {/* رسالة المريض 1 */}
+              {/* Patient Message */}
               <Box
                 sx={{
                   display: "flex",
@@ -430,16 +567,12 @@ const Message = () => {
               >
                 <Paper
                   elevation={0}
-                  sx={{
-                    p: 2,
-                    bgcolor: "white",
-                    border: "1px solid #E5E7EB",
-                    maxWidth: "60%",
-                    borderRadius: "12px 12px 12px 0",
-                    boxShadow: "none",
-                  }}
+                  sx={responsiveStyles.messageBubble.patient}
                 >
-                  <Typography variant="body2">
+                  <Typography
+                    variant="body2"
+                    sx={{ fontSize: { xs: "0.8rem", md: "0.875rem" } }}
+                  >
                     Hi Dr. Smith, thank you for taking the time. I've been
                     having this persistent headache for about 3 days now and
                     over-the-counter meds aren't helping much.
@@ -448,13 +581,13 @@ const Message = () => {
                 <Typography
                   variant="caption"
                   color="text.secondary"
-                  sx={{ display: "block", mt: 1 }}
+                  sx={{ display: "block", mt: 0.5 }}
                 >
                   10:01 AM
                 </Typography>
               </Box>
 
-              {/* رسالة الدكتور 1 */}
+              {/* Doctor Message */}
               <Box
                 sx={{
                   display: "flex",
@@ -462,105 +595,54 @@ const Message = () => {
                   alignItems: "flex-end",
                 }}
               >
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    bgcolor: "primary.main",
-                    color: "white",
-                    borderRadius: "12px 12px 0 12px",
-                    maxWidth: "60%",
-                    boxShadow: "none",
-                  }}
-                >
-                  <Typography variant="body2">
-                    Hi Dr. Smith, thank you for taking the time. I've been
-                    having this persistent headache for about 3 days now and
-                    over-the-counter meds aren't helping much.
-                  </Typography>
-                </Paper>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    display: "block",
-                    mt: 1,
-                  }}
-                >
-                  10:02 AM
-                </Typography>
-              </Box>
-
-              {/* رسالة المريض 2 */}
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "flex-start",
-                  flexDirection: "column",
-                }}
-              >
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    bgcolor: "white",
-                    border: "1px solid #E5E7EB",
-                    maxWidth: "60%",
-                    borderRadius: "12px 12px 12px 0",
-                    boxShadow: "none",
-                  }}
-                >
-                  <Typography variant="body2">
-                    Hi Dr. Smith, thank you for taking the time. I've been
-                    having this persistent headache for about 3 days now and
-                    over-the-counter meds aren't helping much.
-                  </Typography>
-                </Paper>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ display: "block", mt: 1 }}
-                >
-                  10:01 AM
-                </Typography>
-              </Box>
-
-              {/* رسالة الدكتور 2 */}
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-end",
-                }}
-              >
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    bgcolor: "primary.main",
-                    color: "white",
-                    borderRadius: "12px 12px 0 12px",
-                    maxWidth: "60%",
-                    boxShadow: "none",
-                  }}
-                >
-                  <Typography variant="body2">
+                <Paper elevation={0} sx={responsiveStyles.messageBubble.doctor}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontSize: { xs: "0.8rem", md: "0.875rem" } }}
+                  >
                     I see. Have you noticed any sensitivity to light or nausea
                     accompanying these episodes?
                   </Typography>
                 </Paper>
                 <Typography
                   variant="caption"
-                  sx={{
-                    display: "block",
-                    mt: 1,
-                  }}
+                  sx={{ display: "block", mt: 0.5, color: alpha("#fff", 0.9) }}
                 >
                   10:02 AM
                 </Typography>
               </Box>
 
+              {/* Additional Patient Message */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-start",
+                  flexDirection: "column",
+                }}
+              >
+                <Paper
+                  elevation={0}
+                  sx={responsiveStyles.messageBubble.patient}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{ fontSize: { xs: "0.8rem", md: "0.875rem" } }}
+                  >
+                    Yes, actually. The light sensitivity is pretty strong, and I
+                    feel a bit nauseous in the mornings.
+                  </Typography>
+                </Paper>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: "block", mt: 0.5 }}
+                >
+                  10:05 AM
+                </Typography>
+              </Box>
+
               {sessionState === "ended" && (
-                <Box sx={{ textAlign: "center", my: 2 }}>
+                <Box sx={{ textAlign: "center", my: { xs: 1, md: 2 } }}>
                   <Typography variant="caption" color="text.secondary">
                     Session ended by Dr. Smith • 10:15 AM
                   </Typography>
@@ -568,78 +650,75 @@ const Message = () => {
               )}
             </Box>
 
-            {/* منطقة الكتابة (Input Area) */}
-            <Box
-              sx={{
-                px: 4,
-                py: 3,
-                bgcolor: "white",
-                borderTop: "1px solid #E5E7EB",
-              }}
-            >
+            {/* 🔹 Input Area - Fixed on Mobile */}
+            <Box sx={responsiveStyles.inputArea}>
               {sessionState === "active" ? (
                 <TextField
                   fullWidth
                   placeholder="Type your message..."
                   variant="outlined"
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 3,
-                      bgcolor: "#F9FAFB",
-                      "& fieldset": { border: "none" },
-                    },
-                  }}
+                  size={isMobile ? "small" : "medium"}
+                  sx={responsiveStyles.textField}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <IconButton>
+                        <IconButton size={isMobile ? "small" : "medium"}>
                           <AttachFileIcon sx={{ color: "#9CA3AF" }} />
                         </IconButton>
                       </InputAdornment>
                     ),
                     endAdornment: (
                       <InputAdornment position="end">
-                        <IconButton sx={{ color: "#10B981" }}>
-                          <SendIcon />
+                        <IconButton
+                          size={isMobile ? "small" : "medium"}
+                          sx={{ color: "#10B981" }}
+                        >
+                          <SendIcon fontSize={isMobile ? "small" : "medium"} />
                         </IconButton>
                       </InputAdornment>
                     ),
                   }}
                 />
               ) : (
-                // حالة الجلسة المنتهية (Read Only)
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    bgcolor: "#F9FAFB",
-                    borderRadius: 3,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    border: "1px solid #E5E7EB",
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                // Read-Only State (Session Ended)
+                <Paper elevation={0} sx={responsiveStyles.readOnlyBanner}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: { xs: 1.5, md: 2 },
+                    }}
+                  >
                     <Box
                       sx={{
-                        width: 40,
-                        height: 40,
+                        width: { xs: 36, md: 40 },
+                        height: { xs: 36, md: 40 },
                         borderRadius: "50%",
                         bgcolor: "white",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         border: "1px solid #E5E7EB",
+                        flexShrink: 0,
                       }}
                     >
-                      <LockIcon sx={{ color: "#9CA3AF" }} />
+                      <LockIcon
+                        sx={{ color: "#9CA3AF", fontSize: { xs: 18, md: 20 } }}
+                      />
                     </Box>
                     <Box>
-                      <Typography variant="subtitle2" fontWeight="bold">
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight="bold"
+                        sx={{ fontSize: { xs: "0.875rem", md: "1rem" } }}
+                      >
                         Chat is Read-Only
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: { xs: "none", sm: "block" } }}
+                      >
                         This consultation session has officially ended. You can
                         review the history above.
                       </Typography>
@@ -649,11 +728,15 @@ const Message = () => {
                   <Button
                     variant="outlined"
                     startIcon={<ArrowBackIcon />}
+                    size={isMobile ? "small" : "medium"}
                     sx={{
                       borderRadius: 2,
                       textTransform: "none",
                       color: "#059669",
                       borderColor: "#D1FAE5",
+                      fontSize: { xs: "0.75rem", md: "0.875rem" },
+                      width: { xs: "100%", md: "auto" },
+                      justifyContent: { xs: "center", md: "flex-start" },
                     }}
                     onClick={() => setSessionState("waiting")}
                   >
@@ -665,84 +748,86 @@ const Message = () => {
           </Box>
         )}
 
-        {/* رسالة أسفل صفحة الانتظار */}
+        {/* 🔹 Waiting State - Disabled Input + Info Chip */}
         {sessionState === "waiting" && (
-          <>
-            <Box
-              sx={{
-                // position: "fixed",
-                // bottom: 0,
-                // left: 0,
-                // right: 0,
-                bgcolor: "white",
-                p: 3,
-                mt: 2,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                width: "100%",
+          <Box
+            sx={{
+              position: { xs: "fixed", md: "relative" },
+              bottom: { xs: 0, md: "auto" },
+              left: 0,
+              right: 0,
+              bgcolor: "white",
+              p: { xs: 2, md: 3 },
+              mt: { md: 2 },
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              width: "100%",
+              zIndex: 1000,
+              borderTop: { xs: "1px solid #E5E7EB", md: "none" },
+            }}
+          >
+            <TextField
+              fullWidth
+              disabled
+              placeholder="Chat will be enabled once the patient joins the session..."
+              variant="outlined"
+              size={isMobile ? "small" : "medium"}
+              sx={responsiveStyles.waitingInput}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <IconButton size={isMobile ? "small" : "medium"} disabled>
+                      <AttachFileIcon sx={{ color: "#9CA3AF" }} />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton size={isMobile ? "small" : "medium"} disabled>
+                      <SendIcon sx={{ color: "#10B981" }} />
+                    </IconButton>
+                  </InputAdornment>
+                ),
               }}
-            >
-              <TextField
-                fullWidth
-                disabled
-                placeholder="Chat will be enabled once the patient joins the session..."
-                variant="outlined"
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 3,
-                    bgcolor: "#F9FAFB",
-                    "& fieldset": { border: "none" },
-                  },
-                }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <IconButton>
-                        <AttachFileIcon sx={{ color: "#9CA3AF" }} />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton sx={{ color: "#10B981" }}>
-                        <SendIcon />
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              {sessionState === "waiting" && (
-                <Chip
-                  icon={
-                    <InfoOutlineIcon sx={{ color: "#F59E0B", fontSize: 18 ,mr:2}} />
-                  }
-                  label="Waiting for Sarah Johnson to join the room to enable chat."
+            />
+            <Chip
+              icon={
+                <InfoOutlineIcon
                   sx={{
-                    mt: 2,
-                    bgcolor: "#FFF7ED",
-                    color: "#C2410C",
-                    fontWeight: 500,
-                    fontSize: "14px",
-                    px: 2,
-                    py: 1.5,
-                    borderRadius: "50px",
-                    border: "1px solid rgba(245, 158, 11, 0.2)",
-                    "& .MuiChip-icon": {
-                      color: "#F59E0B",
-                      ml: 0.5,
-                    },
-                    "& .MuiChip-label": {
-                      px: 1,
-                      py: 0.5,
-                    },
-                    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                    color: "#F59E0B",
+                    fontSize: { xs: 16, md: 18 },
+                    mr: { xs: 1, md: 2 },
                   }}
                 />
-              )}
-            </Box>
-          </>
+              }
+              label="Waiting for Sarah Johnson to join the room to enable chat."
+              size={isMobile ? "small" : "medium"}
+              sx={{
+                mt: { xs: 1.5, md: 2 },
+                bgcolor: "#FFF7ED",
+                color: "#C2410C",
+                fontWeight: 500,
+                fontSize: { xs: "0.7rem", md: "14px" },
+                px: { xs: 1.5, md: 2 },
+                py: { xs: 1, md: 1.5 },
+                borderRadius: "50px",
+                border: "1px solid rgba(245, 158, 11, 0.2)",
+                "& .MuiChip-icon": {
+                  color: "#F59E0B",
+                  ml: { xs: 0.5, md: 0.5 },
+                },
+                "& .MuiChip-label": {
+                  px: { xs: 0.5, md: 1 },
+                  py: { xs: 0.3, md: 0.5 },
+                },
+                boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                width: { xs: "100%", md: "auto" },
+                justifyContent: { xs: "flex-start", md: "center" },
+              }}
+            />
+          </Box>
         )}
       </Box>
     </Box>

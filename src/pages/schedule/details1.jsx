@@ -34,7 +34,6 @@ export default function Details1() {
   const [openMedicalModal, SetopenMedicalModal] = useState(false);
   const appoinDetails = useSelector((state) => state.patientdet.dataApp);
   const appointment = appoinDetails?.data;
-  console.log("appoinDetails: ", appoinDetails?.data);
   const selectedPatient = useSelector(
     (state) => state.schedule.selectedPatient
   );

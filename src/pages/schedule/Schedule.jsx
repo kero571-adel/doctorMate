@@ -39,20 +39,20 @@ import { appointmentsDoctor } from "../../redux/schedule/schedule";
 import { useNavigate } from "react-router";
 import { appointmentsStatus } from "../../redux/schedule/schedule";
 import AppointmentScheduleTable from "./timeLineAppomint";
-
+import { getDataDoctor } from "../../redux/doctor/doctor";
+import { setSelectedPatient2 } from "../../redux/schedule/schedule";
 export default function Schedule() {
-  const [timeReady, settimeReady] = useState(false);
   const dispatch = useDispatch();
   const { data, loading, error } = useSelector((state) => state.schedule);
   const userLS = JSON.parse(localStorage.getItem("user") || "{}");
-
+  const ITEMS_PER_PAGE = 6;
   const [btnHeader, setbtnHeader] = useState({
     Upcoming: true,
     InProgress: false,
     Completed: false,
     Cancel: false,
   });
-
+  const [localPage, setLocalPage] = useState(1);
   const [page, setPage] = useState(1);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -77,13 +77,14 @@ export default function Schedule() {
           id: targetAppointment.id,
         })
       ).then(() => {
-        dispatch(appointmentsDoctor({ page, limit: 10 }));
+        dispatch(appointmentsDoctor({ page: page, limit: 10 }));
         handleMenuClose();
       });
     }
   };
 
   const handlePageChange = (event, value) => {
+    event.preventDefault();
     setPage(value);
   };
 
@@ -101,17 +102,13 @@ export default function Schedule() {
     const target = combineDateTime(appointmentDate, appointmentTime);
     const diffInMs = target - now;
     const totalHours = Math.floor(Math.abs(diffInMs) / (1000 * 60 * 60));
-
     if (totalHours >= 24) return null;
-
     const hours = totalHours;
     const minutes = Math.floor((Math.abs(diffInMs) / (1000 * 60)) % 60);
     let parts = [];
-
     if (hours > 0) parts.push(`${hours} hour${hours > 1 ? "s" : ""}`);
     if (minutes > 0) parts.push(`${minutes} minute${minutes !== 1 ? "s" : ""}`);
     if (parts.length === 0) parts.push("less than a minute");
-
     const result = parts.join(" ");
     return diffInMs > 0 ? `In ${result}` : `${result} ago`;
   };
@@ -202,18 +199,30 @@ export default function Schedule() {
   };
 
   const filteredAppointments = getFilteredAppointments();
-  // Fetch appointments on mount and when page changes
+  const totalPages = Math.ceil(filteredAppointments.length / ITEMS_PER_PAGE);
+
+  const displayedAppointments = filteredAppointments.slice(
+    (localPage - 1) * ITEMS_PER_PAGE,
+    localPage * ITEMS_PER_PAGE
+  );
   useEffect(() => {
     dispatch(appointmentsDoctor({ page, limit: 10 }));
   }, [dispatch, page]);
   const { user } = useSelector((state) => state.doctor);
+
+  useEffect(() => {
+    setLocalPage(1);
+  }, [btnHeader]);
+  useEffect(() => {
+    dispatch(getDataDoctor());
+  }, []);
   return (
     <Stack direction="row">
       <NavBar />
       <Box
         sx={{
           backgroundColor: "#F5F7FA",
-          padding: "20px",
+          padding: { xs: "8px", md: "10px" },
           height: "100vh",
           overflowY: "auto",
           flex: 1,
@@ -229,25 +238,26 @@ export default function Schedule() {
               background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
               color: "white",
               position: "relative",
-              overflow: "hidden",
               "&::before": {
                 content: '""',
                 position: "absolute",
                 top: 0,
                 right: 0,
-                width: "300px",
-                height: "300px",
+                width: { xs: "200px", md: "300px" },
+                height: { xs: "200px", md: "300px" },
                 borderRadius: "50%",
                 background: "rgba(255, 255, 255, 0.08)",
                 transform: "translate(30%, -50%)",
               },
             }}
           >
-            <CardContent sx={{ p: 3, position: "relative", zIndex: 1 }}>
+            <CardContent
+              sx={{ p: { xs: 2, md: 1.5 }, position: "relative", zIndex: 1 }}
+            >
               <Stack
-                direction="row"
                 alignItems="center"
                 justifyContent="space-between"
+                sx={{ flexDirection: { xs: "column", md: "row" } }}
               >
                 <Stack direction="row" alignItems="center" spacing={2}>
                   <Box
@@ -255,25 +265,48 @@ export default function Schedule() {
                       width: 56,
                       height: 56,
                       borderRadius: "14px",
-                      backgroundColor: "rgba(255, 255, 255, 0.2)",
+                      backgroundColor: {
+                        xs: "",
+                        md: "rgba(255, 255, 255, 0.2)",
+                      },
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       backdropFilter: "blur(10px)",
                     }}
                   >
-                    <EventAvailable sx={{ fontSize: 28, color: "white" }} />
+                    <EventAvailable
+                      sx={{ fontSize: { xs: 24, md: 28 }, color: "white" }}
+                    />
                   </Box>
                   <Box>
-                    <Typography variant="h5" fontWeight="700">
+                    <Typography
+                      fontWeight="700"
+                      sx={{ fontSize: { xs: "1.1rem", md: "1.25rem" } }}
+                    >
                       Appointments Schedule
                     </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                    <Typography
+                      sx={{
+                        opacity: 0.9,
+                        mt: 0.5,
+                        fontSize: { xs: "0.85rem", md: "0.95rem" },
+                      }}
+                    >
                       Manage your patient appointments and sessions
                     </Typography>
                   </Box>
                 </Stack>
-                <Stack direction="row" spacing={1}>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    width: { xs: "100%", md: "auto" },
+                    mt: { xs: 2, md: 0 },
+                  }}
+                >
                   <IconButton
                     onClick={handleRefresh}
                     sx={{
@@ -300,22 +333,14 @@ export default function Schedule() {
             </CardContent>
           </Card>
         </Fade>
-
         {/* Error Alert */}
         {error && (
-          <Alert
-            severity="error"
-            sx={{
-              mb: 3,
-              borderRadius: "16px",
-              border: "2px solid #f44336",
-              boxShadow: "0 4px 20px rgba(244, 67, 54, 0.2)",
-            }}
-          >
-            {error}
+          <Alert severity="error">
+            {typeof error === "string"
+              ? error
+              : error.message || JSON.stringify(error)}
           </Alert>
         )}
-
         {/* Filter Tabs Card */}
         <Card
           sx={{
@@ -325,10 +350,10 @@ export default function Schedule() {
             border: "1px solid rgba(82, 172, 140, 0.2)",
           }}
         >
-          <CardContent sx={{ p: 3 }}>
+          <CardContent sx={{ p: { xs: 2, md: 3 } }}>
             <Stack
               direction={{ xs: "column", md: "row" }}
-              spacing={1}
+              spacing={{ xs: 1, md: 1 }}
               sx={{
                 justifyContent: "center",
                 alignItems: "center",
@@ -351,7 +376,7 @@ export default function Schedule() {
                   py: 1.5,
                   borderRadius: "12px",
                   fontWeight: 600,
-                  fontSize: "15px",
+                  fontSize: { xs: "14px", md: "15px" },
                   background: btnHeader.Upcoming
                     ? "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)"
                     : "transparent",
@@ -364,6 +389,8 @@ export default function Schedule() {
                       ? "linear-gradient(135deg, #3D8B6F 0%, #2E7A5F 100%)"
                       : "rgba(82, 172, 140, 0.1)",
                   },
+                  width: { xs: "100%", md: "160px" },
+                  mb: { xs: 1, md: 0 },
                 }}
               >
                 Upcoming
@@ -385,7 +412,7 @@ export default function Schedule() {
                   py: 1.5,
                   borderRadius: "12px",
                   fontWeight: 600,
-                  fontSize: "15px",
+                  fontSize: { xs: "14px", md: "15px" },
                   background: btnHeader.InProgress
                     ? "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)"
                     : "transparent",
@@ -398,6 +425,8 @@ export default function Schedule() {
                       ? "linear-gradient(135deg, #3D8B6F 0%, #2E7A5F 100%)"
                       : "rgba(82, 172, 140, 0.1)",
                   },
+                  width: { xs: "100%", md: "160px" },
+                  mb: { xs: 1, md: 0 },
                 }}
               >
                 In Progress
@@ -419,7 +448,7 @@ export default function Schedule() {
                   py: 1.5,
                   borderRadius: "12px",
                   fontWeight: 600,
-                  fontSize: "15px",
+                  fontSize: { xs: "14px", md: "15px" },
                   background: btnHeader.Completed
                     ? "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)"
                     : "transparent",
@@ -432,6 +461,8 @@ export default function Schedule() {
                       ? "linear-gradient(135deg, #3D8B6F 0%, #2E7A5F 100%)"
                       : "rgba(82, 172, 140, 0.1)",
                   },
+                  width: { xs: "100%", md: "160px" },
+                  mb: { xs: 1, md: 0 },
                 }}
               >
                 Completed
@@ -453,7 +484,7 @@ export default function Schedule() {
                   py: 1.5,
                   borderRadius: "12px",
                   fontWeight: 600,
-                  fontSize: "15px",
+                  fontSize: { xs: "14px", md: "15px" },
                   background: btnHeader.Cancel
                     ? "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)"
                     : "transparent",
@@ -466,6 +497,7 @@ export default function Schedule() {
                       ? "linear-gradient(135deg, #3D8B6F 0%, #2E7A5F 100%)"
                       : "rgba(82, 172, 140, 0.1)",
                   },
+                  width: { xs: "100%", md: "160px" },
                 }}
               >
                 Cancelled
@@ -474,12 +506,13 @@ export default function Schedule() {
 
             {/* Stats Row */}
             <Stack
-              direction="row"
-              spacing={3}
+              direction={{ xs: "column", sm: "row" }}
+              spacing={{ xs: 1.5, md: 3 }}
               sx={{
                 mt: 2,
                 pt: 2,
                 borderTop: "1px solid rgba(82, 172, 140, 0.1)",
+                justifyContent: "space-around",
               }}
             >
               <Box>
@@ -523,9 +556,20 @@ export default function Schedule() {
           </CardContent>
         </Card>
 
-        {/* Timeline Component */}
-        <Box sx={{ mb: 3 }}>
+        {/* Timeline Component - Responsive Wrapper */}
+        <Box
+          sx={{
+            mb: 3,
+            // overflowX: "auto",
+            // "& > *": {
+            //   minWidth: { xs: "600px", md: "100%" },
+            // },
+            px: { xs: 0.5, md: 0 },
+          }}
+        >
           <AppointmentScheduleTable
+            page={page}
+            setPage={setPage}
             appointments={data?.data?.appointments || []}
             loading={loading}
             error={error}
@@ -535,13 +579,13 @@ export default function Schedule() {
 
         {/* Appointments Grid */}
         {loading ? (
-          <Grid container spacing={2}>
+          <Grid container spacing={{ xs: 2, md: 2 }}>
             {Array.from({ length: 4 }).map((_, index) => (
-              <Grid item xs={12} md={6} key={index}>
+              <Grid item xs={12} sm={6} key={index}>
                 <Card
                   sx={{
                     borderRadius: "20px",
-                    p: 3,
+                    p: { xs: 2, md: 3 },
                     boxShadow: "0 4px 20px rgba(82, 172, 140, 0.15)",
                   }}
                 >
@@ -566,8 +610,8 @@ export default function Schedule() {
           </Grid>
         ) : filteredAppointments && filteredAppointments.length > 0 ? (
           <>
-            <Grid container spacing={2}>
-              {filteredAppointments.map((session) => {
+            <Grid container spacing={{ xs: 2, md: 2 }}>
+              {displayedAppointments.map((session) => {
                 const timeStatus = getTimeStatus(
                   session?.appointmentDate,
                   session?.appointmentTime
@@ -578,321 +622,423 @@ export default function Schedule() {
                 const StatusIcon = config.icon;
 
                 return (
-                  <Grid item xs={12} md={6} key={session.id}>
-                    <Fade in timeout={300}>
-                      <Card
-                        sx={{
-                          borderRadius: "20px",
-                          boxShadow: "0 4px 20px rgba(82, 172, 140, 0.15)",
-                          border: "1px solid rgba(82, 172, 140, 0.2)",
-                          position: "relative",
-                          overflow: "visible",
-                          p: 3,
-                          transition: "all 0.3s ease",
-                          "&:hover": {
-                            transform: "translateY(-4px)",
-                            boxShadow: "0 8px 30px rgba(82, 172, 140, 0.25)",
+                  <Grid size={{ xs: 12, md: 6 }} key={session.id}>
+                    {/* <Fade in timeout={300}> */}
+                    <Card
+                      sx={{
+                        borderRadius: { xs: "16px", md: "20px" },
+                        boxShadow: "0 4px 20px rgba(82, 172, 140, 0.15)",
+                        border: "1px solid rgba(82, 172, 140, 0.2)",
+                        position: "relative",
+                        overflow: "hidden",
+                        p: { xs: 2, md: 3 },
+                        transition: "all 0.3s ease",
+                        width: "100%",
+                        boxSizing: "border-box",
+                        "&:hover": {
+                          transform: { md: "translateY(-4px)" },
+                          boxShadow: {
+                            md: "0 8px 30px rgba(82, 172, 140, 0.25)",
                           },
-                        }}
-                      >
-                        {/* Ready Badge */}
-                        {timeStatus &&
-                          session.status?.toLowerCase() === "confirmed" && (
-                            <Box
-                              sx={{
-                                position: "absolute",
-                                top: -12,
-                                left: 20,
-                                px: 2,
-                                py: 0.5,
-                                borderRadius: "8px",
-                                background:
-                                  "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
-                                color: "white",
-                                fontSize: "12px",
-                                fontWeight: 600,
-                                boxShadow: "0 2px 8px rgba(82, 172, 140, 0.4)",
-                                zIndex: 10,
-                              }}
-                            >
-                              Ready to Start
-                            </Box>
-                          )}
+                        },
+                      }}
+                    >
+                      {/* Ready Badge */}
+                      {timeStatus &&
+                        session.status?.toLowerCase() === "confirmed" && (
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              top: { xs: -10, md: -12 },
+                              left: { xs: 12, md: 20 },
+                              px: { xs: 1.5, md: 2 },
+                              py: 0.5,
+                              borderRadius: "8px",
+                              background:
+                                "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                              color: "white",
+                              fontSize: { xs: "8px", md: "12px" },
+                              fontWeight: 600,
+                              boxShadow: "0 2px 8px rgba(82, 172, 140, 0.4)",
+                              zIndex: 10,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            Ready to Start
+                          </Box>
+                        )}
 
-                        {/* Header: Patient Info & Status */}
+                      {/* Header */}
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        justifyContent="space-between"
+                        alignItems="flex-start"
+                        mb={2}
+                        spacing={{ xs: 2, md: 2 }}
+                        sx={{ minWidth: 0 }}
+                      >
                         <Stack
                           direction="row"
-                          justifyContent="space-between"
-                          alignItems="flex-start"
-                          mb={2}
+                          spacing={{ xs: 1.5, md: 2 }}
+                          alignItems="center"
+                          sx={{ minWidth: 0 }}
                         >
-                          <Stack
-                            direction="row"
-                            spacing={2}
-                            alignItems="center"
+                          <Avatar
+                            src={session?.patient?.image}
+                            sx={{
+                              width: { xs: 50, md: 70 },
+                              height: { xs: 50, md: 70 },
+                              border: "3px solid",
+                              borderColor: config.color,
+                              boxShadow: `0 2px 8px ${config.color}40`,
+                              flexShrink: 0,
+                            }}
                           >
-                            <Avatar
-                              src={session?.patient?.image}
+                            {session?.patient?.name?.charAt(0) || "?"}
+                          </Avatar>
+
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography
+                              variant="h6"
+                              fontWeight="700"
+                              color="primary.main"
                               sx={{
-                                width: 70,
-                                height: 70,
-                                border: "3px solid",
-                                borderColor: config.color,
-                                boxShadow: `0 2px 8px ${config.color}40`,
+                                fontSize: { xs: ".9rem", md: "1.25rem" },
+                                wordBreak: "break-word",
                               }}
                             >
-                              {session?.patient?.name?.charAt(0) || "?"}
-                            </Avatar>
-                            <Box>
-                              <Typography
-                                variant="h6"
-                                fontWeight="700"
-                                color="primary.main"
-                              >
-                                {session?.patient?.name}
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                fontWeight="500"
-                              >
-                                ID: #{session?.patient?.id?.slice(-6)}
-                              </Typography>
-                              <Stack direction="row" spacing={1} mt={0.5}>
+                              {session?.patient?.name}
+                            </Typography>
+
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              fontWeight="500"
+                              sx={{
+                                display: { xs: "none", sm: "block" },
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              ID: #{session?.patient?.id?.slice(-6)}
+                            </Typography>
+
+                            <Stack
+                              direction="row"
+                              spacing={0.5}
+                              mt={0.5}
+                              flexWrap="wrap"
+                            >
+                              {session?.patient?.age && (
                                 <Chip
                                   label={`${session?.patient?.age}y`}
                                   size="small"
                                   sx={{
-                                    height: "20px",
-                                    fontSize: "11px",
+                                    height: "24px",
+                                    fontSize: { xs: "9px", md: "11px" },
                                     fontWeight: 600,
                                   }}
                                 />
+                              )}
+                              {session?.patient?.gender && (
                                 <Chip
                                   label={session?.patient?.gender}
                                   size="small"
                                   sx={{
-                                    height: "20px",
-                                    fontSize: "11px",
+                                    height: "24px",
+                                    fontSize: { xs: "9px", md: "11px" },
                                     fontWeight: 600,
                                   }}
                                 />
-                              </Stack>
-                            </Box>
-                          </Stack>
-
-                          <Stack spacing={1} alignItems="flex-end">
-                            <Chip
-                              icon={<StatusIcon />}
-                              label={config.label}
-                              sx={{
-                                background: config.bg,
-                                color: config.color,
-                                fontWeight: 700,
-                                fontSize: "12px",
-                                height: "28px",
-                                border: `1px solid ${config.color}`,
-                                "& .MuiChip-icon": {
-                                  color: config.color,
-                                },
-                              }}
-                            />
-                            <IconButton
-                              size="small"
-                              onClick={(e) => handleMenuOpen(e, session)}
-                              sx={{
-                                color: "primary.main",
-                                "&:hover": {
-                                  backgroundColor: "rgba(82, 172, 140, 0.1)",
-                                },
-                              }}
-                            >
-                              <MoreVert />
-                            </IconButton>
-                          </Stack>
-                        </Stack>
-
-                        {/* Appointment Details */}
-                        <Stack spacing={1.5} mb={2}>
-                          <Stack
-                            direction="row"
-                            spacing={2}
-                            alignItems="center"
-                          >
-                            <CalendarToday
-                              sx={{ fontSize: 18, color: "primary.main" }}
-                            />
-                            <Typography
-                              variant="body2"
-                              fontWeight="600"
-                              color="text.secondary"
-                            >
-                              {formatDate(session?.appointmentDate)}
-                            </Typography>
-                          </Stack>
-                          <Stack
-                            direction="row"
-                            spacing={2}
-                            alignItems="center"
-                          >
-                            <AccessTime
-                              sx={{ fontSize: 18, color: "primary.main" }}
-                            />
-                            <Typography
-                              variant="body2"
-                              fontWeight="600"
-                              color="text.secondary"
-                            >
-                              {formatTime(session.appointmentTime)}
-                            </Typography>
-                          </Stack>
-                          <Stack
-                            direction="row"
-                            spacing={2}
-                            alignItems="center"
-                          >
-                            <ChatBubbleOutline
-                              sx={{ fontSize: 18, color: "primary.main" }}
-                            />
-                            <Typography
-                              variant="body2"
-                              fontWeight="600"
-                              color="text.secondary"
-                            >
-                              {session.reason}
-                            </Typography>
-                          </Stack>
-                          <Stack
-                            direction="row"
-                            spacing={2}
-                            alignItems="center"
-                          >
-                            {session.appointmentType === "video" ? (
-                              <VideoCall
-                                sx={{ fontSize: 18, color: "primary.main" }}
-                              />
-                            ) : (
-                              <Phone
-                                sx={{ fontSize: 18, color: "primary.main" }}
-                              />
-                            )}
-                            <Typography
-                              variant="body2"
-                              fontWeight="600"
-                              color="text.secondary"
-                              sx={{ textTransform: "capitalize" }}
-                            >
-                              {session.appointmentType} Call
-                            </Typography>
-                          </Stack>
-                        </Stack>
-
-                        {/* Time Status Badge */}
-                        {timeStatus && (
-                          <Box
-                            sx={{
-                              backgroundColor: "rgba(82, 172, 140, 0.1)",
-                              color: "primary.main",
-                              border: "1px solid",
-                              borderColor: "primary.main",
-                              borderRadius: "10px",
-                              py: 0.8,
-                              px: 2,
-                              mb: 2,
-                              textAlign: "center",
-                              fontSize: "13px",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {timeStatus}
+                              )}
+                            </Stack>
                           </Box>
-                        )}
-
-                        {/* Action Buttons */}
-                        <Stack direction="row" spacing={1.5}>
-                          {config.nextStatus && (
-                            <Button
-                              fullWidth
-                              variant="contained"
-                              endIcon={<ArrowForward />}
-                              onClick={() =>
-                                handleStatusChange(config.nextStatus, session)
-                              }
-                              sx={{
-                                background:
-                                  "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
-                                color: "white",
-                                fontWeight: 600,
-                                py: 1.2,
-                                borderRadius: "12px",
-                                textTransform: "none",
-                                boxShadow: "0 4px 12px rgba(82, 172, 140, 0.3)",
-                                "&:hover": {
-                                  background:
-                                    "linear-gradient(135deg, #3D8B6F 0%, #2E7A5F 100%)",
-                                  boxShadow:
-                                    "0 6px 16px rgba(82, 172, 140, 0.4)",
-                                },
-                              }}
-                            >
-                              {config.nextLabel}
-                            </Button>
-                          )}
-                          <Button
-                            fullWidth
-                            variant="outlined"
-                            onClick={() => {
-                              navigate("/schedule/appointmentsdetails");
-                              dispatch(setSelectedPatient(session));
-                            }}
+                        </Stack>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          justifyContent="flex-end"
+                          sx={{
+                            width: { xs: "100%", sm: "auto" },
+                          }}
+                        >
+                          <Chip
+                            icon={<StatusIcon />}
+                            label={config.label}
+                            size="small"
                             sx={{
-                              borderColor: "primary.main",
+                              background: config.bg,
+                              color: config.color,
+                              fontWeight: 700,
+                              fontSize: { xs: "9px", md: "12px" },
+                              height: { xs: "24px", md: "28px" },
+                              border: `1px solid ${config.color}`,
+                              "& .MuiChip-icon": {
+                                color: config.color,
+                              },
+                              maxWidth: "100%",
+                            }}
+                          />
+
+                          <IconButton
+                            size="small"
+                            onClick={(e) => handleMenuOpen(e, session)}
+                            sx={{
                               color: "primary.main",
-                              fontWeight: 600,
-                              py: 1.2,
-                              borderRadius: "12px",
-                              textTransform: "none",
-                              borderWidth: "2px",
+                              flexShrink: 0,
                               "&:hover": {
-                                borderWidth: "2px",
                                 backgroundColor: "rgba(82, 172, 140, 0.1)",
                               },
                             }}
                           >
-                            View Details
-                          </Button>
+                            <MoreVert sx={{ fontSize: { xs: 18, md: 22 } }} />
+                          </IconButton>
                         </Stack>
-                      </Card>
-                    </Fade>
+                      </Stack>
+
+                      {/* Appointment Details */}
+                      <Stack spacing={{ xs: 1.2, md: 1.5 }} mb={2}>
+                        {/* Date */}
+                        <Stack
+                          direction={{ xs: "column", sm: "row" }}
+                          spacing={1}
+                          alignItems={{ xs: "flex-start", sm: "center" }}
+                          sx={{ minWidth: 0 }}
+                        >
+                          <CalendarToday
+                            sx={{
+                              fontSize: { xs: 16, md: 18 },
+                              color: "primary.main",
+                              flexShrink: 0,
+                            }}
+                          />
+                          <Typography
+                            variant="body2"
+                            fontWeight="600"
+                            color="text.secondary"
+                            sx={{
+                              fontSize: { xs: "0.75rem", md: "0.875rem" },
+                              wordBreak: "break-word",
+                              whiteSpace: { xs: "normal", sm: "nowrap" },
+                              minWidth: 0,
+                            }}
+                          >
+                            {formatDate(session?.appointmentDate)}
+                          </Typography>
+                        </Stack>
+
+                        {/* Time */}
+                        <Stack
+                          direction={{ xs: "column", sm: "row" }}
+                          spacing={1}
+                          alignItems={{ xs: "flex-start", sm: "center" }}
+                          sx={{ minWidth: 0 }}
+                        >
+                          <AccessTime
+                            sx={{
+                              fontSize: { xs: 16, md: 18 },
+                              color: "primary.main",
+                              flexShrink: 0,
+                            }}
+                          />
+                          <Typography
+                            variant="body2"
+                            fontWeight="600"
+                            color="text.secondary"
+                            sx={{
+                              fontSize: { xs: "0.75rem", md: "0.875rem" },
+                              wordBreak: "break-word",
+                              whiteSpace: { xs: "normal", sm: "nowrap" },
+                              minWidth: 0,
+                            }}
+                          >
+                            {formatTime(session.appointmentTime)}
+                          </Typography>
+                        </Stack>
+
+                        {/* Reason */}
+                        <Stack
+                          direction={{ xs: "column", sm: "row" }}
+                          spacing={1}
+                          alignItems={{ xs: "flex-start", sm: "center" }}
+                          sx={{ minWidth: 0 }}
+                        >
+                          <ChatBubbleOutline
+                            sx={{
+                              fontSize: { xs: 16, md: 18 },
+                              color: "primary.main",
+                              flexShrink: 0,
+                            }}
+                          />
+                          <Typography
+                            variant="body2"
+                            fontWeight="600"
+                            color="text.secondary"
+                            sx={{
+                              fontSize: { xs: "0.75rem", md: "0.875rem" },
+                              wordBreak: "break-word",
+                              whiteSpace: { xs: "normal", sm: "nowrap" },
+                              minWidth: 0,
+                            }}
+                          >
+                            {session.reason}
+                          </Typography>
+                        </Stack>
+
+                        {/* Type */}
+                        <Stack
+                          direction={{ xs: "column", sm: "row" }}
+                          spacing={1}
+                          alignItems={{ xs: "flex-start", sm: "center" }}
+                          sx={{ minWidth: 0 }}
+                        >
+                          {session.appointmentType === "video" ? (
+                            <VideoCall
+                              sx={{
+                                fontSize: { xs: 16, md: 18 },
+                                color: "primary.main",
+                                flexShrink: 0,
+                              }}
+                            />
+                          ) : (
+                            <Phone
+                              sx={{
+                                fontSize: { xs: 16, md: 18 },
+                                color: "primary.main",
+                                flexShrink: 0,
+                              }}
+                            />
+                          )}
+
+                          <Typography
+                            variant="body2"
+                            fontWeight="600"
+                            color="text.secondary"
+                            sx={{
+                              textTransform: "capitalize",
+                              fontSize: { xs: "0.75rem", md: "0.875rem" },
+                              wordBreak: "break-word",
+                              whiteSpace: { xs: "normal", sm: "nowrap" },
+                              minWidth: 0,
+                            }}
+                          >
+                            {session.appointmentType} Call
+                          </Typography>
+                        </Stack>
+                      </Stack>
+
+                      {/* Time Status */}
+                      {timeStatus && (
+                        <Box
+                          sx={{
+                            backgroundColor: "rgba(82, 172, 140, 0.1)",
+                            color: "primary.main",
+                            border: "1px solid",
+                            borderColor: "primary.main",
+                            borderRadius: "10px",
+                            py: 0.8,
+                            px: 2,
+                            mb: 2,
+                            textAlign: "center",
+                            fontSize: { xs: "10px", md: "13px" },
+                            fontWeight: 600,
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {timeStatus}
+                        </Box>
+                      )}
+
+                      {/* Buttons */}
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={{ xs: 1, sm: 1.5 }}
+                      >
+                        {config.nextStatus && (
+                          <Button
+                            fullWidth
+                            variant="contained"
+                            endIcon={<ArrowForward />}
+                            onClick={() =>
+                              handleStatusChange(config.nextStatus, session)
+                            }
+                            sx={{
+                              background:
+                                "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                              color: "white",
+                              fontWeight: 600,
+                              py: { xs: 1, md: 1.2 },
+                              borderRadius: "12px",
+                              textTransform: "none",
+                              fontSize: { xs: "11px", md: "15px" },
+                              boxShadow: "0 4px 12px rgba(82, 172, 140, 0.3)",
+                            }}
+                          >
+                            {config.nextLabel}
+                          </Button>
+                        )}
+
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          onClick={() => {
+                            const currentIndex =
+                              data?.data?.appointments.findIndex(
+                                (p) => p.id === session.id
+                              );
+                            const nextPatient =
+                              data?.data?.appointments[currentIndex + 1] ||
+                              null;
+                            dispatch(setSelectedPatient2(nextPatient));
+                            dispatch(setSelectedPatient(session));
+                            navigate("/schedule/appointmentsdetails");
+                          }}
+                          sx={{
+                            borderColor: "primary.main",
+                            color: "primary.main",
+                            fontWeight: 600,
+                            py: { xs: 1, md: 1.2 },
+                            borderRadius: "12px",
+                            textTransform: "none",
+                            fontSize: { xs: "11px", md: "15px" },
+                            borderWidth: "2px",
+                          }}
+                        >
+                          View Details
+                        </Button>
+                      </Stack>
+                    </Card>
+                    {/* </Fade> */}
                   </Grid>
                 );
               })}
             </Grid>
-
             {/* Pagination */}
-            {data?.data?.pagination?.totalPages > 1 && (
+            {filteredAppointments.length > ITEMS_PER_PAGE && (
               <Box
                 sx={{
-                  mt: 4,
                   display: "flex",
                   justifyContent: "center",
                 }}
               >
                 <Pagination
-                  count={data?.data?.pagination?.totalPages}
-                  page={page}
-                  onChange={handlePageChange}
-                  color="primary"
-                  size="large"
+                  count={totalPages}
+                  page={localPage}
+                  onChange={(e, value) => setLocalPage(value)}
+                  size={window.innerWidth < 600 ? "small" : "medium"}
+                  shape="rounded"
+                  color="white"
                   sx={{
+                    color: "white",
+                    mb: 2,
+                    mt: 2,
                     "& .MuiPaginationItem-root": {
-                      borderRadius: "12px",
                       fontWeight: 600,
-                      "&.Mui-selected": {
-                        background:
-                          "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
-                        color: "white",
-                      },
+                    },
+                    "& .Mui-selected": {
+                      background:
+                        "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%) !important",
+                      color: "#fff",
                     },
                   }}
                 />
@@ -905,14 +1051,15 @@ export default function Schedule() {
               borderRadius: "20px",
               boxShadow: "0 4px 20px rgba(82, 172, 140, 0.15)",
               border: "1px solid rgba(82, 172, 140, 0.2)",
-              p: 6,
+              p: { xs: 4, md: 6 },
               textAlign: "center",
+              mx: { xs: 1, md: 0 },
             }}
           >
             <Box
               sx={{
-                width: 80,
-                height: 80,
+                width: { xs: 60, md: 80 },
+                height: { xs: 60, md: 80 },
                 borderRadius: "50%",
                 background: "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
                 display: "flex",
@@ -922,22 +1069,28 @@ export default function Schedule() {
                 opacity: 0.8,
               }}
             >
-              <EventAvailable sx={{ fontSize: 40, color: "white" }} />
+              <EventAvailable
+                sx={{ fontSize: { xs: 25, md: 40 }, color: "white" }}
+              />
             </Box>
             <Typography
               variant="h6"
               fontWeight="700"
               color="primary.main"
               mb={1}
+              sx={{ fontSize: { xs: ".8rem", md: "1.25rem" } }}
             >
               No Appointments Found
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ fontSize: { xs: "0.65rem", md: "0.95rem" } }}
+            >
               There are no appointments in this category
             </Typography>
           </Card>
         )}
-
         {/* Status Update Menu */}
         <Menu
           anchorEl={anchorEl}
@@ -949,51 +1102,80 @@ export default function Schedule() {
               boxShadow: "0 4px 20px rgba(82, 172, 140, 0.2)",
               border: "1px solid rgba(82, 172, 140, 0.2)",
               mt: 1,
+              minWidth: { xs: 200, md: 250 },
             },
           }}
         >
           <MenuItem
             onClick={() => handleStatusChange("scheduled")}
-            sx={{ fontWeight: 600, color: "#3B82F6" }}
+            sx={{
+              fontWeight: 600,
+              color: "#3B82F6",
+              fontSize: { xs: "10px", md: "14px" },
+            }}
           >
-            <CalendarToday sx={{ mr: 1, fontSize: 18 }} />
+            <CalendarToday sx={{ mr: 1, fontSize: { xs: 15, md: 18 } }} />
             Mark as Scheduled
           </MenuItem>
           <MenuItem
             onClick={() => handleStatusChange("confirmed")}
-            sx={{ fontWeight: 600, color: "#F59E0B" }}
+            sx={{
+              fontWeight: 600,
+              color: "#F59E0B",
+              fontSize: { xs: "10px", md: "14px" },
+            }}
           >
-            <CheckCircle sx={{ mr: 1, fontSize: 18 }} />
+            <CheckCircle sx={{ mr: 1, fontSize: { xs: 15, md: 18 } }} />
             Mark as Confirmed
           </MenuItem>
           <MenuItem
             onClick={() => handleStatusChange("inprogress")}
-            sx={{ fontWeight: 600, color: "#10B981" }}
+            sx={{
+              fontWeight: 600,
+              color: "#10B981",
+              fontSize: { xs: "10px", md: "14px" },
+            }}
           >
-            <HourglassEmpty sx={{ mr: 1, fontSize: 18 }} />
+            <HourglassEmpty sx={{ mr: 1, fontSize: { xs: 15, md: 18 } }} />
             Mark as In Progress
           </MenuItem>
           <MenuItem
             onClick={() => handleStatusChange("completed")}
-            sx={{ fontWeight: 600, color: "#6B7280" }}
+            sx={{
+              fontWeight: 600,
+              color: "#6B7280",
+              fontSize: { xs: "10px", md: "14px" },
+            }}
           >
-            <CheckCircle sx={{ mr: 1, fontSize: 18 }} />
+            <CheckCircle sx={{ mr: 1, fontSize: { xs: 15, md: 18 } }} />
             Mark as Completed
           </MenuItem>
           <MenuItem
             onClick={() => handleStatusChange("cancelled")}
-            sx={{ fontWeight: 600, color: "#EF4444" }}
+            sx={{
+              fontWeight: 600,
+              color: "#EF4444",
+              fontSize: { xs: "10px", md: "14px" },
+            }}
           >
-            <Cancel sx={{ mr: 1, fontSize: 18 }} />
+            <Cancel sx={{ mr: 1, fontSize: { xs: 15, md: 18 } }} />
             Mark as Cancelled
           </MenuItem>
         </Menu>
-
         {/* Footer */}
         <Box
-          sx={{ mt: 4, py: 2, textAlign: "center", color: "text.secondary" }}
+          sx={{
+            mt: 4,
+            py: 2,
+            textAlign: "center",
+            color: "text.secondary",
+            px: { xs: 1, md: 0 },
+          }}
         >
-          <Typography variant="caption">
+          <Typography
+            variant="caption"
+            sx={{ fontSize: { xs: "0.5rem", md: "0.75rem" } }}
+          >
             © 2026 DoctorMate | Your Digital Healthcare Partner
           </Typography>
         </Box>

@@ -9,11 +9,6 @@ export const addDiagnoses = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      console.log("medicalRecordId: ", medicalRecordId);
-      console.log("appointmentId: ", appointmentId);
-      console.log("icdCode: ", icdCode);
-      console.log("description: ", description);
-      console.log("severity: ", severity);
       const response = await api.post(
         "/diagnoses",
         {
@@ -24,7 +19,6 @@ export const addDiagnoses = createAsyncThunk(
           severity,
         }
       );
-      console.log("response.data: ", response.data);
       return response.data;
     } catch (error) {
       console.log(error);
