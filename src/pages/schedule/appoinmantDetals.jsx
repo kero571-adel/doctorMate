@@ -17,6 +17,7 @@ import {
   Skeleton,
   Alert,
 } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import PhoneIcon from "@mui/icons-material/Phone";
 import EmailIcon from "@mui/icons-material/Email";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
@@ -51,6 +52,11 @@ import { setUserInfo } from "../../redux/imageViwer/data";
 import { setMediclImage } from "../../redux/imageViwer/data";
 import { setSelectedPatient } from "../../redux/schedule/schedule";
 import { setSelectedPatient2 } from "../../redux/schedule/schedule";
+import { clearSessionError } from "../../redux/communication/communicationSlice";
+// ✅ NEW: Import startSession for communication
+import { startSession } from "../../redux/communication/communicationSlice";
+import Snackbar from "@mui/material/Snackbar";
+import CloseIcon from "@mui/icons-material/Close";
 
 const cardStyle = {
   p: { xs: 2, sm: 3 },
@@ -90,6 +96,7 @@ const statusConfig = {
 
 export default function AppointmentsDetails() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [openAddPrescription, setopenAddPrescription] = useState(false);
   const [openMedicalModal, setOpenMedicalModal] = useState(false);
   const [openDiagnosis, setOpenDiagnosis] = useState(false);
@@ -99,22 +106,27 @@ export default function AppointmentsDetails() {
   const [showMoreDiagnoses, setShowMoreDiagnoses] = useState(false);
   const [showMorePrescriptions, setShowMorePrescriptions] = useState(false);
 
+  const handleClose = () => {
+    dispatch(clearSessionError());
+  };
+  // 🔹 Redux Selectors
   const selectedPatient = useSelector(
     (state) => state.schedule.selectedPatient
   );
   const selectedPatient2 = useSelector(
     (state) => state.schedule.selectedPatient2
   );
-  console.log("selectedPatient2: ", selectedPatient2);
   const { data } = useSelector((state) => state.schedule);
-  console.log("data: ", data);
   const patientDetails = useSelector((state) => state.patientdet.datapatient);
   const appoinDetails = useSelector((state) => state.patientdet.dataApp);
   const appoinDetails2 = useSelector((state) => state.patientdet.dataApp2);
-  console.log("appoinDetails: ", appoinDetails);
-  console.log("appoinDetails2: ", appoinDetails2);
-  const dispatch = useDispatch();
 
+  // ✅ NEW: Communication State from Redux
+  const { session, sessionStatus, sessionError } = useSelector(
+    (state) => state.communication
+  );
+  console.log("sessionError:", sessionError);
+  // 🔹 Fetch Data on Mount
   useEffect(() => {
     if (selectedPatient?.patient?.id) {
       dispatch(getPatientDetals({ id: selectedPatient.patient.id }));
@@ -122,10 +134,10 @@ export default function AppointmentsDetails() {
     if (selectedPatient?.id) {
       dispatch(getAppDetById({ id: selectedPatient.id }));
     }
-    if (setSelectedPatient2?.id) {
-      dispatch(getAppDetById2({ id: setSelectedPatient2.id }));
+    if (selectedPatient2?.id) {
+      dispatch(getAppDetById2({ id: selectedPatient2.id }));
     }
-  }, [selectedPatient, setSelectedPatient2, dispatch]);
+  }, [selectedPatient, selectedPatient2, dispatch]);
 
   useEffect(() => {
     if (appoinDetails?.data) {
@@ -143,6 +155,7 @@ export default function AppointmentsDetails() {
     }
   }, [appoinDetails, dispatch]);
 
+  // 🔹 Helper Functions
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
@@ -186,7 +199,112 @@ export default function AppointmentsDetails() {
     }
   }
 
-  // Helper to prepare records array (handles both single object and array)
+  // ✅ NEW: Handle Start Communication (Join Chat)
+  const handleJoinChat = async () => {
+    if (!appoinDetails?.data?.id) {
+      return;
+    }
+
+    try {
+      // 1. Start session via API/Redux
+      await dispatch(
+        startSession({ appointmentId: appoinDetails.data.id })
+      ).unwrap();
+
+      // 2. Set patient context
+      dispatch(setSelectedPatient(appoinDetails.data));
+
+      // 3. Navigate to message page
+      navigate("/message");
+    } catch (error) {
+      console.error("Failed to join chat:", error);
+
+      // ✅ Handle "session already exists" error (409 Conflict)
+      if (
+        error?.includes?.("already exists") ||
+        error?.includes?.("active chat session")
+      ) {
+        console.log("✅ Session already exists - fetching existing session");
+
+        // Option: Fetch existing sessions to get the active one
+        try {
+          const response = await api.get("/communication/sessions/active");
+          const existingSession = response.data.data;
+
+          // Update Redux state with existing session
+          dispatch({
+            type: "communication/startSession/fulfilled",
+            payload: existingSession,
+          });
+
+          dispatch(setSelectedPatient(appoinDetails.data));
+          navigate("/message");
+        } catch (fetchError) {
+          console.error("Failed to fetch existing session:", fetchError);
+        }
+      } 
+    }
+  };
+
+  // ✅ NEW: Get Patient Connection Status (Dynamic Online Dot)
+  const getPatientConnectionStatus = () => {
+    // No session at all
+    if (!session?.id) {
+      return {
+        label: "Offline",
+        color: "#6B7280", // Gray
+        bgColor: "rgba(107, 114, 128, 0.2)",
+        pulse: false,
+      };
+    }
+
+    // Check if this appointment matches the session
+    if (session?.appointmentId !== appoinDetails?.data?.id) {
+      return {
+        label: "Offline",
+        color: "#6B7280",
+        bgColor: "rgba(107, 114, 128, 0.2)",
+        pulse: false,
+      };
+    }
+
+    // Based on session status
+    switch (sessionStatus) {
+      case "active":
+        return {
+          label: "In Session",
+          color: "#22C55E", // Green
+          bgColor: "rgba(34, 197, 94, 0.2)",
+          pulse: true,
+        };
+      case "waiting":
+        return {
+          label: "Waiting",
+          color: "#F59E0B", // Amber
+          bgColor: "rgba(245, 158, 11, 0.2)",
+          pulse: true,
+        };
+      case "ended":
+        return {
+          label: "Session Ended",
+          color: "#6B7280", // Gray
+          bgColor: "rgba(107, 114, 128, 0.2)",
+          pulse: false,
+        };
+      default:
+        return {
+          label: "Offline",
+          color: "#6B7280",
+          bgColor: "rgba(107, 114, 128, 0.2)",
+          pulse: false,
+        };
+    }
+  };
+
+  // Get patient status for Online Dot
+  const patientStatus = getPatientConnectionStatus();
+
+  // Helper to prepare records array
   const medicalRecordsList = Array.isArray(appoinDetails?.data?.medicalRecord)
     ? appoinDetails?.data?.medicalRecord
     : appoinDetails?.data?.medicalRecord
@@ -220,6 +338,17 @@ export default function AppointmentsDetails() {
       <AddDiagnosis
         openDiagnosis={openDiagnosis}
         setopenDiagnosis={setOpenDiagnosis}
+      />
+      <Snackbar
+        open={sessionError ? true : false}
+        autoHideDuration={2000}
+        onClose={handleClose}
+        background="red"
+        message={
+          sessionError?.includes("Communication window has closed")
+            ? "Session closed"
+            : "Failed to start session"
+        }
       />
       <Stack direction="row">
         <NavBar />
@@ -1360,22 +1489,16 @@ export default function AppointmentsDetails() {
                     </Box>
                   </Card>
                   {/* Prescriptions */}
-                  <Card sx={{ ...cardStyle, mt: 3 ,overflow: "auto"}}>
+                  <Card sx={{ ...cardStyle, mt: 3, overflow: "auto" }}>
                     {/* Header */}
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
                       justifyContent="space-between"
                       alignItems={{ xs: "flex-start", sm: "center" }}
                       mb={3}
-                      
                       spacing={2}
                     >
-                      <Stack
-                        direction="row"
-                        spacing={1.5}
-                        alignItems="center"
-                        
-                      >
+                      <Stack direction="row" spacing={1.5} alignItems="center">
                         <Box
                           sx={{
                             width: 36,
@@ -1674,7 +1797,8 @@ export default function AppointmentsDetails() {
                       >
                         Session
                       </Typography>
-                      {/* Online Dot */}
+
+                      {/* ✅ DYNAMIC ONLINE DOT - Based on Redux sessionStatus */}
                       <Box
                         sx={{
                           display: "flex",
@@ -1687,9 +1811,13 @@ export default function AppointmentsDetails() {
                             width: 12,
                             height: 12,
                             borderRadius: "50%",
-                            backgroundColor: "#22C55E",
-                            boxShadow: "0 0 8px rgba(34, 197, 94, 0.5)",
-                            animation: "pulse 2s infinite",
+                            backgroundColor: patientStatus.color,
+                            boxShadow: patientStatus.pulse
+                              ? `0 0 8px ${patientStatus.color}`
+                              : "none",
+                            animation: patientStatus.pulse
+                              ? "pulse 2s infinite"
+                              : "none",
                             "@keyframes pulse": {
                               "0%, 100%": { opacity: 1 },
                               "50%": { opacity: 0.5 },
@@ -1699,91 +1827,155 @@ export default function AppointmentsDetails() {
                         <Typography
                           variant="caption"
                           fontWeight={600}
-                          color="#22C55E"
+                          color={patientStatus.color}
                           fontSize={{ xs: "10px", sm: "12px" }}
                         >
-                          Online
+                          {patientStatus.label}
                         </Typography>
                       </Box>
                     </Stack>
-                    {/* Timer */}
-                    <Box textAlign="center" mb={4}>
-                      <Typography
-                        sx={{
-                          fontSize: { xs: "40px", sm: "56px" },
-                          fontWeight: "700",
-                          background:
-                            "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
-                          backgroundClip: "text",
-                          WebkitBackgroundClip: "text",
-                          WebkitTextFillColor: "transparent",
-                          lineHeight: 1,
-                        }}
-                      >
-                        10:01
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: "text.secondary",
-                          mt: 1,
-                          fontWeight: 500,
-                          fontSize: { xs: "12px", sm: "14px" },
-                        }}
-                      >
-                        Elapsed Time
-                      </Typography>
-                    </Box>
-                    {/* Buttons */}
-                    <Stack spacing={2}>
-                      <Button
-                        fullWidth
-                        startIcon={<VideocamIcon />}
-                        sx={{
-                          py: { xs: 1.5, sm: 1.8 },
-                          borderRadius: "12px",
-                          textTransform: "none",
-                          fontSize: { xs: "13px", sm: "15px" },
-                          fontWeight: 600,
-                          background:
-                            "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
-                          color: "white",
-                          boxShadow: "0 4px 16px rgba(82, 172, 140, 0.3)",
-                          "&:hover": {
+
+                    {/* Timer - Only show when session is active */}
+                    {sessionStatus === "active" && (
+                      <Box textAlign="center" mb={4}>
+                        <Typography
+                          sx={{
+                            fontSize: { xs: "40px", sm: "56px" },
+                            fontWeight: "700",
                             background:
-                              "linear-gradient(135deg, #3D8B6F 0%, #2E6B55 100%)",
-                            boxShadow: "0 6px 20px rgba(82, 172, 140, 0.4)",
-                            transform: "translateY(-2px)",
-                          },
-                          transition: "all 0.3s ease",
-                        }}
-                      >
-                        Start Video Call
-                      </Button>
-                      <Button
-                        fullWidth
-                        startIcon={<ChatBubbleOutlineIcon />}
+                              "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)",
+                            backgroundClip: "text",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                            lineHeight: 1,
+                          }}
+                        >
+                          10:01
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "text.secondary",
+                            mt: 1,
+                            fontWeight: 500,
+                            fontSize: { xs: "12px", sm: "14px" },
+                          }}
+                        >
+                          Elapsed Time
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {/* Buttons */}
+                    {/* Buttons */}
+
+                    {/* ✅ Join Chat Button - Always Visible, Disabled when not eligible */}
+                    <Button
+                      fullWidth
+                      startIcon={<ChatBubbleOutlineIcon />}
+                      onClick={() => {
+                        // Only work if eligible
+                        if (
+                          ["confirmed", "inprogress"].includes(
+                            appoinDetails?.data?.status?.toLowerCase()
+                          )
+                        ) {
+                          handleJoinChat();
+                        }
+                      }}
+                      disabled={
+                        !["confirmed", "inprogress"].includes(
+                          appoinDetails?.data?.status?.toLowerCase()
+                        )
+                      }
+                      sx={{
+                        py: { xs: 1.5, sm: 1.8 },
+                        borderRadius: "12px",
+                        textTransform: "none",
+                        fontSize: { xs: "13px", sm: "15px" },
+                        fontWeight: 600,
+                        border: "2px solid #52AC8C",
+                        color: !["confirmed", "inprogress"].includes(
+                          appoinDetails?.data?.status?.toLowerCase()
+                        )
+                          ? "#999"
+                          : sessionStatus === "active"
+                          ? "#667EEA"
+                          : "primary.main",
+                        backgroundColor: "white",
+                        cursor: !["confirmed", "inprogress"].includes(
+                          appoinDetails?.data?.status?.toLowerCase()
+                        )
+                          ? "not-allowed"
+                          : "pointer",
+                        "&:hover": {
+                          backgroundColor: ![
+                            "confirmed",
+                            "inprogress",
+                          ].includes(appoinDetails?.data?.status?.toLowerCase())
+                            ? "white"
+                            : "rgba(82, 172, 140, 0.05)",
+                          borderColor: !["confirmed", "inprogress"].includes(
+                            appoinDetails?.data?.status?.toLowerCase()
+                          )
+                            ? "#ddd"
+                            : "#3D8B6F",
+                        },
+                        transition: "all 0.3s ease",
+                        "&:disabled": {
+                          background: "#f5f5f5",
+                          color: "#999",
+                          borderColor: "#ddd",
+                        },
+                      }}
+                    >
+                      {!["confirmed", "inprogress"].includes(
+                        appoinDetails?.data?.status?.toLowerCase()
+                      )
+                        ? "Chat Not Available"
+                        : sessionStatus === "active"
+                        ? "Go to Chat"
+                        : "Join Chat"}
+                    </Button>
+                    {/* ✅ Helper Text - Shows why button is disabled */}
+                    {!["confirmed", "inprogress"].includes(
+                      appoinDetails?.data?.status?.toLowerCase()
+                    ) && (
+                      <Box
                         sx={{
-                          py: { xs: 1.5, sm: 1.8 },
-                          borderRadius: "12px",
-                          textTransform: "none",
-                          fontSize: { xs: "13px", sm: "15px" },
-                          fontWeight: 600,
-                          border: "2px solid #52AC8C",
-                          color: "primary.main",
-                          backgroundColor: "white",
-                          "&:hover": {
-                            backgroundColor: "rgba(82, 172, 140, 0.05)",
-                            borderColor: "#3D8B6F",
-                            transform: "translateY(-2px)",
-                          },
-                          transition: "all 0.3s ease",
+                          mt: 1,
+                          p: 1.5,
+                          bgcolor: "#F3F4F6",
+                          borderRadius: "8px",
+                          border: "1px solid #E5E7EB",
                         }}
                       >
-                        Join Chat
-                      </Button>
-                    </Stack>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{
+                            fontSize: { xs: "10px", sm: "11px" },
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                          }}
+                        >
+                          <InfoOutlinedIcon sx={{ fontSize: 14 }} />
+                          {appoinDetails?.data?.status?.toLowerCase() ===
+                          "completed"
+                            ? "This session has ended. Chat is no longer available."
+                            : appoinDetails?.data?.status?.toLowerCase() ===
+                              "scheduled"
+                            ? "Chat will be available when appointment is confirmed."
+                            : appoinDetails?.data?.status?.toLowerCase() ===
+                              "cancelled"
+                            ? "This appointment was cancelled."
+                            : "Chat is not available for this status."}
+                        </Typography>
+                      </Box>
+                    )}
                   </Card>
+
                   {/* Quick Notes */}
                   <Card sx={cardStyle}>
                     {/* Header */}
@@ -1876,6 +2068,7 @@ export default function AppointmentsDetails() {
                       </Button>
                     </Stack>
                   </Card>
+
                   {/* NEXT PATIENT */}
                   <Card sx={cardStyle}>
                     <Typography

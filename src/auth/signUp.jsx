@@ -250,10 +250,10 @@ export default function SignUp() {
           {/* Error Alert */}
           {(localError || error) && (
             <Fade in={!!(localError || error)}>
-              <Alert 
-                severity="error" 
-                sx={{ 
-                  width: "90%", 
+              <Alert
+                severity="error"
+                sx={{
+                  width: "90%",
                   mb: 2,
                   borderRadius: "10px",
                 }}

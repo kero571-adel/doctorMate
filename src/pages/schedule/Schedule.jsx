@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Card,
@@ -17,6 +18,7 @@ import {
   MenuItem,
   Tooltip,
 } from "@mui/material";
+import api from "../../utils/api";
 import {
   AccessTime,
   VideoCall,
@@ -31,20 +33,30 @@ import {
   ArrowForward,
   Phone,
 } from "@mui/icons-material";
-import { setSelectedPatient } from "../../redux/schedule/schedule";
-import NavBar from "../../components/navBar";
-import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { appointmentsDoctor } from "../../redux/schedule/schedule";
-import { useNavigate } from "react-router";
-import { appointmentsStatus } from "../../redux/schedule/schedule";
-import AppointmentScheduleTable from "./timeLineAppomint";
+import { useNavigate } from "react-router-dom";
+
+// Redux Actions
+import {
+  setSelectedPatient,
+  setSelectedPatient2,
+  appointmentsDoctor,
+  appointmentsStatus,
+} from "../../redux/schedule/schedule";
+import { startSession } from "../../redux/communication/communicationSlice"; // ✅ Import Start Session
 import { getDataDoctor } from "../../redux/doctor/doctor";
-import { setSelectedPatient2 } from "../../redux/schedule/schedule";
+import NavBar from "../../components/navBar";
+import AppointmentScheduleTable from "./timeLineAppomint";
+
 export default function Schedule() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { data, loading, error } = useSelector((state) => state.schedule);
+  const { user } = useSelector((state) => state.doctor);
   const userLS = JSON.parse(localStorage.getItem("user") || "{}");
+  const { session: activeSession } = useSelector(
+    (state) => state.communication
+  );
   const ITEMS_PER_PAGE = 6;
   const [btnHeader, setbtnHeader] = useState({
     Upcoming: true,
@@ -56,7 +68,7 @@ export default function Schedule() {
   const [page, setPage] = useState(1);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const navigate = useNavigate();
+
   // Helper Functions
   const handleMenuOpen = (event, appointment) => {
     setAnchorEl(event.currentTarget);
@@ -83,11 +95,6 @@ export default function Schedule() {
     }
   };
 
-  const handlePageChange = (event, value) => {
-    event.preventDefault();
-    setPage(value);
-  };
-
   const handleRefresh = () => {
     dispatch(appointmentsDoctor({ page, limit: 10 }));
   };
@@ -96,6 +103,7 @@ export default function Schedule() {
     const datePart = date.split("T")[0];
     return new Date(`${datePart}T${time}`);
   };
+
   const getTimeStatus = (appointmentDate, appointmentTime) => {
     if (!appointmentDate || !appointmentTime) return null;
     const now = new Date();
@@ -189,10 +197,8 @@ export default function Schedule() {
       Completed: ["completed"],
       Cancel: ["cancelled"],
     };
-
     const activeFilter = Object.keys(btnHeader).find((key) => btnHeader[key]);
     if (!activeFilter) return appointments;
-
     return appointments.filter((apt) =>
       statusMap[activeFilter]?.includes(apt.status?.toLowerCase())
     );
@@ -200,22 +206,82 @@ export default function Schedule() {
 
   const filteredAppointments = getFilteredAppointments();
   const totalPages = Math.ceil(filteredAppointments.length / ITEMS_PER_PAGE);
-
   const displayedAppointments = filteredAppointments.slice(
     (localPage - 1) * ITEMS_PER_PAGE,
     localPage * ITEMS_PER_PAGE
   );
+
   useEffect(() => {
     dispatch(appointmentsDoctor({ page, limit: 10 }));
   }, [dispatch, page]);
-  const { user } = useSelector((state) => state.doctor);
 
   useEffect(() => {
     setLocalPage(1);
   }, [btnHeader]);
+
   useEffect(() => {
     dispatch(getDataDoctor());
   }, []);
+
+  const handleStartCommunication = async (session) => {
+    console.log("🔹 Start Communication clicked");
+
+    // ✅ لو فيه session شغال لنفس ال appointment
+    if (
+      activeSession &&
+      (activeSession.appointmentId === session.id ||
+        activeSession.sessionId === session.id)
+    ) {
+      console.log("⚠️ Session already active → navigate مباشرة");
+
+      dispatch(setSelectedPatient(session));
+      navigate("/message");
+      return;
+    }
+
+    try {
+      const result = await dispatch(
+        startSession({ appointmentId: session.id })
+      ).unwrap();
+
+      console.log("✅ Session started");
+
+      dispatch(setSelectedPatient(session));
+      navigate("/message");
+    } catch (error) {
+      console.error("❌ Error:", error);
+
+      if (
+        error?.includes?.("already exists") ||
+        error?.includes?.("active chat session")
+      ) {
+        console.log("⚠️ Backend says session exists → reuse it");
+
+        dispatch({
+          type: "communication/startSession/fulfilled",
+          payload: {
+            id: session.id,
+            sessionId: session.id,
+            appointmentId: session.id,
+            status: "active",
+            ...session,
+          },
+        });
+
+        dispatch(setSelectedPatient(session));
+        navigate("/message");
+      } else {
+        alert(`Failed: ${error}`);
+      }
+    }
+  };
+  const hasSessionStarted = (appointmentDate, appointmentTime) => {
+    if (!appointmentDate || !appointmentTime) return false;
+    const now = new Date();
+    const sessionTime = combineDateTime(appointmentDate, appointmentTime);
+    const diffInMinutes = (now - sessionTime) / (1000 * 60);
+    return diffInMinutes >= -10 && diffInMinutes <= 60;
+  };
   return (
     <Stack direction="row">
       <NavBar />
@@ -333,6 +399,7 @@ export default function Schedule() {
             </CardContent>
           </Card>
         </Fade>
+
         {/* Error Alert */}
         {error && (
           <Alert severity="error">
@@ -341,6 +408,7 @@ export default function Schedule() {
               : error.message || JSON.stringify(error)}
           </Alert>
         )}
+
         {/* Filter Tabs Card */}
         <Card
           sx={{
@@ -556,14 +624,10 @@ export default function Schedule() {
           </CardContent>
         </Card>
 
-        {/* Timeline Component - Responsive Wrapper */}
+        {/* Timeline Component */}
         <Box
           sx={{
             mb: 3,
-            // overflowX: "auto",
-            // "& > *": {
-            //   minWidth: { xs: "600px", md: "100%" },
-            // },
             px: { xs: 0.5, md: 0 },
           }}
         >
@@ -581,7 +645,7 @@ export default function Schedule() {
         {loading ? (
           <Grid container spacing={{ xs: 2, md: 2 }}>
             {Array.from({ length: 4 }).map((_, index) => (
-              <Grid item xs={12} sm={6} key={index}>
+              <Grid size={{ xs: 12, md: 6 }} key={index}>
                 <Card
                   sx={{
                     borderRadius: "20px",
@@ -616,14 +680,16 @@ export default function Schedule() {
                   session?.appointmentDate,
                   session?.appointmentTime
                 );
+                const isActive =
+                  activeSession &&
+                  (activeSession.appointmentId === session.id ||
+                    activeSession.sessionId === session.id);
                 const config =
                   statusConfig[session.status?.toLowerCase()] ||
                   statusConfig.scheduled;
                 const StatusIcon = config.icon;
-
                 return (
                   <Grid size={{ xs: 12, md: 6 }} key={session.id}>
-                    {/* <Fade in timeout={300}> */}
                     <Card
                       sx={{
                         borderRadius: { xs: "16px", md: "20px" },
@@ -631,9 +697,10 @@ export default function Schedule() {
                         border: "1px solid rgba(82, 172, 140, 0.2)",
                         position: "relative",
                         overflow: "hidden",
-                        p: { xs: 2, md: 3 },
+                        p: { xs: 3, md: 4 },
                         transition: "all 0.3s ease",
                         width: "100%",
+                        height: "auto",
                         boxSizing: "border-box",
                         "&:hover": {
                           transform: { md: "translateY(-4px)" },
@@ -649,7 +716,7 @@ export default function Schedule() {
                           <Box
                             sx={{
                               position: "absolute",
-                              top: { xs: -10, md: -12 },
+                              top: "5px",
                               left: { xs: 12, md: 20 },
                               px: { xs: 1.5, md: 2 },
                               py: 0.5,
@@ -696,7 +763,6 @@ export default function Schedule() {
                           >
                             {session?.patient?.name?.charAt(0) || "?"}
                           </Avatar>
-
                           <Box sx={{ minWidth: 0 }}>
                             <Typography
                               variant="h6"
@@ -709,7 +775,6 @@ export default function Schedule() {
                             >
                               {session?.patient?.name}
                             </Typography>
-
                             <Typography
                               variant="caption"
                               color="text.secondary"
@@ -721,7 +786,6 @@ export default function Schedule() {
                             >
                               ID: #{session?.patient?.id?.slice(-6)}
                             </Typography>
-
                             <Stack
                               direction="row"
                               spacing={0.5}
@@ -779,7 +843,6 @@ export default function Schedule() {
                               maxWidth: "100%",
                             }}
                           />
-
                           <IconButton
                             size="small"
                             onClick={(e) => handleMenuOpen(e, session)}
@@ -826,7 +889,6 @@ export default function Schedule() {
                             {formatDate(session?.appointmentDate)}
                           </Typography>
                         </Stack>
-
                         {/* Time */}
                         <Stack
                           direction={{ xs: "column", sm: "row" }}
@@ -855,7 +917,6 @@ export default function Schedule() {
                             {formatTime(session.appointmentTime)}
                           </Typography>
                         </Stack>
-
                         {/* Reason */}
                         <Stack
                           direction={{ xs: "column", sm: "row" }}
@@ -884,7 +945,6 @@ export default function Schedule() {
                             {session.reason}
                           </Typography>
                         </Stack>
-
                         {/* Type */}
                         <Stack
                           direction={{ xs: "column", sm: "row" }}
@@ -909,7 +969,6 @@ export default function Schedule() {
                               }}
                             />
                           )}
-
                           <Typography
                             variant="body2"
                             fontWeight="600"
@@ -978,6 +1037,39 @@ export default function Schedule() {
                           </Button>
                         )}
 
+                        {/* ✅ NEW: Start Communication Button */}
+                        {(session.status?.toLowerCase() === "confirmed" ||
+                          session.status?.toLowerCase() === "inprogress") &&
+                          (hasSessionStarted(
+                            session.appointmentDate,
+                            session.appointmentTime
+                          ) ||
+                            (activeSession &&
+                              (activeSession.appointmentId === session.id ||
+                                activeSession.sessionId === session.id))) && (
+                            <Button
+                              fullWidth
+                              variant="contained"
+                              startIcon={<ChatBubbleOutline />}
+                              onClick={() => handleStartCommunication(session)}
+                              sx={{
+                                background: isActive
+                                  ? "linear-gradient(135deg, #10B981 0%, #059669 100%)"
+                                  : "linear-gradient(135deg, #667EEA 0%, #764BA2 100%)",
+                                color: "white",
+                                fontWeight: 600,
+                                py: { xs: 1, md: 1.2 },
+                                borderRadius: "12px",
+                                textTransform: "none",
+                                fontSize: { xs: "11px", md: "15px" },
+                              }}
+                            >
+                              {isActive
+                                ? "Join Session"
+                                : "Start Communication"}
+                            </Button>
+                          )}
+
                         <Button
                           fullWidth
                           variant="outlined"
@@ -1008,11 +1100,11 @@ export default function Schedule() {
                         </Button>
                       </Stack>
                     </Card>
-                    {/* </Fade> */}
                   </Grid>
                 );
               })}
             </Grid>
+
             {/* Pagination */}
             {filteredAppointments.length > ITEMS_PER_PAGE && (
               <Box
@@ -1091,6 +1183,7 @@ export default function Schedule() {
             </Typography>
           </Card>
         )}
+
         {/* Status Update Menu */}
         <Menu
           anchorEl={anchorEl}
@@ -1162,6 +1255,7 @@ export default function Schedule() {
             Mark as Cancelled
           </MenuItem>
         </Menu>
+
         {/* Footer */}
         <Box
           sx={{

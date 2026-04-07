@@ -48,8 +48,10 @@ const workingDaysList = [
 export default function ComPro() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { specialties, specialtiesLoading } = useSelector((state) => state.auth);
-  
+  const { specialties, specialtiesLoading } = useSelector(
+    (state) => state.auth
+  );
+
   const [image, setImage] = useState(null);
   const storedUser = JSON.parse(localStorage.getItem("user"));
   const [loading, setLoading] = useState(false);
@@ -138,7 +140,8 @@ export default function ComPro() {
       });
 
       // Store the image URL from API response
-      const imageUrl = response.data.data || response.data.imageUrl || response.data;
+      const imageUrl =
+        response.data.data || response.data.imageUrl || response.data;
       setFormData((prev) => ({
         ...prev,
         imageUrl: imageUrl,
@@ -146,7 +149,8 @@ export default function ComPro() {
     } catch (error) {
       console.error("Image upload error:", error);
       setFormError(
-        error.response?.data?.message || "Failed to upload image. Please try again."
+        error.response?.data?.message ||
+          "Failed to upload image. Please try again."
       );
       // Clear the preview on error
       setImage(null);
@@ -455,7 +459,9 @@ export default function ComPro() {
               input={<OutlinedInput />}
               renderValue={(selected) => {
                 if (!selected) {
-                  return <span style={{ color: "#9e9e9e" }}>Select Specialty</span>;
+                  return (
+                    <span style={{ color: "#9e9e9e" }}>Select Specialty</span>
+                  );
                 }
                 const specialty = specialties.find((s) => s.id === selected);
                 return specialty?.name || "Select Specialty";

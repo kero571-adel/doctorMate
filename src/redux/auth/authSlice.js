@@ -89,9 +89,7 @@ export const resetPass = createAsyncThunk(
   "auth/logoutUser",
   async ({ email, password, confirmPassword }, { rejectWithValue }) => {
     try {
-     
       const getEmail = email.email;
-
       const response = await axios.post(
         "https://doctormate.runasp.net/api/PasswordReset/reset-password",
         { email: getEmail, newPassword: password, confirmPassword }

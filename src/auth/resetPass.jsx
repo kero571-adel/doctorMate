@@ -240,10 +240,10 @@ export default function ResetPass() {
           {/* Error Alert */}
           {localError && (
             <Fade in={!!localError}>
-              <Alert 
-                severity="error" 
-                sx={{ 
-                  width: "90%", 
+              <Alert
+                severity="error"
+                sx={{
+                  width: "90%",
                   mb: 2,
                   borderRadius: "10px",
                 }}
@@ -288,8 +288,8 @@ export default function ResetPass() {
               ),
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton 
-                    onClick={handleTogglePassword} 
+                  <IconButton
+                    onClick={handleTogglePassword}
                     edge="end"
                     sx={{
                       color: "action.disabled",

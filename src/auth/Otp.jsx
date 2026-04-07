@@ -1,4 +1,12 @@
-import { Stack, Box, Typography, Button, Alert, Fade, Chip } from "@mui/material";
+import {
+  Stack,
+  Box,
+  Typography,
+  Button,
+  Alert,
+  Fade,
+  Chip,
+} from "@mui/material";
 import { useState, useEffect } from "react";
 import OtpInput from "react-otp-input";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -163,10 +171,10 @@ export default function Otp() {
           {/* Error Alert */}
           {error && (
             <Fade in={!!error}>
-              <Alert 
-                severity="error" 
-                sx={{ 
-                  width: "90%", 
+              <Alert
+                severity="error"
+                sx={{
+                  width: "90%",
                   mb: 2,
                   borderRadius: "10px",
                 }}
@@ -209,7 +217,8 @@ export default function Otp() {
                 onFocus={(e) => {
                   e.target.style.borderColor = "#52AC8C";
                   e.target.style.backgroundColor = "white";
-                  e.target.style.boxShadow = "0 0 0 3px rgba(82, 172, 140, 0.1)";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(82, 172, 140, 0.1)";
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = "#E5E7EB";

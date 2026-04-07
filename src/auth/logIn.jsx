@@ -48,7 +48,7 @@ export default function LogIn() {
   // → Handle login click
   const handleLogin = () => {
     setLocalError("");
-    
+
     if (!email && !password) {
       setLocalError("Please enter email and password");
       return;
@@ -167,7 +167,7 @@ export default function LogIn() {
           >
             Welcome Back!
           </Typography>
-          
+
           <Typography
             sx={{
               fontSize: { xs: "14px", md: "16px" },
@@ -181,10 +181,10 @@ export default function LogIn() {
           {/* Error Alert */}
           {localError && (
             <Fade in={!!localError}>
-              <Alert 
-                severity="error" 
-                sx={{ 
-                  width: "90%", 
+              <Alert
+                severity="error"
+                sx={{
+                  width: "90%",
                   mb: 2,
                   borderRadius: "10px",
                 }}
@@ -209,11 +209,11 @@ export default function LogIn() {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <EmailIcon 
-                    sx={{ 
+                  <EmailIcon
+                    sx={{
                       color: emailFocused ? "primary.main" : "action.disabled",
-                      transition: "color 0.3s"
-                    }} 
+                      transition: "color 0.3s",
+                    }}
                   />
                 </InputAdornment>
               ),
@@ -260,11 +260,13 @@ export default function LogIn() {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <LockIcon 
-                    sx={{ 
-                      color: passwordFocused ? "primary.main" : "action.disabled",
-                      transition: "color 0.3s"
-                    }} 
+                  <LockIcon
+                    sx={{
+                      color: passwordFocused
+                        ? "primary.main"
+                        : "action.disabled",
+                      transition: "color 0.3s",
+                    }}
                   />
                 </InputAdornment>
               ),
@@ -398,9 +400,9 @@ export default function LogIn() {
 
           {/* Social Login */}
           <Stack direction={"row"} spacing={2} sx={{ width: "90%" }}>
-            <Button 
-              variant="outlined" 
-              sx={{ 
+            <Button
+              variant="outlined"
+              sx={{
                 width: "49%",
                 borderRadius: "12px",
                 textTransform: "none",
@@ -418,9 +420,9 @@ export default function LogIn() {
             >
               Facebook
             </Button>
-            <Button 
-              variant="outlined" 
-              sx={{ 
+            <Button
+              variant="outlined"
+              sx={{
                 width: "49%",
                 borderRadius: "12px",
                 textTransform: "none",
@@ -450,15 +452,17 @@ export default function LogIn() {
           >
             Don't have an account?{" "}
             <Link to="/signUp" style={{ textDecoration: "none" }}>
-              <span 
-                style={{ 
-                  color: "#52AC8C", 
+              <span
+                style={{
+                  color: "#52AC8C",
                   cursor: "pointer",
                   fontWeight: "600",
                   transition: "all 0.2s ease",
                 }}
-                onMouseEnter={(e) => e.target.style.textDecoration = "underline"}
-                onMouseLeave={(e) => e.target.style.textDecoration = "none"}
+                onMouseEnter={(e) =>
+                  (e.target.style.textDecoration = "underline")
+                }
+                onMouseLeave={(e) => (e.target.style.textDecoration = "none")}
               >
                 Sign Up
               </span>

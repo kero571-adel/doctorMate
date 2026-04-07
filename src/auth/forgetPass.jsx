@@ -1,4 +1,13 @@
-import { Stack, Box, Typography, TextField, Button, InputAdornment, Alert, Fade } from "@mui/material";
+import {
+  Stack,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  InputAdornment,
+  Alert,
+  Fade,
+} from "@mui/material";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import EmailIcon from "@mui/icons-material/Email";
@@ -29,7 +38,7 @@ export default function ForgetPass() {
   }, [error, dispatch]);
   const handleSendCode = () => {
     setError("");
-    
+
     if (!email) {
       setError("Please enter your email");
       return;
@@ -146,10 +155,10 @@ export default function ForgetPass() {
           {/* Error Alert */}
           {error01 && (
             <Fade in={!!error01}>
-              <Alert 
-                severity="error" 
-                sx={{ 
-                  width: "90%", 
+              <Alert
+                severity="error"
+                sx={{
+                  width: "90%",
                   mb: 2,
                   borderRadius: "10px",
                 }}
@@ -178,11 +187,11 @@ export default function ForgetPass() {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <EmailIcon 
-                    sx={{ 
+                  <EmailIcon
+                    sx={{
                       color: emailFocused ? "primary.main" : "action.disabled",
-                      transition: "color 0.3s"
-                    }} 
+                      transition: "color 0.3s",
+                    }}
                   />
                 </InputAdornment>
               ),
@@ -190,6 +199,7 @@ export default function ForgetPass() {
             sx={{
               width: "90%",
               marginTop: "10px",
+              mb: 2,
               "& .MuiOutlinedInput-root": {
                 borderRadius: "12px",
                 backgroundColor: "#F9FAFB",
