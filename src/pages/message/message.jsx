@@ -167,7 +167,7 @@ const Message = () => {
       return;
 
     const expiresAt = new Date(session.expiresAt).getTime();
-    const fiveMinutesBefore = expiresAt - 5 * 60 * 1000; 
+    const fiveMinutesBefore = expiresAt - 5 * 60 * 1000;
     const now = Date.now();
     const timeUntilWarning = fiveMinutesBefore - now;
 
@@ -182,7 +182,7 @@ const Message = () => {
         }
       }, timeUntilWarning);
 
-      return () => clearTimeout(timer); 
+      return () => clearTimeout(timer);
     } else if (now < expiresAt) {
       const timer = setTimeout(() => {
         if (sessionStatus === "active") {
@@ -1163,9 +1163,7 @@ const Message = () => {
                 }}
               >
                 <Avatar
-                  src={
-                    selectedPatient?.patient?.image 
-                  }
+                  src={selectedPatient?.patient?.image}
                   sx={{
                     width: { xs: 50, md: 58 },
                     height: { xs: 50, md: 58 },
@@ -1369,29 +1367,6 @@ const Message = () => {
               )}
               {sessionStatus === "active" && (
                 <>
-                  <Button
-                    startIcon={
-                      <MedicalRecordIcon
-                        fontSize={isMobile ? "small" : "medium"}
-                      />
-                    }
-                    size={isMobile ? "small" : "medium"}
-                    sx={{
-                      color: "#4B5563",
-                      textTransform: "none",
-                      border: "1px solid #E5E7EB",
-                      borderRadius: 1,
-                      fontSize: { xs: "0.75rem", md: "0.875rem" },
-                      px: { xs: 1, md: 2 },
-                    }}
-                  >
-                    <Typography
-                      variant="caption"
-                      sx={{ display: { xs: "none", sm: "inline" } }}
-                    >
-                      Medical Record
-                    </Typography>
-                  </Button>
                   <Button
                     startIcon={
                       <VideoCallIcon fontSize={isMobile ? "small" : "medium"} />
