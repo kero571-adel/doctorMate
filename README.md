@@ -258,12 +258,11 @@ vite.config.js
 | **Styling**            | CSS-in-JS, Tailwind CSS    |
 | **HTTP Client**        | Axios                      |
 | **Real-time Chat**     | Firebase Firestore         |
-| **Authentication**     | Firebase Auth              |
 | **Video Calling**      | Agora RTC SDK              |
 | **Push Notifications** | Firebase Cloud Messaging   |
 | **Routing**            | React Router v6            |
 | **Form Handling**      | React Hook Form            |
-| **Package Manager**    | npm / yarn                 |
+| **Package Manager**    | npm                        |
 | **Version Control**    | Git                        |
 
 ---
