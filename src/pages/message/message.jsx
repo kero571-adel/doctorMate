@@ -71,6 +71,12 @@ const Message = () => {
   const { session, sessionStatus, messages, call } = useSelector(
     (state) => state.communication
   );
+  console.log("📊 Communication State:", {
+    session,
+    sessionStatus,
+    messages,
+    call,
+  });
   const selectedPatient = useSelector(
     (state) => state.schedule.selectedPatient
   );
@@ -98,6 +104,8 @@ const Message = () => {
   const localVideoTrackRef = useRef(null);
   const remoteVideoTracksRef = useRef({}); // { uid: { audio, video } }
   const playedUsers = useRef({});
+  const expiryWarningShownRef = useRef(false);
+  const expiryTimerRef = useRef(null);
 
   // ✅ Snackbar State
   const [snackbar, setSnackbar] = useState({
@@ -145,7 +153,49 @@ const Message = () => {
       };
     }
   }, [session?.id, session?.sessionId, sessionStatus, dispatch]);
+  useEffect(() => {
+    // إعادة تعيين الـ Ref عند تحميل جلسة جديدة
+    expiryWarningShownRef.current = false;
+  }, [session?.sessionId]);
 
+  useEffect(() => {
+    if (
+      !session?.expiresAt ||
+      sessionStatus !== "active" ||
+      expiryWarningShownRef.current
+    )
+      return;
+
+    const expiresAt = new Date(session.expiresAt).getTime();
+    const fiveMinutesBefore = expiresAt - 5 * 60 * 1000; 
+    const now = Date.now();
+    const timeUntilWarning = fiveMinutesBefore - now;
+
+    if (timeUntilWarning > 0) {
+      const timer = setTimeout(() => {
+        if (sessionStatus === "active") {
+          showSnackbar(
+            "⚠️Warning: The session will end in 5 minutes. Calls and messages will be automatically disabled.",
+            "warning"
+          );
+          expiryWarningShownRef.current = true;
+        }
+      }, timeUntilWarning);
+
+      return () => clearTimeout(timer); 
+    } else if (now < expiresAt) {
+      const timer = setTimeout(() => {
+        if (sessionStatus === "active") {
+          showSnackbar(
+            "⚠️ Warning: The session will end in 5 minutes. Calls and messages will be automatically disabled.",
+            "warning"
+          );
+          expiryWarningShownRef.current = true;
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [session?.expiresAt, sessionStatus]);
   // 🔹 Handle Send Message
   const handleSendMessage = async () => {
     const sessionId = session?.id || session?.sessionId;
@@ -277,12 +327,11 @@ const Message = () => {
         }
         // Handle audio track
         if (audio && mediaType !== "video") {
-          const existingAudio =
-            remoteVideoTracksRef.current[user.uid]?.audio;
-        
+          const existingAudio = remoteVideoTracksRef.current[user.uid]?.audio;
+
           if (!existingAudio) {
             remoteVideoTracksRef.current[user.uid].audio = audio;
-        
+
             try {
               if (audio && !playedUsers.current[user.uid]) {
                 audio.play();
@@ -291,7 +340,7 @@ const Message = () => {
             } catch (e) {
               console.warn("⚠️ Audio autoplay blocked:", e);
             }
-        
+
             setRemoteUsersStatus((prev) => ({
               ...prev,
               [user.uid]: { ...(prev[user.uid] || {}), hasAudio: true },
@@ -323,7 +372,7 @@ const Message = () => {
     if (isInCall) {
       console.log("⚠️ [CALL] Call already active, ending it first...");
       await handleEndCall();
-      await new Promise((resolve) => setTimeout(resolve, 300)); //////////////////////////////////////////////////////////////////////////////////////
+      await new Promise((resolve) => setTimeout(resolve, 300));
     }
 
     const sessionId = session?.id || session?.sessionId;
@@ -448,7 +497,7 @@ const Message = () => {
 
         onError: (error) => {
           console.error("❌ Agora error:", error);
-          showSnackbar("Call error: " + error.message, "error");
+          showSnackbar("Call error: " + error.msg, "error");
         },
       });
 
@@ -623,35 +672,64 @@ const Message = () => {
   };
 
   const formatSessionTime = () => {
-    if (!session?.appointmentDate || !session?.appointmentTime) {
-      return "10:00 AM - 10:30 AM";
-    }
-
     try {
-      const date = new Date(session.appointmentDate);
-      const [hours, minutes] = session.appointmentTime.split(":");
+      let start, end;
 
-      const start = new Date(date);
-      start.setHours(parseInt(hours), parseInt(minutes));
+      // 🔹 الحالة 1: لو فيه startedAt و expiresAt (الجلسة فعلية)
+      if (session?.startedAt && session?.expiresAt) {
+        start = new Date(session.startedAt);
+        end = new Date(session.expiresAt);
+      }
+      // 🔹 الحالة 2: لو فيه appointmentDate و appointmentTime (موعد مستقبلي)
+      else if (session?.appointmentDate && session?.appointmentTime) {
+        const date = new Date(session.appointmentDate);
+        const [hours, minutes] = session.appointmentTime.split(":");
+        start = new Date(date);
+        start.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+        end = new Date(start);
+        end.setMinutes(start.getMinutes() + 30);
+      }
+      // 🔹 الحالة 3: fallback من selectedPatient
+      else if (selectedPatient?.appointmentDate) {
+        const date = new Date(selectedPatient.appointmentDate);
+        start = date;
+        end = new Date(date);
+        end.setMinutes(date.getMinutes() + 30);
+      }
+      // 🔹 الحالة 4: مفيش بيانات
+      else {
+        return "Session Time";
+      }
 
-      const end = new Date(start);
-      end.setMinutes(start.getMinutes() + 30);
+      // 🔹 التحقق من صحة التواريخ
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        console.warn("⚠️ Invalid session dates:", {
+          startedAt: session?.startedAt,
+          expiresAt: session?.expiresAt,
+        });
+        return "Session Time";
+      }
 
-      const formatTime = (date) => {
-        return date.toLocaleTimeString([], {
+      // 🔹 تنسيق الوقت للعرض
+      const format = (d) =>
+        d.toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
           hour12: true,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         });
-      };
 
-      return `${formatTime(start)} - ${formatTime(end)}`;
+      return `${format(start)} - ${format(end)}`;
     } catch (error) {
-      return "10:00 AM - 10:30 AM";
+      console.error("❌ Error formatting session time:", error);
+      return "Session Time";
     }
   };
 
   const formattedTime = formatSessionTime();
+  const isExpired = session?.expiresAt
+    ? new Date(session.expiresAt) <= new Date()
+    : false;
 
   // 🔹 No Session State
   if (!session && sessionStatus === "idle") {
@@ -752,7 +830,47 @@ const Message = () => {
       return () => clearTimeout(timer);
     }
   }, [showVideo, isInCall, playVideoTrack]);
+  useEffect(() => {
+    if (!session?.expiresAt || !isInCall) return;
 
+    const expiresAt = new Date(session.expiresAt).getTime();
+    const now = Date.now();
+    const timeLeft = expiresAt - now;
+
+    // لو الوقت خلص بالفعل أو خلص دلوقتي
+    if (timeLeft <= 0) {
+      console.log("⏰ Session already expired. Ending call immediately...");
+      handleEndCall();
+      showSnackbar(
+        "⏰ The session has expired. The call has been automatically closed.",
+        "warning"
+      );
+      return;
+    }
+
+    // ✅ ضبط مؤقت دقيق لوقت الانتهاء بالضبط
+    console.log(
+      `⏱️ Expiry timer set for ${Math.round(timeLeft / 1000)} seconds`
+    );
+    expiryTimerRef.current = setTimeout(() => {
+      if (isInCall) {
+        console.log("⏰ Session expired via timer. Ending call...");
+        handleEndCall();
+        showSnackbar(
+          "⏰ The session has expired. The call has been automatically closed.",
+          "warning"
+        );
+      }
+    }, timeLeft);
+
+    // ✅ تنظيف المؤقت عند تغيير الجلسة أو إغلاق المكالمة يدوياً
+    return () => {
+      if (expiryTimerRef.current) {
+        clearTimeout(expiryTimerRef.current);
+        expiryTimerRef.current = null;
+      }
+    };
+  }, [session?.expiresAt, isInCall]);
   const responsiveStyles = {
     videoContainer: {
       position: "fixed",
@@ -843,7 +961,7 @@ const Message = () => {
         {isInCall && showVideo && (
           <Box sx={{ ...responsiveStyles.videoContainer }}>
             {/* ✅ Remote User Status Icons - يعرض الحالة بوضوح (أخضر=مفتوح، أحمر=مغلق) */}
-            <Box
+            {/* <Box
               sx={{
                 position: "absolute",
                 top: { xs: 80, md: 100 },
@@ -858,7 +976,7 @@ const Message = () => {
               
               {Object.entries(remoteUsersStatus).map(([uid, status]) => (
                 <React.Fragment key={uid}>
-                  {/* حالة الميكروفون */}
+                  {/* حالة الميكروفون 
                   {status.hasAudio !== undefined && (
                     <Box
                       sx={{
@@ -886,7 +1004,7 @@ const Message = () => {
                       )}
                     </Box>
                   )}
-                  {/* حالة الكاميرا */}
+                  {/* حالة الكاميرا 
                   {status.hasVideo !== undefined && (
                     <Box
                       sx={{
@@ -916,7 +1034,7 @@ const Message = () => {
                   )}
                 </React.Fragment>
               ))}
-            </Box>
+            </Box> */}
 
             {/* زر الرجوع للخلف */}
             <Box sx={{ position: "absolute", top: 20, left: 20, zIndex: 200 }}>
@@ -1046,8 +1164,7 @@ const Message = () => {
               >
                 <Avatar
                   src={
-                    selectedPatient?.patient?.image ||
-                    "https://i.pravatar.cc/150?img=5"
+                    selectedPatient?.patient?.image 
                   }
                   sx={{
                     width: { xs: 50, md: 58 },
@@ -1090,22 +1207,9 @@ const Message = () => {
                     flexWrap: "wrap",
                   }}
                 >
-                  {sessionStatus === "waiting" && (
-                    <>
-                      <span>General Consultation</span>
-                      <span>•</span>
-                    </>
-                  )}
                   {(sessionStatus === "active" ||
                     sessionStatus === "waiting") && (
                     <span>{formattedTime}</span>
-                  )}
-                  {sessionStatus === "ended" && (
-                    <>
-                      <span>Follow-up Consultation</span>
-                      <span>•</span>
-                      <span>Oct 24, 10:00 AM - 10:30 AM</span>
-                    </>
                   )}
                   {sessionStatus === "active" && (
                     <>
@@ -1149,7 +1253,7 @@ const Message = () => {
                 </Box>
               </Box>
 
-              {isInCall && (
+              {/* {isInCall && (
                 <Box
                   sx={{
                     display: "flex",
@@ -1219,7 +1323,7 @@ const Message = () => {
                     </IconButton>
                   </Tooltip>
                 </Box>
-              )}
+              )} */}
             </Box>
 
             <Box
@@ -1294,15 +1398,24 @@ const Message = () => {
                     }
                     size={isMobile ? "small" : "medium"}
                     onClick={() => {
+                      if (session.isExpired) {
+                        showSnackbar(
+                          "⏰ انتهت مدة الجلسة. لا يمكن بدء مكالمة جديدة.",
+                          "warning"
+                        );
+                        return;
+                      }
                       if (isInCall) {
                         setShowVideo(true);
                       } else {
                         handleStartCall();
                       }
                     }}
-                    disabled={connecting}
+                    disabled={connecting || isExpired}
                     sx={{
-                      bgcolor: connecting
+                      bgcolor: isExpired
+                        ? "#9CA3AF"
+                        : connecting
                         ? "#ccc"
                         : isInCall || call.active
                         ? "#10B981"
@@ -1311,7 +1424,9 @@ const Message = () => {
                       textTransform: "none",
                       borderRadius: 1,
                       "&:hover": {
-                        bgcolor: connecting
+                        bgcolor: isExpired
+                          ? "#9CA3AF"
+                          : connecting
                           ? "#ccc"
                           : isInCall || call.active
                           ? "#059669"
@@ -1319,13 +1434,16 @@ const Message = () => {
                       },
                       fontSize: { xs: "0.75rem", md: "0.875rem" },
                       px: { xs: 1, md: 2 },
+                      opacity: isExpired ? 0.8 : 1,
                     }}
                   >
                     <Typography
                       variant="caption"
                       sx={{ display: { xs: "none", sm: "inline" } }}
                     >
-                      {connecting
+                      {isExpired
+                        ? "Session Expired"
+                        : connecting
                         ? "Connecting..."
                         : isInCall
                         ? "In Call"
@@ -1334,7 +1452,6 @@ const Message = () => {
                         : "Start Video Call"}
                     </Typography>
                   </Button>
-
                   <Button
                     startIcon={
                       <EndCallIcon fontSize={isMobile ? "small" : "medium"} />

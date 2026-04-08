@@ -43,7 +43,7 @@ import {
   appointmentsDoctor,
   appointmentsStatus,
 } from "../../redux/schedule/schedule";
-import { startSession } from "../../redux/communication/communicationSlice"; // ✅ Import Start Session
+import { startSession } from "../../redux/communication/communicationSlice";
 import { getDataDoctor } from "../../redux/doctor/doctor";
 import NavBar from "../../components/navBar";
 import AppointmentScheduleTable from "./timeLineAppomint";
@@ -225,8 +225,6 @@ export default function Schedule() {
 
   const handleStartCommunication = async (session) => {
     console.log("🔹 Start Communication clicked");
-
-    // ✅ لو فيه session شغال لنفس ال appointment
     if (
       activeSession &&
       (activeSession.appointmentId === session.id ||

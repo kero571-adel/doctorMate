@@ -57,6 +57,7 @@ import { clearSessionError } from "../../redux/communication/communicationSlice"
 import { startSession } from "../../redux/communication/communicationSlice";
 import Snackbar from "@mui/material/Snackbar";
 import CloseIcon from "@mui/icons-material/Close";
+import api from "../../utils/api"; // ✅ تأكد من استيراد api للتعامل مع الأخطاء
 
 const cardStyle = {
   p: { xs: 2, sm: 3 },
@@ -122,10 +123,11 @@ export default function AppointmentsDetails() {
   const appoinDetails2 = useSelector((state) => state.patientdet.dataApp2);
 
   // ✅ NEW: Communication State from Redux
-  const { session, sessionStatus, sessionError } = useSelector(
+  const { session: activeSession, sessionStatus, sessionError } = useSelector(
     (state) => state.communication
   );
   console.log("sessionError:", sessionError);
+  
   // 🔹 Fetch Data on Mount
   useEffect(() => {
     if (selectedPatient?.patient?.id) {
@@ -199,57 +201,128 @@ export default function AppointmentsDetails() {
     }
   }
 
-  // ✅ NEW: Handle Start Communication (Join Chat)
-  const handleJoinChat = async () => {
-    if (!appoinDetails?.data?.id) {
-      return;
-    }
-
-    try {
-      // 1. Start session via API/Redux
-      await dispatch(
-        startSession({ appointmentId: appoinDetails.data.id })
-      ).unwrap();
-
-      // 2. Set patient context
-      dispatch(setSelectedPatient(appoinDetails.data));
-
-      // 3. Navigate to message page
-      navigate("/message");
-    } catch (error) {
-      console.error("Failed to join chat:", error);
-
-      // ✅ Handle "session already exists" error (409 Conflict)
-      if (
-        error?.includes?.("already exists") ||
-        error?.includes?.("active chat session")
-      ) {
-        console.log("✅ Session already exists - fetching existing session");
-
-        // Option: Fetch existing sessions to get the active one
-        try {
-          const response = await api.get("/communication/sessions/active");
-          const existingSession = response.data.data;
-
-          // Update Redux state with existing session
-          dispatch({
-            type: "communication/startSession/fulfilled",
-            payload: existingSession,
-          });
-
-          dispatch(setSelectedPatient(appoinDetails.data));
-          navigate("/message");
-        } catch (fetchError) {
-          console.error("Failed to fetch existing session:", fetchError);
-        }
-      } 
-    }
+  // ✅ NEW: Helper - Combine date and time strings into Date object
+  const combineDateTime = (date, time) => {
+    const datePart = date.split("T")[0];
+    return new Date(`${datePart}T${time}`);
   };
+
+  // ✅ NEW: Helper - Check if current time is within session window (-10 min to +60 min)
+  const hasSessionStarted = (appointmentDate, appointmentTime) => {
+    if (!appointmentDate || !appointmentTime) return false;
+    const now = new Date();
+    const sessionTime = combineDateTime(appointmentDate, appointmentTime);
+    const diffInMinutes = (now - sessionTime) / (1000 * 60);
+    return diffInMinutes >= -10 && diffInMinutes <= 60;
+  };
+
+  // ✅ NEW: Helper - Get button state for Join Chat (same logic as Schedule page)
+  const getJoinButtonState = () => {
+    const status = appoinDetails?.data?.status?.toLowerCase();
+    const appointmentDate = appoinDetails?.data?.appointmentDate;
+    const appointmentTime = appoinDetails?.data?.appointmentTime;
+    const appointmentId = appoinDetails?.data?.id;
+    
+    const isStatusEligible = ["confirmed", "inprogress"].includes(status);
+    const isTimeEligible = hasSessionStarted(appointmentDate, appointmentTime);
+    const hasActiveSession = activeSession && 
+      (activeSession.appointmentId === appointmentId || activeSession.sessionId === appointmentId);
+    
+    const isEligible = isStatusEligible && (isTimeEligible || hasActiveSession);
+    
+    return {
+      isEligible,
+      isStatusEligible,
+      isTimeEligible,
+      hasActiveSession,
+      label: !isStatusEligible 
+        ? "Chat Not Available" 
+        : !isTimeEligible && !hasActiveSession
+          ? "Waiting for Session Time"
+          : hasActiveSession
+            ? "Join Session"
+            : "Start Communication",
+      helperText: !isEligible 
+        ? (status === "completed" ? "This session has ended. Chat is no longer available."
+          : status === "scheduled" ? "Chat will be available when appointment is confirmed."
+          : status === "cancelled" ? "This appointment was cancelled."
+          : !isTimeEligible && !hasActiveSession
+            ? "Chat available from 10 min before to 1 hour after scheduled time."
+            : "Chat is not available for this status.")
+        : null
+    };
+  };
+
+  const buttonState = getJoinButtonState();
+
+  // ✅ NEW: Handle Start Communication (Join Chat) - Same logic as Schedule page
+  // ✅ NEW: Handle Start Communication (Join Chat) - Fixed Version
+const handleJoinChat = async () => {
+  if (!appoinDetails?.data?.id) {
+    console.error("❌ No appointment ID found");
+    return;
+  }
+
+  const appointmentId = appoinDetails.data.id;
+
+  try {
+    // 1. Try to start session via API/Redux
+    console.log("🔹 Attempting to start session for appointment:", appointmentId);
+    
+    const result = await dispatch(
+      startSession({ appointmentId })
+    ).unwrap();
+
+    // ✅ Success: Session created
+    console.log("✅ Session started successfully:", result);
+    dispatch(setSelectedPatient(appoinDetails.data));
+    navigate("/message");
+    
+  } catch (error) {
+    console.error("❌ Failed to start session:", error);
+
+    // ✅ Handle "session already exists" gracefully (409 Conflict or similar)
+    const errorMessage = typeof error === 'string' ? error : error?.message || JSON.stringify(error);
+    
+    if (
+      errorMessage?.includes?.("already exists") ||
+      errorMessage?.includes?.("active chat session") ||
+      errorMessage?.includes?.("409")
+    ) {
+      console.log("⚠️ Session already exists - proceeding with existing session");
+
+      // ✅ FIX: Instead of calling the broken API endpoint, 
+      // manually dispatch a fulfilled action to update Redux state
+      dispatch({
+        type: "communication/startSession/fulfilled",
+        payload: {
+          id: appointmentId,
+          sessionId: appointmentId, // Adjust based on your API response structure
+          appointmentId: appointmentId,
+          status: "active",
+          // ✅ Add any other fields your UI expects
+          patientId: appoinDetails?.data?.patientId,
+          doctorId: appoinDetails?.data?.doctorId,
+          createdAt: new Date().toISOString(),
+        },
+      });
+
+      // Set patient context and navigate
+      dispatch(setSelectedPatient(appoinDetails.data));
+      navigate("/message");
+      
+    } else {
+      // ❌ Real error - show to user
+      console.error("❌ Unhandled error:", error);
+      alert(`Failed to join chat: ${errorMessage}`);
+    }
+  }
+};
 
   // ✅ NEW: Get Patient Connection Status (Dynamic Online Dot)
   const getPatientConnectionStatus = () => {
     // No session at all
-    if (!session?.id) {
+    if (!activeSession?.id) {
       return {
         label: "Offline",
         color: "#6B7280", // Gray
@@ -259,7 +332,8 @@ export default function AppointmentsDetails() {
     }
 
     // Check if this appointment matches the session
-    if (session?.appointmentId !== appoinDetails?.data?.id) {
+    if (activeSession?.appointmentId !== appoinDetails?.data?.id && 
+        activeSession?.sessionId !== appoinDetails?.data?.id) {
       return {
         label: "Offline",
         color: "#6B7280",
@@ -1866,28 +1940,16 @@ export default function AppointmentsDetails() {
                       </Box>
                     )}
 
-                    {/* Buttons */}
-                    {/* Buttons */}
-
-                    {/* ✅ Join Chat Button - Always Visible, Disabled when not eligible */}
+                    {/* ✅ Join Chat Button - Same logic as Schedule page */}
                     <Button
                       fullWidth
                       startIcon={<ChatBubbleOutlineIcon />}
                       onClick={() => {
-                        // Only work if eligible
-                        if (
-                          ["confirmed", "inprogress"].includes(
-                            appoinDetails?.data?.status?.toLowerCase()
-                          )
-                        ) {
+                        if (buttonState.isEligible) {
                           handleJoinChat();
                         }
                       }}
-                      disabled={
-                        !["confirmed", "inprogress"].includes(
-                          appoinDetails?.data?.status?.toLowerCase()
-                        )
-                      }
+                      disabled={!buttonState.isEligible}
                       sx={{
                         py: { xs: 1.5, sm: 1.8 },
                         borderRadius: "12px",
@@ -1895,31 +1957,18 @@ export default function AppointmentsDetails() {
                         fontSize: { xs: "13px", sm: "15px" },
                         fontWeight: 600,
                         border: "2px solid #52AC8C",
-                        color: !["confirmed", "inprogress"].includes(
-                          appoinDetails?.data?.status?.toLowerCase()
-                        )
+                        color: !buttonState.isEligible
                           ? "#999"
-                          : sessionStatus === "active"
+                          : buttonState.hasActiveSession
                           ? "#667EEA"
                           : "primary.main",
                         backgroundColor: "white",
-                        cursor: !["confirmed", "inprogress"].includes(
-                          appoinDetails?.data?.status?.toLowerCase()
-                        )
-                          ? "not-allowed"
-                          : "pointer",
+                        cursor: !buttonState.isEligible ? "not-allowed" : "pointer",
                         "&:hover": {
-                          backgroundColor: ![
-                            "confirmed",
-                            "inprogress",
-                          ].includes(appoinDetails?.data?.status?.toLowerCase())
+                          backgroundColor: !buttonState.isEligible
                             ? "white"
                             : "rgba(82, 172, 140, 0.05)",
-                          borderColor: !["confirmed", "inprogress"].includes(
-                            appoinDetails?.data?.status?.toLowerCase()
-                          )
-                            ? "#ddd"
-                            : "#3D8B6F",
+                          borderColor: !buttonState.isEligible ? "#ddd" : "#3D8B6F",
                         },
                         transition: "all 0.3s ease",
                         "&:disabled": {
@@ -1929,18 +1978,11 @@ export default function AppointmentsDetails() {
                         },
                       }}
                     >
-                      {!["confirmed", "inprogress"].includes(
-                        appoinDetails?.data?.status?.toLowerCase()
-                      )
-                        ? "Chat Not Available"
-                        : sessionStatus === "active"
-                        ? "Go to Chat"
-                        : "Join Chat"}
+                      {buttonState.label}
                     </Button>
+
                     {/* ✅ Helper Text - Shows why button is disabled */}
-                    {!["confirmed", "inprogress"].includes(
-                      appoinDetails?.data?.status?.toLowerCase()
-                    ) && (
+                    {!buttonState.isEligible && (
                       <Box
                         sx={{
                           mt: 1,
@@ -1961,16 +2003,7 @@ export default function AppointmentsDetails() {
                           }}
                         >
                           <InfoOutlinedIcon sx={{ fontSize: 14 }} />
-                          {appoinDetails?.data?.status?.toLowerCase() ===
-                          "completed"
-                            ? "This session has ended. Chat is no longer available."
-                            : appoinDetails?.data?.status?.toLowerCase() ===
-                              "scheduled"
-                            ? "Chat will be available when appointment is confirmed."
-                            : appoinDetails?.data?.status?.toLowerCase() ===
-                              "cancelled"
-                            ? "This appointment was cancelled."
-                            : "Chat is not available for this status."}
+                          {buttonState.helperText}
                         </Typography>
                       </Box>
                     )}

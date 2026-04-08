@@ -150,6 +150,7 @@ export default function Patients() {
   const pateintDet = useSelector((state) => state.patients.patientDet);
   const pateintDet2 = useSelector((state) => state.patients.patientDet2);
   const patientDetails = useSelector((state) => state.patientdet.datapatient);
+  console.log("patientDetails", patientDetails);
   const patientDetails2 = useSelector((state) => state.patientdet.datapatient2);
   const { patients } = useSelector((state) => state.patients);
   console.log("patients", patients);

@@ -1,19 +1,5 @@
 import AgoraRTC from "agora-rtc-sdk-ng";
 
-/**
- * Agora Video/Audio Call Service
- * Service لإدارة مكالمات الفيديو والصوت باستخدام Agora SDK
- *
- * 🔧 KEY FIXES APPLIED:
- * 1. Event listeners MUST be called BEFORE joinChannel() to avoid missing "user-published" events
- * 2. Added eventListenersSetup flag to prevent duplicate listener registration
- * 3. Wrapped callback executions in try-catch to prevent one error from breaking the event system
- * 4. Fixed subscribeToRemoteStream to support 'both' mediaType and return consistent object structure
- * 5. Added _cleanupLocalTracks() private helper for DRY, reliable cleanup (prevents memory leaks)
- * 6. Added proper state reset in leaveChannel/cleanup to allow re-joining
- * 7. Added guards and validation to prevent calling methods out of order
- * 8. Fixed export statement and cleaned up file corruption
- */
 class AgoraService {
   constructor() {
     this.client = null;
@@ -250,7 +236,11 @@ class AgoraService {
     }
 
     const {
-      audioOptions = {},
+      audioOptions = {
+        AEC: true,
+        ANS: true,
+        AGC: true,
+      },
       videoOptions = { encoderConfig: "640x480" },
       publishAudio = true,
       publishVideo = true,
