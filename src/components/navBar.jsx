@@ -12,7 +12,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import GroupIcon from "@mui/icons-material/Group";
+import PersonIcon from '@mui/icons-material/Person';
 import { useDispatch } from "react-redux";
 import { logout } from "../redux/auth/authSlice";
 import { useState } from "react";
@@ -476,7 +476,7 @@ export default function NavBar() {
                     spacing={1}
                     sx={menuItemStyles(pathname === "/doctorprofile")}
                   >
-                    <GroupIcon
+                    <PersonIcon
                       sx={{
                         width: "24px",
                         height: "24px",

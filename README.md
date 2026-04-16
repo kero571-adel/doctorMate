@@ -46,22 +46,29 @@
 
 ### 📺 Live Demo
 
-[Visit Live Dashboard](https://doctormate-dashboard.vercel.app) _(Coming Soon)_
+[Visit Live Dashboard](hhttps://doctor-mate.vercel.app)
 
 ### 🎥 Video Demo
 
-[Watch Demo Video](https://youtube.com) _(Coming Soon)_
+[Watch Demo Video](https://youtube.com)
 
 ### 📸 Screenshots
 
-| Dashboard                                                        | Patient Management                                                       | Video Consultation                                            |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| ![Dashboard](imageRedme/Screenshot 2026-04-08 222031.png) | ![Patients](https://via.placeholder.com/400x300?text=Patient+Management) | ![Video](https://via.placeholder.com/400x300?text=Video+Call) |
-
-| Chat Interface                                                   | Appointments                                                           | Notifications                                                            |
-| ---------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| ![Chat](https://via.placeholder.com/400x300?text=Real-time+Chat) | ![Appointments](https://via.placeholder.com/400x300?text=Appointments) | ![Notifications](https://via.placeholder.com/400x300?text=Notifications) |
-
+<p align="center">
+  <img src="public/imageRedme/Screenshot 2026-04-08 223523.png" width="30%" />
+  <img src="public/imageRedme/Screenshot 2026-04-08 224046.png" width="30%" />
+  <img src="public/imageRedme/Screenshot 2026-04-08 222128.png" width="30%" />
+</p>
+<p align="center">
+  <img src="public/imageRedme/Screenshot 2026-04-08 222031.png" width="30%" />
+  <img src="public/imageRedme/Screenshot 2026-04-08 222331.png" width="30%" />
+  <img src="public/imageRedme/notifications.png" width="30%" />
+</p>
+<p align="center">
+  <img src="public/imageRedme/Screenshot 2026-04-08 224128.png" width="30%" />
+  <img src="public/imageRedme/Screenshot 2026-04-08 224252.png" width="30%" />
+  <img src="public/imageRedme/Screenshot 2026-04-08 224229.png" width="30%" />
+</p>
 ---
 
 ## ✨ Key Features
@@ -71,7 +78,6 @@
 - **Secure Login/Registration** - Email and password-based authentication via Firebase Auth
 - **Role-Based Access Control** - Dedicated doctor-specific features and restrictions
 - **Session Management** - Auto-logout and session timeout for security
-- **Data Encryption** - End-to-end encryption for sensitive patient data
 - **HIPAA Compliance** - Adherence to healthcare data protection standards
 
 ### 👥 Dashboard & Patient Management
@@ -104,8 +110,6 @@
 
 - **HD Video Calls** - Crystal clear 1080p video consultations
 - **Audio-Only Mode** - Switch to audio-only for bandwidth optimization
-- **Screen Sharing** - Share medical images and documents during calls
-- **Recording Capability** - Record consultations for medical records (with consent)
 - **Call Quality Indicators** - Monitor connection quality in real-time
 - **Automatic Fallback** - Graceful degradation for poor connections
 
@@ -153,7 +157,7 @@ The dashboard leverages **Agora Real-Time Communication (RTC)** platform to deli
 ### React Architecture Highlights
 
 - **Functional Components** - React Hooks for state management and side effects
-- **Custom Hooks** - Reusable logic hooks (useAuth, useChat, useAppointments)
+- **Custom Hooks** - Reusable logic hooks ( useCommunicationSession.js)
 - **Context API** - Global state for user data and app settings
 - **Redux Toolkit** - Centralized state management for complex operations
 - **Service Layer** - Abstracted API calls and Firebase operations

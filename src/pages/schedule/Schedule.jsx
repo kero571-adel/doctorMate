@@ -576,6 +576,7 @@ export default function Schedule() {
               spacing={{ xs: 1.5, md: 3 }}
               sx={{
                 mt: 2,
+                textAlign: "center",
                 pt: 2,
                 borderTop: "1px solid rgba(82, 172, 140, 0.1)",
                 justifyContent: "space-around",
