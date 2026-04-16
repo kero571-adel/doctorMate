@@ -46,7 +46,7 @@
 
 ### 📺 Live Demo
 
-[Visit Live Dashboard](hhttps://doctor-mate.vercel.app)
+[Visit Live Dashboard](https://doctor-mate.vercel.app)
 
 ### 🎥 Video Demo
 
