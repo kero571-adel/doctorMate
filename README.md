@@ -55,19 +55,19 @@
 ### 📸 Screenshots
 
 <p align="center">
-  <img src="public/imageRedme/Screenshot 2026-04-08 223523.png" width="30%" height="200" />
-  <img src="public/imageRedme/Screenshot 2026-04-08 224046.png" width="30%" height="200" />
-  <img src="public/imageRedme/Screenshot 2026-04-08 222128.png" width="30%" height="200" />
+  <img src="public/imageRedme/Screenshot 2026-04-08 223523.png" width="30%" height="200" object-fit:cover;/>
+  <img src="public/imageRedme/Screenshot 2026-04-08 224046.png" width="30%" height="200" object-fit:cover;/>
+  <img src="public/imageRedme/Screenshot 2026-04-08 222128.png" width="30%" height="200" object-fit:cover;/>
 </p>
 <p align="center">
-  <img src="public/imageRedme/Screenshot 2026-04-08 222031.png" width="30%" height="200"/>
-  <img src="public/imageRedme/Screenshot 2026-04-08 222331.png" width="30%" height="200"/>
+  <img src="public/imageRedme/Screenshot 2026-04-08 222031.png" width="30%" height="200" object-fit:cover;/>
+  <img src="public/imageRedme/Screenshot 2026-04-08 222331.png" width="30%" height="200" object-fit:cover;/>
   <img src="public/imageRedme/notifications.png" width="30%" />
 </p>
 <p align="center">
-  <img src="public/imageRedme/Screenshot 2026-04-08 224128.png" width="30%" height="200"/>
-  <img src="public/imageRedme/Screenshot 2026-04-08 224252.png" width="30%" height="200"/>
-  <img src="public/imageRedme/Screenshot 2026-04-08 224229.png" width="30%" height="200"/>
+  <img src="public/imageRedme/Screenshot 2026-04-08 224128.png" width="30%" height="200" object-fit:cover;/>
+  <img src="public/imageRedme/Screenshot 2026-04-08 224252.png" width="30%" height="200"object-fit:cover; />
+  <img src="public/imageRedme/Screenshot 2026-04-08 224229.png" width="30%" height="200" object-fit:cover;/>
 </p>
 ---
 
