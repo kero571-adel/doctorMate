@@ -52,33 +52,37 @@
 
 [Watch Demo Video](https://drive.google.com/drive/folders/1RPl_hXdpCpJS6VFwO2kE50XCY9A3lf9_?usp=sharing)
 
-### 📸 Screenshots
+## 📸 Screenshots
 
-<p align="center">
-  <img src="public/imageRedme/Screenshot 2026-04-17 151731.png" width="25%"  />
-  <img src="public/imageRedme/Screenshot 2026-04-17 151854.png" width="25%"  />
-  <img src="public/imageRedme/Screenshot 2026-04-17 152847.png" width="25%"  />
-  <img src="public/imageRedme/Screenshot 2026-04-17 152017.png" width="25%"  />
-</p>
-<p align="center">
-  <img src="public/imageRedme/Screenshot 2026-04-17 152042.png" width="25%" />
-  <img src="public/imageRedme/Screenshot 2026-04-08 222331.png" width="25%" />
-  <img src="public/imageRedme/Screenshot 2026-04-17 152137.png" width="25%" />
-  <img src="public/imageRedme/Screenshot 2026-04-17 153245.png" width="25%" />
-</p>
-<p align="center">
-  <img src="public/imageRedme/Screenshot 2026-04-17 153315.png" width="25%" />
-  <img src="public/imageRedme/Screenshot 2026-04-08 224128.png" width="25%" />
-  <img src="public/imageRedme/Screenshot 2026-04-08 224204.png" width="25%" />
-  <img src="public/imageRedme/Screenshot 2026-04-08 224229.png" width="25%" />
-</p>
-<p align="center">
-  <img src="public/imageRedme/Screenshot 2026-04-17 152244.png" width="25%" />
-  <img src="public/imageRedme/Screenshot 2026-04-08 224252.png" width="25%" />
-  <img src="public/imageRedme/Screenshot 2026-04-08 224204.png" width="25%" />
-  <img src="public/imageRedme/Screenshot 2026-04-08 224229.png" width="25%" />
-</p>
+### 🧑‍⚕️ Dashboard Overview
+
+| | | | |
+|---|---|---|---|
+| ![](public/imageRedme/Screenshot%202026-04-17%20151731.png) | ![](public/imageRedme/Screenshot%202026-04-17%20151854.png) | ![](public/imageRedme/Screenshot%202026-04-17%20152847.png) | ![](public/imageRedme/Screenshot%202026-04-17%20152017.png) |
+
 ---
+
+### 📅 Appointments & Scheduling
+
+| | | | |
+|---|---|---|---|
+| ![](public/imageRedme/Screenshot%202026-04-17%20152042.png) | ![](public/imageRedme/Screenshot%202026-04-08%20222331.png) | ![](public/imageRedme/Screenshot%202026-04-17%20152137.png) | ![](public/imageRedme/Screenshot%202026-04-17%20153245.png) |
+
+---
+
+### 💬 Chat & Communication
+
+| | | | |
+|---|---|---|---|
+| ![](public/imageRedme/Screenshot%202026-04-17%20153315.png) | ![](public/imageRedme/Screenshot%202026-04-08%20224128.png) | ![](public/imageRedme/Screenshot%202026-04-08%20224204.png) | ![](public/imageRedme/Screenshot%202026-04-08%20224229.png) |
+
+---
+
+### 🎥 Video Consultation
+
+| | | | |
+|---|---|---|---|
+| ![](public/imageRedme/Screenshot%202026-04-17%20152244.png) | ![](public/imageRedme/Screenshot%202026-04-08%20224252.png) | ![](public/imageRedme/Screenshot%202026-04-08%20224204.png) | ![](public/imageRedme/Screenshot%202026-04-08%20224229.png) |
 
 ## ✨ Key Features
 
