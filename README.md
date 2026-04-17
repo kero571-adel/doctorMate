@@ -54,15 +54,11 @@
 
 ## 📸 Screenshots
 
-### 🧑‍⚕️ Dashboard Overview
-
 | | | | |
 |---|---|---|---|
 | ![](public/imageRedme/Screenshot%202026-04-17%20151731.png) | ![](public/imageRedme/Screenshot%202026-04-17%20151854.png) | ![](public/imageRedme/Screenshot%202026-04-17%20152847.png) | ![](public/imageRedme/Screenshot%202026-04-17%20152017.png) |
 
 ---
-
-### 📅 Appointments & Scheduling
 
 | | | | |
 |---|---|---|---|
@@ -70,15 +66,11 @@
 
 ---
 
-### 💬 Chat & Communication
-
 | | | | |
 |---|---|---|---|
 | ![](public/imageRedme/Screenshot%202026-04-17%20153315.png) | ![](public/imageRedme/Screenshot%202026-04-08%20224128.png) | ![](public/imageRedme/Screenshot%202026-04-08%20224204.png) | ![](public/imageRedme/Screenshot%202026-04-08%20224229.png) |
 
 ---
-
-### 🎥 Video Consultation
 
 | | | | |
 |---|---|---|---|
