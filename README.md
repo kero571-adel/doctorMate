@@ -38,7 +38,7 @@
 - 💬 Real-time chat with patients
 - 🎥 Conduct secure video consultations
 - 🔔 Receive instant notifications for appointments and messages
-- 📱 Responsive design for desktop and tablet access
+- 📱 Responsive design for desktop and tablet access,mobile
 
 ---
 
@@ -50,24 +50,33 @@
 
 ### 🎥 Video Demo
 
-[Watch Demo Video](https://youtube.com)
+[Watch Demo Video](https://drive.google.com/drive/folders/1RPl_hXdpCpJS6VFwO2kE50XCY9A3lf9_?usp=sharing)
 
 ### 📸 Screenshots
 
 <p align="center">
-  <img src="public/imageRedme/Screenshot 2026-04-08 223523.png" width="30%" height="200" />
-  <img src="public/imageRedme/Screenshot 2026-04-08 224046.png" width="30%" height="200" />
-  <img src="public/imageRedme/Screenshot 2026-04-08 222128.png" width="30%" height="200" />
+  <img src="public/imageRedme/Screenshot 2026-04-17 151731.png" width="25%"  />
+  <img src="public/imageRedme/Screenshot 2026-04-17 151854.png" width="25%"  />
+  <img src="public/imageRedme/Screenshot 2026-04-17 152847.png" width="25%"  />
+  <img src="public/imageRedme/Screenshot 2026-04-17 152017.png" width="25%"  />
 </p>
 <p align="center">
-  <img src="public/imageRedme/Screenshot 2026-04-08 222031.png" width="30%" height="200"/>
-  <img src="public/imageRedme/Screenshot 2026-04-08 222331.png" width="30%" height="200"/>
-  <img src="public/imageRedme/notifications.png" width="30%" />
+  <img src="public/imageRedme/Screenshot 2026-04-17 152042.png" width="25%" />
+  <img src="public/imageRedme/Screenshot 2026-04-08 222331.png" width="25%" />
+  <img src="public/imageRedme/Screenshot 2026-04-17 152137.png" width="25%" />
+  <img src="public/imageRedme/Screenshot 2026-04-17 153245.png" width="25%" />
 </p>
 <p align="center">
-  <img src="public/imageRedme/Screenshot 2026-04-08 224128.png" width="30%" height="200"/>
-  <img src="public/imageRedme/Screenshot 2026-04-08 224252.png" width="30%" height="200"/>
-  <img src="public/imageRedme/Screenshot 2026-04-08 224229.png" width="30%" height="200"/>
+  <img src="public/imageRedme/Screenshot 2026-04-17 153315.png" width="25%" />
+  <img src="public/imageRedme/Screenshot 2026-04-08 224128.png" width="25%" />
+  <img src="public/imageRedme/Screenshot 2026-04-08 224204.png" width="25%" />
+  <img src="public/imageRedme/Screenshot 2026-04-08 224229.png" width="25%" />
+</p>
+<p align="center">
+  <img src="public/imageRedme/Screenshot 2026-04-17 152244.png" width="25%" />
+  <img src="public/imageRedme/Screenshot 2026-04-08 224252.png" width="25%" />
+  <img src="public/imageRedme/Screenshot 2026-04-08 224204.png" width="25%" />
+  <img src="public/imageRedme/Screenshot 2026-04-08 224229.png" width="25%" />
 </p>
 ---
 

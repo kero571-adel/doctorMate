@@ -18,6 +18,7 @@ export const addmedical = createAsyncThunk(
           patientId,
         }
       );
+      console.log("Medical Record Added:", response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || "حدث خطأ");

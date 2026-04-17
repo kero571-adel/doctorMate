@@ -384,7 +384,7 @@ const handleJoinChat = async () => {
     : appoinDetails?.data?.medicalRecord
     ? [appoinDetails?.data?.medicalRecord]
     : [];
-
+console.log("Medical Records List:", Array.isArray(appoinDetails?.data?.medicalRecord));
   const displayedRecords = showMoreRecords
     ? medicalRecordsList
     : medicalRecordsList.slice(0, 4);
