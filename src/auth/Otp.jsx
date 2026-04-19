@@ -16,6 +16,8 @@ import { useSelector, useDispatch } from "react-redux";
 import { verfyOtp } from "../redux/auth/authSlice";
 import { useNavigate } from "react-router-dom";
 import CircularProgress from "@mui/material/CircularProgress";
+import { useSnackbar } from "../hooks/useSnackbar";
+import GlobalSnackbar from "../components/GlobalSnackbar";
 export default function Otp() {
   const [otp, setOtp] = useState("");
   const [timeLeft, setTimeLeft] = useState(60);
@@ -26,6 +28,7 @@ export default function Otp() {
     (state) => state.auth.forgotPasswordEmail.forgotPass
   );
   const { loading, error } = useSelector((state) => state.auth);
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
   const navigate = useNavigate();
   useEffect(() => {
     let interval = null;
@@ -62,6 +65,10 @@ export default function Otp() {
           isVerified: true,
         };
         localStorage.setItem("user", JSON.stringify(user));
+
+        // ✅ أضف رسالة نجاح قبل الـ navigate
+        showSnackbar("Code verified successfully!", "success");
+
         if (forgotPass) {
           navigate("/logIn/forgetpass/otp/resetpass");
           return;
@@ -73,7 +80,10 @@ export default function Otp() {
         navigate("/");
       })
       .catch((error) => {
-        console.error(error);
+        showSnackbar(
+          error.message || "Failed to verify code. Please try again.",
+          "error"
+        );
       });
   };
 
@@ -168,21 +178,6 @@ export default function Otp() {
             Enter the 6-digit code sent to your email
           </Typography>
 
-          {/* Error Alert */}
-          {error && (
-            <Fade in={!!error}>
-              <Alert
-                severity="error"
-                sx={{
-                  width: "90%",
-                  mb: 2,
-                  borderRadius: "10px",
-                }}
-              >
-                {error}
-              </Alert>
-            </Fade>
-          )}
 
           {otp.length > 0 && otp.length < 6 && (
             <Chip
@@ -294,20 +289,7 @@ export default function Otp() {
             )}
           </Button>
 
-          {error && (
-            <Typography
-              sx={{
-                color: "error.main",
-                fontSize: "14px",
-                textAlign: "center",
-                width: "90%",
-                marginBottom: "10px",
-              }}
-            >
-              {error}
-            </Typography>
-          )}
-
+        
           <Typography
             sx={{
               fontSize: "12px",
@@ -346,6 +328,7 @@ export default function Otp() {
           </Typography>
         </Stack>
       </Box>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </Stack>
   );
 }

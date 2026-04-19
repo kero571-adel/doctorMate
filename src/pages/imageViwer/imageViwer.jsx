@@ -54,6 +54,8 @@ import {
 } from "@mui/icons-material";
 import { setSelectedPatient } from "../../redux/schedule/schedule";
 import { useSelector, useDispatch } from "react-redux";
+import { useSnackbar } from "../../hooks/useSnackbar";
+import GlobalSnackbar from "../../components/GlobalSnackbar";
 export default function DicomViewer() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -64,8 +66,6 @@ export default function DicomViewer() {
   const [contrast, setContrast] = useState(100);
   const [inverted, setInverted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [tool, setTool] = useState("pan");
-  const [viewMode, setViewMode] = useState("grid");
   const imageRef = useRef(null);
   const medicalImages = useSelector(
     (state) => state.dataSliceImgViwer.mediclImage
@@ -78,7 +78,7 @@ export default function DicomViewer() {
   const selectedImage = location.state?.image;
   const patientInfo = userInfo || {
     name: "_",
-    age: _,
+    age: "_",
     gender: "_",
     bloodType: "_",
     id: "_",
@@ -95,7 +95,7 @@ export default function DicomViewer() {
   };
   // Convert DICOM images to the format expected by the viewer
   const images =
-    medicalImages.length > 0
+    medicalImages?.length > 0
       ? [
           dicomFile,
           ...medicalImages.map((img) => ({
@@ -133,7 +133,22 @@ export default function DicomViewer() {
       }
     }
   }, [selectedImage, medicalImages]);
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
+  // useEffect(() => {
+  //   const fetchImages = async () => {
+  //     try {
+  //       // const response = await api.get('/dicom/images');
+  //       // setImages(response.data);
+  //     } catch (error) {
+  //       showSnackbar(
+  //         "Failed to load medical images. Please try again.",
+  //         "error"
+  //       );
+  //     }
+  //   };
 
+  //   fetchImages();
+  // }, []);
   const handlePrevious = () => {
     setCurrentImage((prev) => (prev > 0 ? prev - 1 : images.length - 1));
   };
@@ -929,6 +944,7 @@ export default function DicomViewer() {
           </Card>
         </div>
       </Fade>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </Box>
   );
 }

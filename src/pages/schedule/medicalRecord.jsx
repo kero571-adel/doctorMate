@@ -28,6 +28,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import NotesIcon from "@mui/icons-material/Notes";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import MedicalServicesIcon from "@mui/icons-material/MedicalServices";
+import { useSnackbar } from '../../hooks/useSnackbar';
 const conditions = [
   {
     id: 1,
@@ -70,6 +71,7 @@ const consultations = [
 ];
 import AddDiagnosis from "./Modal/diagnosis";
 export default function MedicalRecord({ appoinDetails, formatDate }) {
+  const { showSnackbar } = useSnackbar();
   const [openDiagnosis, setopenDiagnosis] = useState(false);
   return (
     <>

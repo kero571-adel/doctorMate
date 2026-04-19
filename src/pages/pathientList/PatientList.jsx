@@ -17,7 +17,6 @@ import {
   Pagination,
   InputAdornment,
   Skeleton,
-  Alert,
   Fade,
   CardContent,
 } from "@mui/material";
@@ -34,12 +33,17 @@ import { useNavigate } from "react-router-dom";
 import { setpatientDet } from "../../redux/patientList/patientList";
 import { setpatientDet2 } from "../../redux/patientList/patientList";
 import { getDataDoctor } from "../../redux/doctor/doctor";
+import { useSnackbar } from "../../hooks/useSnackbar";
+import GlobalSnackbar from "../../components/GlobalSnackbar";
 export default function PatientList() {
   const dispatch = useDispatch();
   const { patients, pagination, loading, error } = useSelector(
     (state) => state.patients
   );
-  console.log("🚀 ~ file: PatientList.jsx:28 ~ PatientList ~ patients:", patients);
+  console.log(
+    "🚀 ~ file: PatientList.jsx:28 ~ PatientList ~ patients:",
+    patients
+  );
   const userLS = JSON.parse(localStorage.getItem("user") || "{}");
   const { user } = useSelector((state) => state.doctor);
 
@@ -61,6 +65,12 @@ export default function PatientList() {
     dispatch(patientsList({ page, limit: 10, search: debouncedSearch }));
     dispatch(getDataDoctor());
   }, [dispatch, page, debouncedSearch]);
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
+  useEffect(() => {
+    if (error) {
+      showSnackbar(error, "error");
+    }
+  }, [error, showSnackbar]);
 
   const handlePageChange = (event, value) => {
     setPage(value);
@@ -210,22 +220,6 @@ export default function PatientList() {
             </CardContent>
           </Card>
         </Fade>
-
-        {/* Error Alert */}
-        {error && (
-          <Alert
-            severity="error"
-            sx={{
-              mb: 3,
-              borderRadius: "16px",
-              border: "2px solid #f44336",
-              boxShadow: "0 4px 20px rgba(244, 67, 54, 0.2)",
-            }}
-          >
-            {error}
-          </Alert>
-        )}
-
         {/* Search and Filter Bar */}
         <Card
           sx={{
@@ -273,9 +267,8 @@ export default function PatientList() {
                   ),
                 }}
               />
-
               {/* Action Buttons */}
-              <Stack direction="row" spacing={1}>
+              {/* <Stack direction="row" spacing={1}>
                 <IconButton
                   sx={{
                     background:
@@ -308,7 +301,7 @@ export default function PatientList() {
                 >
                   <DownloadOutlinedIcon />
                 </IconButton>
-              </Stack>
+              </Stack> */}
             </Stack>
 
             {/* Stats Row */}
@@ -639,6 +632,7 @@ export default function PatientList() {
           </Typography>
         </Box>
       </Box>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </Stack>
   );
 }

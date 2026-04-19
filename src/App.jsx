@@ -33,10 +33,6 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      {/* <BasicModal /> */}
-      {/* <AddPrescription /> 
-      <AddDiagnosis />*/}
-
       <Routes>
         {/* Public Routes */}
         <Route path="/signup" element={<SignUp />} />
@@ -79,14 +75,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* <Route
-          path="/schedule/appointmentsdetails/details"
-          element={
-            <ProtectedRoute>
-              <Details1 />
-            </ProtectedRoute>
-          }
-        /> */}
         <Route
           path="/medicalimaging"
           element={

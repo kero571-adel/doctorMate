@@ -10,8 +10,6 @@ import {
   TextField,
   Typography,
   FormControl,
-  Snackbar,
-  Alert,
 } from "@mui/material";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
@@ -19,6 +17,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useDispatch, useSelector } from "react-redux";
 import { addmedical } from "../../../redux/schedule/addMedicaql";
 import { getAppDetById } from "../../../redux/schedule/appoinmantDetals";
+import { useSnackbar } from "../../../hooks/useSnackbar";
+import GlobalSnackbar from "../../../components/GlobalSnackbar";
 const style = {
   position: "absolute",
   top: "50%",
@@ -41,11 +41,11 @@ export default function BasicModal({
   SetopenMedicalModal,
   id,
 }) {
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
   const selectedPatient = useSelector(
     (state) => state.schedule.selectedPatient
   );
   const dispatch = useDispatch();
-  const [openSnack, setOpenSnack] = useState(false);
   const handleClose = () => SetopenMedicalModal(false);
   const [recordType, setRecordType] = useState("diagnosis");
   const [selectedFile, setSelectedFile] = useState(null);
@@ -59,6 +59,25 @@ export default function BasicModal({
   };
   const handleSave = async () => {
     const patientId = id ? id : selectedPatient?.patient?.id;
+
+    // ✅ 1. التحقق من الحقول المطلوبة (اللي عليها *)
+    const errors = [];
+
+    if (!title?.trim()) {
+      errors.push("Title");
+    }
+    if (!description?.trim()) {
+      errors.push("Description");
+    }
+
+    // لو في أخطاء، اعرض رسالة واضحة
+    if (errors.length > 0) {
+      const message = `Please fill in: ${errors.join(" & ")}`;
+      showSnackbar(message, "warning");
+      return;
+    }
+
+    // ✅ 2. لو كل حاجة تمام، نفذ الحفظ
     try {
       await dispatch(
         addmedical({
@@ -68,10 +87,12 @@ export default function BasicModal({
           patientId,
         })
       ).unwrap();
-      // Refresh appointment details
-      await dispatch(getAppDetById({ id: selectedPatient?.id }));
-      setOpenSnack(true);
+
+      await dispatch(getAppDetById({ id: selectedPatient?.id })).unwrap();
+
+      showSnackbar("Medical record added successfully!", "success");
       SetopenMedicalModal(false);
+
       // Reset form
       setTitle("");
       setDescription("");
@@ -79,6 +100,10 @@ export default function BasicModal({
       setSelectedFile(null);
     } catch (error) {
       console.log("Error:", error);
+      showSnackbar(
+        error?.message || "Failed to add medical record. Please try again.",
+        "error"
+      );
     }
   };
   return (
@@ -235,20 +260,7 @@ export default function BasicModal({
           </Box>
         </Box>
       </Modal>
-      <Snackbar
-        open={openSnack}
-        autoHideDuration={3000}
-        onClose={() => setOpenSnack(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <Alert
-          onClose={() => setOpenSnack(false)}
-          severity="success"
-          sx={{ width: "100%" }}
-        >
-          Medical record added successfully!
-        </Alert>
-      </Snackbar>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </div>
   );
 }

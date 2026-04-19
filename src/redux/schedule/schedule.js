@@ -3,7 +3,7 @@ import api from "../../utils/api";
 
 // ========================== overViewSec2 profile ==========================
 export const appointmentsDoctor = createAsyncThunk(
-  "schedule/appointmentsDoctor", // عدّل الاسم هنا كمان
+  "schedule/appointmentsDoctor", 
   async ({ page, limit }, { rejectWithValue }) => {
     try {
       const response = await api.get(

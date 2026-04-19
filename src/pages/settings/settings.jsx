@@ -35,8 +35,11 @@ import { profileManagement } from "../../redux/doctor/profileMangment";
 import { getDataDoctor } from "../../redux/doctor/doctor";
 const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 import dayjs from "dayjs";
+import { useSnackbar } from "../../hooks/useSnackbar";
+import GlobalSnackbar from "../../components/GlobalSnackbar";
 
 export default function Settings() {
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
   const dispatch = useDispatch();
   const { loading, error, data } = useSelector((state) => state.profile);
   const { user } = useSelector((state) => state.doctor);
@@ -44,11 +47,7 @@ export default function Settings() {
   const [selectedDays, setSelectedDays] = useState([]);
   const [disabled, setDisabled] = useState(true);
   const navigate = useNavigate();
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "error",
-  });
+
   const [form, setForm] = useState({
     fullName: "",
     phone: "",
@@ -138,20 +137,12 @@ export default function Settings() {
   };
   useEffect(() => {
     if (error) {
-      setSnackbar({
-        open: true,
-        message: error || "Something went wrong",
-        severity: "error",
-      });
+      showSnackbar(error || "Something went wrong", "error");
     }
-    if (data) {
-      setSnackbar({
-        open: true,
-        message: data.message,
-        severity: "success",
-      });
+    if (data?.message) {
+      showSnackbar(data.message, "success");
     }
-  }, [error, data]);
+  }, [error, data, showSnackbar]);
   function handleSave() {
     const workingTimeString = `${selectedDays.join(", ")} from ${
       date.startTime ? dayjs(date.startTime).format("h A") : ""
@@ -165,13 +156,17 @@ export default function Settings() {
       .then(() => {
         // Refresh doctor data after successful update
         dispatch(getDataDoctor());
-        // Show success message and navigate
+        showSnackbar("Profile updated successfully!", "success");
         setTimeout(() => {
           navigate("/doctorprofile");
         }, 1000);
       })
       .catch((err) => {
         console.error("Profile update failed:", err);
+        showSnackbar(
+          err?.message || "Failed to update profile. Please try again.",
+          "error"
+        );
       });
   }
 
@@ -200,21 +195,6 @@ export default function Settings() {
           flex: 1,
         }}
       >
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={2500}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-        >
-          <Alert
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
-            severity={snackbar.severity}
-            sx={{ width: "100%" }}
-          >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-
         {/* Header */}
         <Fade in timeout={400}>
           <Stack
@@ -844,6 +824,7 @@ export default function Settings() {
           </Card>
         </Fade>
       </Box>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </Stack>
   );
 }

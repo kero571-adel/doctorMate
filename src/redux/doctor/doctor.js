@@ -93,20 +93,6 @@ const doctor = createSlice({
         state.loading = false;
         state.error = action.payload;
       });
-    // fetch patients
-    // builder
-    //   .addCase(getRateDoctor.pending, (state) => {
-    //     state.loading = true;
-    //     state.error = null;
-    //   })
-    //   .addCase(getRateDoctor.fulfilled, (state, action) => {
-    //     state.loading = false;
-    //     state.data = action.payload;
-    //   })
-    //   .addCase(getRateDoctor.rejected, (state, action) => {
-    //     state.loading = false;
-    //     state.error = action.payload;
-    //   });
   },
 });
 export default doctor.reducer;

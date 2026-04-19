@@ -11,12 +11,13 @@ export const signIn = createAsyncThunk(
         "https://doctormate.runasp.net/api/Login",
         { emailOrPhone, password }
       );
-     
+     console.log("signIn response.data = ", response.data);
       const { token, user } = response.data.data;
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
       return response.data;
     } catch (error) {
+      console.error("signIn error = ", error);
       return rejectWithValue(error.response?.data?.message || error.message);
     }
   }

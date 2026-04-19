@@ -3,18 +3,11 @@ import {
   Box,
   Typography,
   Button,
-  Card,
-  CardContent,
   CardMedia,
-  Grid,
   LinearProgress,
   IconButton,
-  Breadcrumbs,
-  Link,
   Paper,
   Avatar,
-  Snackbar,
-  Alert,
   Stack,
   Dialog,
   DialogTitle,
@@ -30,8 +23,6 @@ import {
   Description,
   Close,
   ExpandMore,
-  Delete,
-  CheckCircle,
   Error as ErrorIcon,
   VisibilityOutlined,
   WarningAmber,
@@ -44,6 +35,8 @@ import { delMedicalImg } from "../../redux/schedule/addMedicalImg";
 import cornerstone from "cornerstone-core";
 import cornerstoneWADOImageLoader from "cornerstone-wado-image-loader";
 import dicomParser from "dicom-parser";
+import { useSnackbar } from "../../hooks/useSnackbar";
+import GlobalSnackbar from "../../components/GlobalSnackbar";
 
 // ✅ Initialize Cornerstone with proper configuration
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
@@ -67,16 +60,17 @@ cornerstone.registerImageLoader(
 );
 
 export default function MedicalImaging() {
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
   const fileInputRef = useRef(null);
   const dispatch = useDispatch();
   const [uploadingFiles, setUploadingFiles] = useState([]);
   const [displayedImages, setDisplayedImages] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
+  // const [snackbar, setSnackbar] = useState({
+  //   open: false,
+  //   message: "",
+  //   severity: "success",
+  //});
   const [openDescriptionModal, setOpenDescriptionModal] = useState(false);
   const [pendingFiles, setPendingFiles] = useState([]);
   const [imageDescription, setImageDescription] = useState("");
@@ -97,13 +91,6 @@ export default function MedicalImaging() {
     displayedImages.length > 0 ? displayedImages : allImages;
   const hasMoreImages = displayableImages.length < allImages.length;
 
-  const showSnackbar = (message, severity = "success") => {
-    setSnackbar({ open: true, message, severity });
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
   function handelDel(id) {
     dispatch(delMedicalImg(id));
   }
@@ -120,7 +107,8 @@ export default function MedicalImaging() {
     // بناء رابط من معرف الملف والمريض
     // تأكد من أن API endpoint صحيح
     if (image.id) {
-      const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const apiBaseUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:5000";
       return `${apiBaseUrl}/api/medical-images/${image.id}/download`;
     }
     return null;
@@ -142,11 +130,12 @@ export default function MedicalImaging() {
               try {
                 // تفعيل العنصر
                 cornerstone.enable(el);
-                
+
                 const imageUrl = getImageUrl(image);
                 if (!imageUrl) {
                   console.warn("No image URL for DICOM:", image);
-                  el.innerHTML = '<div style="color:#999;text-align:center;padding:20px;height:100%;display:flex;align-items:center;justify-content:center;">No URL</div>';
+                  el.innerHTML =
+                    '<div style="color:#999;text-align:center;padding:20px;height:100%;display:flex;align-items:center;justify-content:center;">No URL</div>';
                   return;
                 }
 
@@ -165,7 +154,8 @@ export default function MedicalImaging() {
                   .catch((err) => {
                     console.error("Error loading DICOM:", err);
                     if (el) {
-                      el.innerHTML = '<div style="color:#f44336;text-align:center;padding:20px;font-size:12px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;"><div style="font-size:20px;margin-bottom:8px;">⚠️</div><div>Failed to load</div></div>';
+                      el.innerHTML =
+                        '<div style="color:#f44336;text-align:center;padding:20px;font-size:12px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;"><div style="font-size:20px;margin-bottom:8px;">⚠️</div><div>Failed to load</div></div>';
                     }
                   });
               } catch (err) {
@@ -185,7 +175,21 @@ export default function MedicalImaging() {
             justifyContent: "center",
           }}
         >
-          <Box sx={{ position: "absolute", top: 8, left: 8, bgcolor: "#5cb998", color: "white", px: 1, py: 0.3, borderRadius: "4px", fontSize: "10px", fontWeight: 600, zIndex: 2 }}>
+          <Box
+            sx={{
+              position: "absolute",
+              top: 8,
+              left: 8,
+              bgcolor: "#5cb998",
+              color: "white",
+              px: 1,
+              py: 0.3,
+              borderRadius: "4px",
+              fontSize: "10px",
+              fontWeight: 600,
+              zIndex: 2,
+            }}
+          >
             {image.modality || "DICOM"}
           </Box>
         </Box>
@@ -530,6 +534,15 @@ export default function MedicalImaging() {
     "dicomweb",
     cornerstoneWADOImageLoader.loadImage
   );
+  useEffect(() => {
+    if (error) {
+      const message =
+        typeof error === "string"
+          ? error
+          : error.message || JSON.stringify(error);
+      showSnackbar(message, "error");
+    }
+  }, [error, showSnackbar]);
   return (
     <>
       <input
@@ -1192,35 +1205,7 @@ export default function MedicalImaging() {
           </Box>
         </Paper>
       </Box>
-
-      {/* Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-      >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{
-            width: "100%",
-            fontSize: "14px",
-            fontWeight: 500,
-          }}
-          icon={
-            snackbar.severity === "success" ? (
-              <CheckCircle />
-            ) : snackbar.severity === "warning" ? (
-              <WarningAmber />
-            ) : (
-              <ErrorIcon />
-            )
-          }
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </>
   );
 }

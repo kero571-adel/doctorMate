@@ -67,6 +67,8 @@ import { setUserInfo } from "../../redux/imageViwer/data";
 import { setMediclImage } from "../../redux/imageViwer/data";
 import { setpatientDet } from "../../redux/patientList/patientList";
 import { setpatientDet2 } from "../../redux/patientList/patientList";
+import { useSnackbar } from "../../hooks/useSnackbar";
+import GlobalSnackbar from "../../components/GlobalSnackbar";
 const cardStyle = {
   p: { xs: 2, sm: 3 },
   borderRadius: "20px",
@@ -132,7 +134,6 @@ const getStatusColor = (status, theme) => {
       };
   }
 };
-
 export default function Patients() {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -146,13 +147,14 @@ export default function Patients() {
   const [showAllRecords, setShowAllRecords] = useState(false);
   const [showAllDiagnoses, setShowAllDiagnoses] = useState(false);
   const [showAllPrescriptions, setShowAllPrescriptions] = useState(false);
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
   const ITEM_LIMIT = 4;
   const pateintDet = useSelector((state) => state.patients.patientDet);
   const pateintDet2 = useSelector((state) => state.patients.patientDet2);
   const patientDetails = useSelector((state) => state.patientdet.datapatient);
   console.log("patientDetails", patientDetails);
   const patientDetails2 = useSelector((state) => state.patientdet.datapatient2);
-  const { patients } = useSelector((state) => state.patients);
+  const { patients, error } = useSelector((state) => state.patients);
   console.log("patients", patients);
   function handleNextPatientClick() {
     dispatch(setpatientDet(patientDetails2.data.basicInfo));
@@ -169,7 +171,11 @@ export default function Patients() {
       dispatch(getPatientDetals({ id: pateintDet.id }));
     }
   }, [pateintDet]);
-
+  useEffect(() => {
+    if (error) {
+      showSnackbar(error, "error");
+    }
+  }, [error, showSnackbar]);
   // المريض التالي
   useEffect(() => {
     if (pateintDet2?.id) {
@@ -1342,46 +1348,47 @@ export default function Patients() {
                     overflowX: "auto",
                   }}
                 >
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: "#f8f9fa" }}>
-                        <TableCell
-                          sx={{
-                            py: 1,
-                            px: 1.5,
-                            fontWeight: 700,
-                            fontSize: "10px",
-                            color: "#6c757d",
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          Medication
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            py: 1,
-                            px: 1.5,
-                            fontWeight: 700,
-                            fontSize: "10px",
-                            color: "#6c757d",
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          Dosage
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            py: 1,
-                            px: 1.5,
-                            fontWeight: 700,
-                            fontSize: "10px",
-                            color: "#6c757d",
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          Frequency
-                        </TableCell>
-                        {/* <TableCell
+                  {visibleMedications.length > 0 ? (
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: "#f8f9fa" }}>
+                          <TableCell
+                            sx={{
+                              py: 1,
+                              px: 1.5,
+                              fontWeight: 700,
+                              fontSize: "10px",
+                              color: "#6c757d",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            Medication
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              py: 1,
+                              px: 1.5,
+                              fontWeight: 700,
+                              fontSize: "10px",
+                              color: "#6c757d",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            Dosage
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              py: 1,
+                              px: 1.5,
+                              fontWeight: 700,
+                              fontSize: "10px",
+                              color: "#6c757d",
+                              textTransform: "uppercase",
+                            }}
+                          >
+                            Frequency
+                          </TableCell>
+                          {/* <TableCell
                           sx={{
                             py: 1,
                             px: 1.5,
@@ -1406,78 +1413,100 @@ export default function Patients() {
                         >
                           Actions
                         </TableCell> */}
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {visibleMedications.map((item) => (
-                        <TableRow
-                          key={item?.id}
-                          hover
-                          sx={{
-                            "&:hover": {
-                              backgroundColor: "rgba(82, 172, 140, 0.04)",
-                            },
-                            "&:last-child td": { borderBottom: "none" },
-                          }}
-                        >
-                          <TableCell sx={{ py: 1.5, px: 1.5 }}>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                              }}
-                            >
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {visibleMedications.map((item) => (
+                          <TableRow
+                            key={item?.id}
+                            hover
+                            sx={{
+                              "&:hover": {
+                                backgroundColor: "rgba(82, 172, 140, 0.04)",
+                              },
+                              "&:last-child td": { borderBottom: "none" },
+                            }}
+                          >
+                            <TableCell sx={{ py: 1.5, px: 1.5 }}>
                               <Box
                                 sx={{
-                                  width: 28,
-                                  height: 28,
-                                  borderRadius: 1.5,
-                                  background:
-                                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                                   display: "flex",
                                   alignItems: "center",
-                                  justifyContent: "center",
-                                  color: "white",
-                                  fontWeight: 600,
-                                  fontSize: "11px",
-                                  flexShrink: 0,
+                                  gap: 1,
                                 }}
                               >
-                                {item?.drugName?.charAt(0)}
+                                <Box
+                                  sx={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: 1.5,
+                                    background:
+                                      "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: "white",
+                                    fontWeight: 600,
+                                    fontSize: "11px",
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {item?.drugName?.charAt(0)}
+                                </Box>
+                                <Typography
+                                  fontWeight={600}
+                                  fontSize="12px"
+                                  color="#1a1a1a"
+                                  noWrap
+                                >
+                                  {item?.drugName}
+                                </Typography>
                               </Box>
+                            </TableCell>
+                            <TableCell sx={{ py: 1.5, px: 1.5 }}>
+                              <Chip
+                                label={item?.dosage}
+                                size="small"
+                                sx={{
+                                  height: 24,
+                                  fontSize: "10px",
+                                  fontWeight: 600,
+                                  backgroundColor: "#e3f2fd",
+                                  color: "#1976d2",
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell sx={{ py: 1.5, px: 1.5 }}>
                               <Typography
-                                fontWeight={600}
-                                fontSize="12px"
-                                color="#1a1a1a"
+                                fontSize="11px"
+                                color="#6c757d"
                                 noWrap
                               >
-                                {item?.drugName}
+                                {item?.frequency}
                               </Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell sx={{ py: 1.5, px: 1.5 }}>
-                            <Chip
-                              label={item?.dosage}
-                              size="small"
-                              sx={{
-                                height: 24,
-                                fontSize: "10px",
-                                fontWeight: 600,
-                                backgroundColor: "#e3f2fd",
-                                color: "#1976d2",
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell sx={{ py: 1.5, px: 1.5 }}>
-                            <Typography fontSize="11px" color="#6c757d" noWrap>
-                              {item?.frequency}
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <Box
+                      sx={{
+                        p: 3,
+                        textAlign: "center",
+                        backgroundColor: "rgba(82, 172, 140, 0.05)",
+                        borderRadius: "12px",
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        fontSize={{ xs: "12px", sm: "14px" }}
+                      >
+                        No prescriptions recorded yet
+                      </Typography>
+                    </Box>
+                  )}
                 </TableContainer>
 
                 {/* Show More/Less - Compact */}
@@ -1510,6 +1539,7 @@ export default function Patients() {
             </Grid>
           </Grid>
         </Box>
+        <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
       </Stack>
     </>
   );

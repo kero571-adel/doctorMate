@@ -5,8 +5,6 @@ import {
   TextField,
   Button,
   InputAdornment,
-  Alert,
-  Fade,
 } from "@mui/material";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
@@ -14,38 +12,31 @@ import EmailIcon from "@mui/icons-material/Email";
 import { useSelector, useDispatch } from "react-redux";
 import {
   forgotPass,
-  clearAuthError,
   setForgotPasswordEmail,
 } from "../redux/auth/authSlice";
 import { useState, useEffect } from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useNavigate } from "react-router-dom";
+import { useSnackbar } from "../hooks/useSnackbar";
+import GlobalSnackbar from "../components/GlobalSnackbar";
 export default function ForgetPass() {
   const [email, setEmail] = useState("");
-  const [error01, setError] = useState("");
   const [emailFocused, setEmailFocused] = useState(false);
   const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.auth);
+  const { loading } = useSelector((state) => state.auth);
   const navigate = useNavigate();
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
   const isValidEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
-  useEffect(() => {
-    if (error) {
-      setError(error);
-      dispatch(clearAuthError());
-    }
-  }, [error, dispatch]);
   const handleSendCode = () => {
-    setError("");
-
     if (!email) {
-      setError("Please enter your email");
+      showSnackbar("Please enter your email", "error");
       return;
     }
 
     if (!isValidEmail(email)) {
-      setError("Please enter a valid email");
+      showSnackbar("Please enter a valid email", "error");
       return;
     }
     dispatch(
@@ -58,6 +49,12 @@ export default function ForgetPass() {
       .unwrap()
       .then(() => {
         navigate("/logIn/forgetpass/otp");
+      })
+      .catch((error) => {
+        showSnackbar(
+          error.message || "Failed to send code. Please try again.",
+          "error"
+        );
       });
   };
 
@@ -151,24 +148,6 @@ export default function ForgetPass() {
           >
             Enter your email and we'll send a 6-digit verification code
           </Typography>
-
-          {/* Error Alert */}
-          {error01 && (
-            <Fade in={!!error01}>
-              <Alert
-                severity="error"
-                sx={{
-                  width: "90%",
-                  mb: 2,
-                  borderRadius: "10px",
-                }}
-                onClose={() => setError("")}
-              >
-                {error01}
-              </Alert>
-            </Fade>
-          )}
-
           <TextField
             label="Email Address"
             type="email"
@@ -177,7 +156,6 @@ export default function ForgetPass() {
             onBlur={() => setEmailFocused(false)}
             onChange={(e) => {
               setEmail(e.target.value);
-              setError("");
             }}
             onKeyPress={(e) => {
               if (e.key === "Enter") {
@@ -285,6 +263,7 @@ export default function ForgetPass() {
           </Stack>
         </Stack>
       </Box>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </Stack>
   );
 }

@@ -47,8 +47,11 @@ import { startSession } from "../../redux/communication/communicationSlice";
 import { getDataDoctor } from "../../redux/doctor/doctor";
 import NavBar from "../../components/navBar";
 import AppointmentScheduleTable from "./timeLineAppomint";
+import { useSnackbar } from "../../hooks/useSnackbar";
+import GlobalSnackbar from "../../components/GlobalSnackbar";
 
 export default function Schedule() {
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { data, loading, error } = useSelector((state) => state.schedule);
@@ -82,6 +85,12 @@ export default function Schedule() {
 
   const handleStatusChange = (newStatus, appointment = null) => {
     const targetAppointment = appointment || selectedAppointment;
+    console.log(
+      "🔹 Changing status to:",
+      newStatus,
+      "for appointment:",
+      targetAppointment
+    );
     if (targetAppointment) {
       dispatch(
         appointmentsStatus({
@@ -223,6 +232,16 @@ export default function Schedule() {
     dispatch(getDataDoctor());
   }, []);
 
+  // ✅ أضف ده بعد الـ useEffect الحالي:
+  useEffect(() => {
+    if (error) {
+      const message =
+        typeof error === "string"
+          ? error
+          : error.message || JSON.stringify(error);
+      showSnackbar(message, "error");
+    }
+  }, [error, showSnackbar]);
   const handleStartCommunication = async (session) => {
     console.log("🔹 Start Communication clicked");
     if (
@@ -269,7 +288,7 @@ export default function Schedule() {
         dispatch(setSelectedPatient(session));
         navigate("/message");
       } else {
-        alert(`Failed: ${error}`);
+        showSnackbar(`Failed to start communication: ${error}`, "error");
       }
     }
   };
@@ -398,14 +417,7 @@ export default function Schedule() {
           </Card>
         </Fade>
 
-        {/* Error Alert */}
-        {error && (
-          <Alert severity="error">
-            {typeof error === "string"
-              ? error
-              : error.message || JSON.stringify(error)}
-          </Alert>
-        )}
+        
 
         {/* Filter Tabs Card */}
         <Card
@@ -1060,7 +1072,7 @@ export default function Schedule() {
                                 py: { xs: 1, md: 1.2 },
                                 borderRadius: "12px",
                                 textTransform: "none",
-                                fontSize: { xs: "11px", md: "15px" },
+                                fontSize: { xs: "11px", md: "13px" },
                               }}
                             >
                               {isActive
@@ -1273,6 +1285,7 @@ export default function Schedule() {
           </Typography>
         </Box>
       </Box>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </Stack>
   );
 }

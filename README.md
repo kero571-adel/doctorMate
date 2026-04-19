@@ -54,27 +54,33 @@
 
 ## 📸 Screenshots
 
-| | | | |
-|---|---|---|---|
+|                                                             |                                                             |                                                             |                                                             |
+| ----------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- |
 | ![](public/imageRedme/Screenshot%202026-04-17%20151731.png) | ![](public/imageRedme/Screenshot%202026-04-17%20151854.png) | ![](public/imageRedme/Screenshot%202026-04-17%20152847.png) | ![](public/imageRedme/Screenshot%202026-04-17%20152017.png) |
 
 ---
 
-| | | | |
-|---|---|---|---|
+|                                                             |                                                             |                                                             |                                                             |
+| ----------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- |
 | ![](public/imageRedme/Screenshot%202026-04-17%20152042.png) | ![](public/imageRedme/Screenshot%202026-04-08%20222331.png) | ![](public/imageRedme/Screenshot%202026-04-17%20152137.png) | ![](public/imageRedme/Screenshot%202026-04-17%20153245.png) |
 
 ---
 
-| | | | |
-|---|---|---|---|
+|                                                             |                                                             |                                                             |                                                             |
+| ----------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- |
 | ![](public/imageRedme/Screenshot%202026-04-17%20153315.png) | ![](public/imageRedme/Screenshot%202026-04-08%20224128.png) | ![](public/imageRedme/Screenshot%202026-04-08%20224204.png) | ![](public/imageRedme/Screenshot%202026-04-08%20224229.png) |
 
 ---
 
-| | | | |
-|---|---|---|---|
+|                                                             |                                                             |                                                             |                                                             |
+| ----------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- |
 | ![](public/imageRedme/Screenshot%202026-04-17%20152244.png) | ![](public/imageRedme/Screenshot%202026-04-08%20224252.png) | ![](public/imageRedme/Screenshot%202026-04-08%20224204.png) | ![](public/imageRedme/Screenshot%202026-04-08%20224229.png) |
+
+---
+
+|                                                         |                                                         |                                                         |     |
+| ------------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------- | --- |
+| ![](public/imageRedme/Screenshot 2026-04-18 153059.png) | ![](public/imageRedme/Screenshot 2026-04-18 153144.png) | ![](public/imageRedme/Screenshot 2026-04-18 155610.png) |
 
 ## ✨ Key Features
 
@@ -170,90 +176,52 @@ The dashboard leverages **Agora Real-Time Communication (RTC)** platform to deli
 
 ### Project Folder Structure
 
-```
-src/
-├── components/
-│   ├── Dashboard/
-│   │   ├── Dashboard.jsx
-│   │   ├── DashboardHeader.jsx
-│   │   └── StatCards.jsx
-│   ├── Patients/
-│   │   ├── PatientList.jsx
-│   │   ├── PatientCard.jsx
-│   │   └── PatientDetail.jsx
-│   ├── Appointments/
-│   │   ├── AppointmentCalendar.jsx
-│   │   ├── AppointmentForm.jsx
-│   │   └── AppointmentList.jsx
-│   ├── Chat/
-│   │   ├── ChatWindow.jsx
-│   │   ├── ChatMessage.jsx
-│   │   └── ChatInput.jsx
-│   ├── VideoCall/
-│   │   ├── VideoCallRoom.jsx
-│   │   ├── VideoControls.jsx
-│   │   └── ParticipantVideo.jsx
-│   ├── Layout/
-│   │   ├── Sidebar.jsx
-│   │   ├── Navbar.jsx
-│   │   └── Layout.jsx
-│   └── Common/
-│       ├── Button.jsx
-│       ├── Modal.jsx
-│       └── LoadingSpinner.jsx
-├── pages/
-│   ├── LoginPage.jsx
-│   ├── DashboardPage.jsx
-│   ├── PatientsPage.jsx
-│   ├── AppointmentsPage.jsx
-│   ├── ChatPage.jsx
-│   ├── VideoCallPage.jsx
-│   └── NotFoundPage.jsx
-├── services/
-│   ├── firebase.js
-│   ├── authService.js
-│   ├── patientService.js
-│   ├── appointmentService.js
-│   ├── chatService.js
-│   ├── videoCallService.js
-│   └── notificationService.js
-├── hooks/
-│   ├── useAuth.js
-│   ├── useChat.js
-│   ├── useAppointments.js
-│   ├── useVideoCall.js
-│   └── useFetch.js
-├── redux/
-│   ├── store.js
-│   ├── slices/
-│   │   ├── authSlice.js
-│   │   ├── appointmentSlice.js
-│   │   ├── chatSlice.js
-│   │   └── uiSlice.js
-│   └── middleware/
-│       └── thunks.js
-├── utils/
-│   ├── constants.js
-│   ├── helpers.js
-│   ├── validators.js
-│   ├── dateFormatter.js
-│   └── errorHandler.js
-├── styles/
-│   ├── global.css
-│   ├── variables.css
+📁 dashpord_doctor/
+├── 📁 public/
+│   ├── 📁 assets/
+│   │   ├── 📁 auth/
+│   │   ├── 📁 dashboard/
+│   │   ├── 📁 H&S/
+│   │   ├── 📁 imageView/
+│   │   ├── 📁 message/
+│   │   ├── 📁 navBar/
+│   │   ├── 📁 patitient/
+│   │   ├── 📁 schudle/
+│   │   ├── 📁 settings/
+│   │   ├── IMG-0001-00001.dcm
+│   │   └── react.svg
+│   ├── 📁 imageRedme/
+│   │   └── (screenshots)
+│   └── vite.svg
+├── 📁 src/
+│   ├── 📁 auth/
+│   │   ├── compeleteProfile.jsx
+│   │   ├── forgetPass.jsx
+│   │   ├── logIn.jsx
+│   │   ├── Otp.jsx
+│   │   ├── resetPass.jsx
+│   │   └── signUp.jsx
+│   ├── 📁 components/
+│   │   ├── LogoutButton.jsx
+│   │   ├── navBar.jsx
+│   │   ├── GlobalSnackbar.jsx
+│   │   └── ProtectedRoute.jsx
+│   ├── 📁 hooks/
+│   ├── 📁 pages/
+│   ├── 📁 redux/
+│   ├── 📁 services/
+│   ├── 📁 utils/
+│   ├── App.css
+│   ├── App.jsx
+│   ├── index.css
+│   ├── main.jsx
 │   └── theme.js
-├── App.jsx
-└── main.jsx
-
-public/
+├── eslint.config.js
 ├── index.html
-└── assets/
-
-.env (for environment variables)
-package.json
-vite.config.js
-```
-
+├── package.json
+├── vercel.json
+├── vite.config.js
+└── README.md
 ---
 
 ## 🛠️ Tech Stack
@@ -335,36 +303,6 @@ yarn preview
 
 ---
 
-## 🔑 Environment Variables
-
-Create a `.env` file in the root directory with the following variables:
-
-```env
-# Firebase Configuration
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
-VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
-VITE_FIREBASE_APP_ID=your_firebase_app_id
-
-# Agora Configuration
-VITE_AGORA_APP_ID=your_agora_app_id
-VITE_AGORA_APP_CERTIFICATE=your_agora_app_certificate
-
-# API Endpoints
-VITE_API_BASE_URL=http://localhost:3001
-VITE_APP_NAME=DoctorMate Doctor Dashboard
-
-# Feature Flags
-VITE_ENABLE_VIDEO_RECORDING=true
-VITE_ENABLE_SCREEN_SHARING=true
-```
-
-**Important:** Never commit `.env` file to version control. Add it to `.gitignore`.
-
----
-
 ## 🎨 UI/UX Design
 
 ### Design Philosophy
@@ -401,19 +339,15 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 Developed with ❤️ for healthcare professionals and patient care.
 
-### Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
 ### Support
 
-For support, email support@doctormate.com or open an issue on GitHub.
+For support, email doctormate630@gmail.com or open an issue on GitHub.
 
 ### Links
 
-- 🌐 [Website](https://doctormate.com)
-- 📧 [Email](mailto:info@doctormate.com)
-- 💼 [LinkedIn](https://linkedin.com/company/doctormate)
+- 🌐 [Website](https://doctor-mate.vercel.app)
+- 📧 [Email](doctormate630@gmail.com)
+- 💼 [LinkedIn](https://www.linkedin.com/in/keroles-adel-08020b332/)
 
 ---
 

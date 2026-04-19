@@ -17,6 +17,8 @@ import NoteAddIcon from "@mui/icons-material/NoteAdd";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import SaveIcon from "@mui/icons-material/Save";
+import { useSnackbar } from "../../../hooks/useSnackbar";
+import GlobalSnackbar from "../../../components/GlobalSnackbar";
 import { Snackbar, Alert } from "@mui/material";
 const style = {
   position: "absolute",
@@ -36,12 +38,13 @@ export default function AddPrescription({
   openAddPrescription,
   setopenAddPrescription,
 }) {
-  const [openSnack, setOpenSnack] = useState(false);
-  const [openSuccessSnack, setOpenSuccessSnack] = useState(false);
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
   const dispatch = useDispatch();
   const { loading, error, data } = useSelector((state) => state.prescriptions);
   const diagnosisId = useSelector((state) => state.diagnoses.data);
-  const selectedPatient = useSelector((state) => state.schedule.selectedPatient);
+  const selectedPatient = useSelector(
+    (state) => state.schedule.selectedPatient
+  );
   //State for medications
   const [medications, setMedications] = useState([
     {
@@ -100,12 +103,15 @@ export default function AddPrescription({
     const isValid = medications.every((med) => med.drugName && med.dosage);
 
     if (!isValid) {
-      alert("Please fill in all required fields (Drug Name and Dosage)");
+      showSnackbar(
+        "Please fill in all required fields (Drug Name and Dosage)",
+        "warning"
+      );
       return;
     }
 
     if (!diagnosisId) {
-      alert("Diagnosis ID is required");
+      showSnackbar("Diagnosis ID is required", "warning");
       return;
     }
     try {
@@ -122,20 +128,24 @@ export default function AddPrescription({
         })
       ).unwrap();
       // Refresh appointment details
-      await dispatch(getAppDetById({ id: selectedPatient?.id }));
-      setOpenSuccessSnack(true);
+      await dispatch(getAppDetById({ id: selectedPatient?.id })).unwrap();
+      showSnackbar("Prescription added successfully!", "success");
       handleClose();
     } catch (error) {
       console.log("Error:", error);
+      showSnackbar(
+        error?.message || "Failed to add prescription. Please try again.",
+        "error"
+      );
     }
   };
-  
-useEffect(() => {
-  if (openAddPrescription && !diagnosisId?.data?.id) {
-    setOpenSnack(true);
-    setopenAddPrescription(false);
-  }
-}, [openAddPrescription, diagnosisId]);
+
+  useEffect(() => {
+    if (openAddPrescription && !diagnosisId?.data?.id) {
+      setOpenSnack(true);
+      setopenAddPrescription(false);
+    }
+  }, [openAddPrescription, diagnosisId]);
   return (
     <div>
       <Modal
@@ -180,7 +190,9 @@ useEffect(() => {
             {/* Show error if exists */}
             {error && (
               <Alert severity="error" sx={{ mb: 2 }}>
-                {typeof error === "string" ? error : "An error occurred"}
+                {typeof error.message === "string"
+                  ? error.message
+                  : "An error occurred"}
               </Alert>
             )}
 
@@ -406,35 +418,7 @@ useEffect(() => {
           </Box>
         </Box>
       </Modal>
-      <Snackbar
-        open={openSnack}
-        autoHideDuration={4000}
-        onClose={() => setOpenSnack(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => setOpenSnack(false)}
-          severity="warning"
-          variant="filled"
-          sx={{ width: "100%" }}
-        >
-          You must add a diagnosis before adding a prescription.
-        </Alert>
-      </Snackbar>
-      <Snackbar
-        open={openSuccessSnack}
-        autoHideDuration={3000}
-        onClose={() => setOpenSuccessSnack(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setOpenSuccessSnack(false)}
-          severity="success"
-          sx={{ width: '100%' }}
-        >
-          Prescription added successfully!
-        </Alert>
-      </Snackbar>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </div>
   );
 }

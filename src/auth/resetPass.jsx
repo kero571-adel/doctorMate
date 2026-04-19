@@ -21,6 +21,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { resetPass, clearAuthError } from "../redux/auth/authSlice";
 import CircularProgress from "@mui/material/CircularProgress";
+import { useSnackbar } from '../hooks/useSnackbar';
+import GlobalSnackbar from '../components/GlobalSnackbar';
 
 export default function ResetPass() {
   const [showPassword, setShowPassword] = useState(false);
@@ -37,7 +39,7 @@ export default function ResetPass() {
   // حالة الحقول
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [localError, setLocalError] = useState("");
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
 
   // Redux
   const dispatch = useDispatch();
@@ -53,14 +55,6 @@ export default function ResetPass() {
       navigate("/logIn/forgetpass", { replace: true });
     }
   }, [forgotPasswordEmail, navigate]);
-
-  // مسح الخطأ من Redux
-  useEffect(() => {
-    if (error) {
-      setLocalError(error);
-      dispatch(clearAuthError());
-    }
-  }, [error, dispatch]);
 
   // دوال إظهار/إخفاء الباسورد
   const handleTogglePassword = () => setShowPassword(!showPassword);
@@ -78,32 +72,32 @@ export default function ResetPass() {
 
   // دالة إعادة تعيين الباسورد
   const handleResetPassword = () => {
-    setLocalError("");
 
     // التحقق من وجود الإيميل
     if (!forgotPasswordEmail) {
-      setLocalError(
-        "Session expired. Please restart the password reset process."
+      showSnackbar(
+        "Session expired. Please restart the password reset process.",
+        "error"
       );
       return;
     }
 
     // التحقق من ملء جميع الحقول
     if (!password || !confirmPassword) {
-      setLocalError("⚠️ Please fill in all fields");
+      showSnackbar("⚠️ Please fill in all fields", "error");
       return;
     }
 
     // التحقق من تطابق الباسورد
     if (password !== confirmPassword) {
-      setLocalError("⚠️ Passwords do not match");
+      showSnackbar("⚠️ Passwords do not match", "error");
       return;
     }
 
     // التحقق من شروط الباسورد
     const allValid = Object.values(passwordValidation).every(Boolean);
     if (!allValid) {
-      setLocalError("⚠️ Password does not meet all requirements");
+      showSnackbar("⚠️ Password does not meet all requirements", "warning");
       return;
     }
     dispatch(
@@ -118,7 +112,7 @@ export default function ResetPass() {
         navigate("/login");
       })
       .catch((error) => {
-        setLocalError(error || "Failed to reset password. Please try again.");
+        showSnackbar(error || "Failed to reset password. Please try again.", "error");
       });
   };
 
@@ -126,13 +120,11 @@ export default function ResetPass() {
     const newPassword = e.target.value;
     setPassword(newPassword);
     setPasswordValidation(getPasswordValidation(newPassword));
-    setLocalError("");
   };
 
   // تحديث حالة تأكيد الباسورد
   const handleConfirmPasswordChange = (e) => {
     setConfirmPassword(e.target.value);
-    setLocalError("");
   };
 
   return (
@@ -236,24 +228,7 @@ export default function ResetPass() {
           >
             Enter your new password below
           </Typography>
-
-          {/* Error Alert */}
-          {localError && (
-            <Fade in={!!localError}>
-              <Alert
-                severity="error"
-                sx={{
-                  width: "90%",
-                  mb: 2,
-                  borderRadius: "10px",
-                }}
-                onClose={() => setLocalError("")}
-              >
-                {localError}
-              </Alert>
-            </Fade>
-          )}
-
+          
           {/* New Password */}
           <TextField
             label="New Password"
@@ -385,24 +360,6 @@ export default function ResetPass() {
             }}
           />
 
-          {/* Error Message */}
-          {localError && (
-            <Box
-              sx={{
-                width: "90%",
-                mt: 1,
-                mb: 2,
-                p: 2,
-                backgroundColor: "#ffe6e6",
-                color: "#cc0000",
-                borderRadius: "10px",
-                fontSize: "15px",
-                textAlign: "center",
-              }}
-            >
-              {localError}
-            </Box>
-          )}
           {/* Reset Password Button */}
           <Button
             variant="contained"
@@ -463,6 +420,7 @@ export default function ResetPass() {
           </Typography>
         </Stack>
       </Box>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </Stack>
   );
 }

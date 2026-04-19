@@ -60,7 +60,8 @@ import {
 
 // Agora Service
 import agoraService from "../../services/agoraService";
-
+import { useSnackbar } from "../../hooks/useSnackbar";
+import GlobalSnackbar from "../../components/GlobalSnackbar";
 const Message = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
@@ -107,13 +108,6 @@ const Message = () => {
   const expiryWarningShownRef = useRef(false);
   const expiryTimerRef = useRef(null);
 
-  // ✅ Snackbar State
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "info",
-  });
-
   // ✅ Remote User Status - track which users have audio/video
   const [remoteUsersStatus, setRemoteUsersStatus] = useState({}); // { uid: { hasAudio, hasVideo } }
 
@@ -122,11 +116,7 @@ const Message = () => {
   const senderId = doctorUser?.data?.id || userLS?.id || "doctor-id";
   const senderName = doctorUser?.data?.fullName || userLS?.fullName || "Doctor";
   const senderImage = doctorUser?.data?.imageUrl || userLS?.imageUrl;
-
-  // دالة لعرض الـ Snackbar
-  const showSnackbar = (message, severity = "info") => {
-    setSnackbar({ open: true, message, severity });
-  };
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
 
   // 🔹 Scroll to bottom
   useEffect(() => {
@@ -914,22 +904,6 @@ const Message = () => {
 
   return (
     <>
-      {/* ✅ Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-
       <Box
         sx={{
           minHeight: "100vh",
@@ -1957,6 +1931,7 @@ const Message = () => {
           </Box>
         )}
       </Box>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </>
   );
 };

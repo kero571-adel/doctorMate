@@ -31,6 +31,8 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import { useSelector, useDispatch } from "react-redux";
 import { getReport } from "../../redux/doctor/report";
 import { getDataDoctor } from "../../redux/doctor/doctor";
+import { useSnackbar } from "../../hooks/useSnackbar";
+import GlobalSnackbar from "../../components/GlobalSnackbar";
 //import { useMediaQuery } from "@mui/material";
 // import {
 //   LineChart,
@@ -100,11 +102,22 @@ const StatCard = ({ title, value, icon, color }) => {
           <Typography
             variant="body2"
             color="text.secondary"
-            sx={{ mb: 1, fontWeight: 500, fontSize: { xs: "0.8rem", md: "0.875rem" } }}
+            sx={{
+              mb: 1,
+              fontWeight: 500,
+              fontSize: { xs: "0.8rem", md: "0.875rem" },
+            }}
           >
             {title}
           </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 1, fontSize: { xs: "1.5rem", md: "2rem" } }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              mb: 1,
+              fontSize: { xs: "1.5rem", md: "2rem" },
+            }}
+          >
             {value}
           </Typography>
           {/* <Typography
@@ -146,12 +159,18 @@ export default function Reports() {
   const report = data?.data;
   console.log("Report Data:", data?.data);
   const theme = useTheme();
-  const { user } = useSelector((state) => state.doctor);
+  const { user, error } = useSelector((state) => state.doctor);
   //const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   useEffect(() => {
     dispatch(getReport());
     dispatch(getDataDoctor());
   }, [dispatch]);
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
+  useEffect(() => {
+    if (error) {
+      showSnackbar(error, "error");
+    }
+  }, [error, showSnackbar]);
   return (
     <Stack direction="row">
       <NavBar />
@@ -192,10 +211,16 @@ export default function Reports() {
                 alignItems: "center",
                 mb: { xs: 2, md: "0" },
                 flexWrap: "wrap", // ✅ لمنع تداخل العناصر في الموبايل
-                gap: { xs: 2, md: 0 }
+                gap: { xs: 2, md: 0 },
               }}
             >
-              <Typography variant="h5" sx={{ fontWeight: 700, fontSize: { xs: "1.2rem", md: "1.5rem" } }}>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: { xs: "1.2rem", md: "1.5rem" },
+                }}
+              >
                 Reports
               </Typography>
               <TextField
@@ -269,7 +294,7 @@ export default function Reports() {
               alignItems: "center",
               flexWrap: "wrap",
               justifyContent: { xs: "center", md: "space-between" },
-              gap: { xs: 1, md: 0 }
+              gap: { xs: 1, md: 0 },
             }}
           >
             <StatCard
@@ -578,8 +603,8 @@ export default function Reports() {
               </Card>
             </Grid>
           </Grid> */}
-        </Box> {/* ✅ End of Scrollable Content Area */}
-
+        </Box>{" "}
+        {/* ✅ End of Scrollable Content Area */}
         {/* ✅ Footer - خارج منطقة السكرول عشان يفضل ثابت في الآخر */}
         <Stack
           sx={{
@@ -590,20 +615,36 @@ export default function Reports() {
             alignItems: "center",
             flexShrink: 0, // ✅ منع الانكماش
             backgroundColor: "#F5F7FA", // ✅ نفس خلفية الصفحة عشان الدمج يكون نضيف
-            pb: { xs: 2, md: 0 }
+            pb: { xs: 2, md: 0 },
           }}
         >
-          <Typography variant="caption" color="text.secondary" mb={{ xs: 1, md: 0 }} sx={{ fontSize: { xs: "0.7rem", md: "0.75rem" } }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            mb={{ xs: 1, md: 0 }}
+            sx={{ fontSize: { xs: "0.7rem", md: "0.75rem" } }}
+          >
             2024 HEALTHCARE ADMIN PORTAL I V 2.4.0
           </Typography>
-          <Typography variant="caption" color="text.secondary" mb={{ xs: 1, md: 0 }} sx={{ fontSize: { xs: "0.7rem", md: "0.75rem" } }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            mb={{ xs: 1, md: 0 }}
+            sx={{ fontSize: { xs: "0.7rem", md: "0.75rem" } }}
+          >
             PRIVACY POLICY
           </Typography>
-          <Typography variant="caption" color="text.secondary" mb={{ xs: 1, md: 0 }} sx={{ fontSize: { xs: "0.7rem", md: "0.75rem" } }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            mb={{ xs: 1, md: 0 }}
+            sx={{ fontSize: { xs: "0.7rem", md: "0.75rem" } }}
+          >
             SYSTEM HEALTH STATUS
           </Typography>
         </Stack>
       </Box>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </Stack>
   );
 }

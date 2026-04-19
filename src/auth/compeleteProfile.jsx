@@ -11,8 +11,6 @@ import {
   FormControl,
   Select,
   OutlinedInput,
-  Alert,
-  Collapse,
   InputAdornment,
 } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -25,6 +23,8 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useNavigate } from "react-router";
 import api from "../utils/api";
+import { useSnackbar } from "../hooks/useSnackbar";
+import GlobalSnackbar from "../components/GlobalSnackbar";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -57,7 +57,7 @@ export default function ComPro() {
   const [loading, setLoading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [formError, setFormError] = useState("");
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
 
   const [formData, setFormData] = useState({
     address: "",
@@ -127,7 +127,6 @@ export default function ComPro() {
     // Show preview immediately
     setImage(URL.createObjectURL(file));
     setImageUploading(true);
-    setFormError("");
 
     try {
       const formData = new FormData();
@@ -148,9 +147,10 @@ export default function ComPro() {
       }));
     } catch (error) {
       console.error("Image upload error:", error);
-      setFormError(
+      showSnackbar(
         error.response?.data?.message ||
-          "Failed to upload image. Please try again."
+          "Failed to upload image. Please try again.",
+        "error"
       );
       // Clear the preview on error
       setImage(null);
@@ -192,10 +192,8 @@ export default function ComPro() {
     }
   };
   const handleSubmit = () => {
-    setFormError("");
-
     if (!validateForm()) {
-      setFormError("Please fix the errors below");
+      showSnackbar("Please fill all fields.", "error");
       return;
     }
     setLoading(true);
@@ -218,8 +216,9 @@ export default function ComPro() {
         navigate("/");
       })
       .catch((error) => {
-        setFormError(
-          error.message || "Failed to complete profile. Please try again."
+        showSnackbar(
+          error.message || "Failed to complete profile. Please try again.",
+          "error"
         );
       })
       .finally(() => {
@@ -256,6 +255,7 @@ export default function ComPro() {
       sx={{
         height: "100vh",
         overflow: "hidden",
+        padding: { xs: "20px 10px", md: "0px" },
         flexDirection: { xs: "column", md: "row" },
         justifyContent: { xs: "center", md: "space-between" },
         alignItems: "center",
@@ -346,23 +346,6 @@ export default function ComPro() {
             Please take a few minutes to fill out your profile with as much
             detail as possible
           </Typography>
-
-          {/* Global Form Error */}
-          <Collapse in={!!formError}>
-            <Alert
-              severity="error"
-              sx={{
-                width: "90%",
-                mb: 2,
-                "& .MuiAlert-icon": {
-                  alignItems: "center",
-                },
-              }}
-              onClose={() => setFormError("")}
-            >
-              {formError}
-            </Alert>
-          </Collapse>
 
           {/* IMAGE */}
           <Box
@@ -671,6 +654,7 @@ export default function ComPro() {
           </Button>
         </Stack>
       </Box>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </Stack>
   );
 }

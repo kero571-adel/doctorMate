@@ -2,7 +2,6 @@ import NavBar from "../../components/navBar";
 import {
   Box,
   Grid,
-  Paper,
   Typography,
   Avatar,
   Button,
@@ -14,8 +13,15 @@ import {
   CardContent,
   Fade,
   IconButton,
-  Skeleton,
-  Alert,
+} from "@mui/material";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  Paper,
+  TableRow,
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import PhoneIcon from "@mui/icons-material/Phone";
@@ -56,6 +62,8 @@ import { clearSessionError } from "../../redux/communication/communicationSlice"
 // ✅ NEW: Import startSession for communication
 import { startSession } from "../../redux/communication/communicationSlice";
 import Snackbar from "@mui/material/Snackbar";
+import { useSnackbar } from "../../hooks/useSnackbar";
+import GlobalSnackbar from "../../components/GlobalSnackbar";
 import CloseIcon from "@mui/icons-material/Close";
 import api from "../../utils/api"; // ✅ تأكد من استيراد api للتعامل مع الأخطاء
 
@@ -123,11 +131,13 @@ export default function AppointmentsDetails() {
   const appoinDetails2 = useSelector((state) => state.patientdet.dataApp2);
 
   // ✅ NEW: Communication State from Redux
-  const { session: activeSession, sessionStatus, sessionError } = useSelector(
-    (state) => state.communication
-  );
+  const {
+    session: activeSession,
+    sessionStatus,
+    sessionError,
+  } = useSelector((state) => state.communication);
   console.log("sessionError:", sessionError);
-  
+
   // 🔹 Fetch Data on Mount
   useEffect(() => {
     if (selectedPatient?.patient?.id) {
@@ -156,7 +166,16 @@ export default function AppointmentsDetails() {
       dispatch(setMediclImage(appoinDetails.data.medicalImages));
     }
   }, [appoinDetails, dispatch]);
-
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
+  // ✅ أضف ده بعد الـ useEffect الحالي:
+  useEffect(() => {
+    if (sessionError) {
+      const message = sessionError?.includes("Communication window has closed")
+        ? "Session closed: Communication window has expired"
+        : "Failed to start session: " + sessionError;
+      showSnackbar(message, "error");
+    }
+  }, [sessionError, showSnackbar]);
   // 🔹 Helper Functions
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -222,34 +241,39 @@ export default function AppointmentsDetails() {
     const appointmentDate = appoinDetails?.data?.appointmentDate;
     const appointmentTime = appoinDetails?.data?.appointmentTime;
     const appointmentId = appoinDetails?.data?.id;
-    
+
     const isStatusEligible = ["confirmed", "inprogress"].includes(status);
     const isTimeEligible = hasSessionStarted(appointmentDate, appointmentTime);
-    const hasActiveSession = activeSession && 
-      (activeSession.appointmentId === appointmentId || activeSession.sessionId === appointmentId);
-    
+    const hasActiveSession =
+      activeSession &&
+      (activeSession.appointmentId === appointmentId ||
+        activeSession.sessionId === appointmentId);
+
     const isEligible = isStatusEligible && (isTimeEligible || hasActiveSession);
-    
+
     return {
       isEligible,
       isStatusEligible,
       isTimeEligible,
       hasActiveSession,
-      label: !isStatusEligible 
-        ? "Chat Not Available" 
+      label: !isStatusEligible
+        ? "Chat Not Available"
         : !isTimeEligible && !hasActiveSession
-          ? "Waiting for Session Time"
-          : hasActiveSession
-            ? "Join Session"
-            : "Start Communication",
-      helperText: !isEligible 
-        ? (status === "completed" ? "This session has ended. Chat is no longer available."
-          : status === "scheduled" ? "Chat will be available when appointment is confirmed."
-          : status === "cancelled" ? "This appointment was cancelled."
+        ? "Waiting for Session Time"
+        : hasActiveSession
+        ? "Join Session"
+        : "Start Communication",
+      helperText: !isEligible
+        ? status === "completed"
+          ? "This session has ended. Chat is no longer available."
+          : status === "scheduled"
+          ? "Chat will be available when appointment is confirmed."
+          : status === "cancelled"
+          ? "This appointment was cancelled."
           : !isTimeEligible && !hasActiveSession
-            ? "Chat available from 10 min before to 1 hour after scheduled time."
-            : "Chat is not available for this status.")
-        : null
+          ? "Chat available from 10 min before to 1 hour after scheduled time."
+          : "Chat is not available for this status."
+        : null,
     };
   };
 
@@ -257,67 +281,71 @@ export default function AppointmentsDetails() {
 
   // ✅ NEW: Handle Start Communication (Join Chat) - Same logic as Schedule page
   // ✅ NEW: Handle Start Communication (Join Chat) - Fixed Version
-const handleJoinChat = async () => {
-  if (!appoinDetails?.data?.id) {
-    console.error("❌ No appointment ID found");
-    return;
-  }
+  const handleJoinChat = async () => {
+    if (!appoinDetails?.data?.id) {
+      console.error("❌ No appointment ID found");
+      return;
+    }
 
-  const appointmentId = appoinDetails.data.id;
+    const appointmentId = appoinDetails.data.id;
 
-  try {
-    // 1. Try to start session via API/Redux
-    console.log("🔹 Attempting to start session for appointment:", appointmentId);
-    
-    const result = await dispatch(
-      startSession({ appointmentId })
-    ).unwrap();
+    try {
+      // 1. Try to start session via API/Redux
+      console.log(
+        "🔹 Attempting to start session for appointment:",
+        appointmentId
+      );
 
-    // ✅ Success: Session created
-    console.log("✅ Session started successfully:", result);
-    dispatch(setSelectedPatient(appoinDetails.data));
-    navigate("/message");
-    
-  } catch (error) {
-    console.error("❌ Failed to start session:", error);
+      const result = await dispatch(startSession({ appointmentId })).unwrap();
 
-    // ✅ Handle "session already exists" gracefully (409 Conflict or similar)
-    const errorMessage = typeof error === 'string' ? error : error?.message || JSON.stringify(error);
-    
-    if (
-      errorMessage?.includes?.("already exists") ||
-      errorMessage?.includes?.("active chat session") ||
-      errorMessage?.includes?.("409")
-    ) {
-      console.log("⚠️ Session already exists - proceeding with existing session");
-
-      // ✅ FIX: Instead of calling the broken API endpoint, 
-      // manually dispatch a fulfilled action to update Redux state
-      dispatch({
-        type: "communication/startSession/fulfilled",
-        payload: {
-          id: appointmentId,
-          sessionId: appointmentId, // Adjust based on your API response structure
-          appointmentId: appointmentId,
-          status: "active",
-          // ✅ Add any other fields your UI expects
-          patientId: appoinDetails?.data?.patientId,
-          doctorId: appoinDetails?.data?.doctorId,
-          createdAt: new Date().toISOString(),
-        },
-      });
-
-      // Set patient context and navigate
+      // ✅ Success: Session created
+      console.log("✅ Session started successfully:", result);
       dispatch(setSelectedPatient(appoinDetails.data));
       navigate("/message");
-      
-    } else {
-      // ❌ Real error - show to user
-      console.error("❌ Unhandled error:", error);
-      alert(`Failed to join chat: ${errorMessage}`);
+    } catch (error) {
+      console.error("❌ Failed to start session:", error);
+
+      // ✅ Handle "session already exists" gracefully (409 Conflict or similar)
+      const errorMessage =
+        typeof error === "string"
+          ? error
+          : error?.message || JSON.stringify(error);
+
+      if (
+        errorMessage?.includes?.("already exists") ||
+        errorMessage?.includes?.("active chat session") ||
+        errorMessage?.includes?.("409")
+      ) {
+        console.log(
+          "⚠️ Session already exists - proceeding with existing session"
+        );
+
+        // ✅ FIX: Instead of calling the broken API endpoint,
+        // manually dispatch a fulfilled action to update Redux state
+        dispatch({
+          type: "communication/startSession/fulfilled",
+          payload: {
+            id: appointmentId,
+            sessionId: appointmentId, // Adjust based on your API response structure
+            appointmentId: appointmentId,
+            status: "active",
+            // ✅ Add any other fields your UI expects
+            patientId: appoinDetails?.data?.patientId,
+            doctorId: appoinDetails?.data?.doctorId,
+            createdAt: new Date().toISOString(),
+          },
+        });
+
+        // Set patient context and navigate
+        dispatch(setSelectedPatient(appoinDetails.data));
+        navigate("/message");
+      } else {
+        // ❌ Real error - show to user
+        console.error("❌ Unhandled error:", error);
+        showSnackbar(`Failed to join chat: ${errorMessage}`, "error");
+      }
     }
-  }
-};
+  };
 
   // ✅ NEW: Get Patient Connection Status (Dynamic Online Dot)
   const getPatientConnectionStatus = () => {
@@ -332,8 +360,10 @@ const handleJoinChat = async () => {
     }
 
     // Check if this appointment matches the session
-    if (activeSession?.appointmentId !== appoinDetails?.data?.id && 
-        activeSession?.sessionId !== appoinDetails?.data?.id) {
+    if (
+      activeSession?.appointmentId !== appoinDetails?.data?.id &&
+      activeSession?.sessionId !== appoinDetails?.data?.id
+    ) {
       return {
         label: "Offline",
         color: "#6B7280",
@@ -384,7 +414,10 @@ const handleJoinChat = async () => {
     : appoinDetails?.data?.medicalRecord
     ? [appoinDetails?.data?.medicalRecord]
     : [];
-console.log("Medical Records List:", Array.isArray(appoinDetails?.data?.medicalRecord));
+  console.log(
+    "Medical Records List:",
+    Array.isArray(appoinDetails?.data?.medicalRecord)
+  );
   const displayedRecords = showMoreRecords
     ? medicalRecordsList
     : medicalRecordsList.slice(0, 4);
@@ -413,17 +446,7 @@ console.log("Medical Records List:", Array.isArray(appoinDetails?.data?.medicalR
         openDiagnosis={openDiagnosis}
         setopenDiagnosis={setOpenDiagnosis}
       />
-      <Snackbar
-        open={sessionError ? true : false}
-        autoHideDuration={2000}
-        onClose={handleClose}
-        background="red"
-        message={
-          sessionError?.includes("Communication window has closed")
-            ? "Session closed"
-            : "Failed to start session"
-        }
-      />
+
       <Stack direction="row">
         <NavBar />
         <Box
@@ -1616,194 +1639,117 @@ console.log("Medical Records List:", Array.isArray(appoinDetails?.data?.medicalR
                       </Button>
                     </Stack>
                     {/* Table Header - Hidden on very small screens */}
-                    {displayedPrescriptions.length > 0 && (
-                      <Box
-                        sx={{
-                          display: { xs: "none", sm: "grid" },
-                          gridTemplateColumns: "2fr 1fr 2fr 1fr",
-                          gap: 2,
-                          pb: 2,
-                          borderBottom: "2px solid rgba(82, 172, 140, 0.1)",
-                        }}
-                      >
-                        <Typography
-                          fontWeight={600}
-                          fontSize="11px"
-                          color="#898989"
-                        >
-                          MEDICATION
-                        </Typography>
-                        <Typography
-                          fontWeight={600}
-                          fontSize="11px"
-                          color="#898989"
-                        >
-                          DOSAGE
-                        </Typography>
-                        <Typography
-                          fontWeight={600}
-                          fontSize="11px"
-                          color="#898989"
-                        >
-                          FREQUENCY
-                        </Typography>
-                        <Typography
-                          fontWeight={600}
-                          fontSize="11px"
-                          color="#898989"
-                        >
-                          STATUS
-                        </Typography>
-                      </Box>
-                    )}
-                    {/* Rows */}
                     {displayedPrescriptions.length > 0 ? (
                       <>
-                        <Stack spacing={0} mt={2}>
-                          {displayedPrescriptions?.map((prescription) =>
-                            prescription?.medications?.map((item, index) => (
-                              <Box
-                                key={item.id || index}
+                        <TableContainer
+                          component={Paper}
+                          sx={{
+                            borderRadius: "12px",
+                            boxShadow: "none",
+                            border: "1px solid rgba(82, 172, 140, 0.1)",
+                            overflowX: "auto",
+                          }}
+                        >
+                          <Table size="small">
+                            {/* Header */}
+                            <TableHead>
+                              <TableRow
                                 sx={{
-                                  display: "grid",
-                                  gridTemplateColumns: {
-                                    xs: "1fr",
-                                    sm: "2fr 1fr 2fr 1fr",
-                                  },
-                                  gap: { xs: 1, sm: 2 },
-                                  alignItems: "center",
-                                  py: 2,
-                                  borderBottom:
-                                    "1px solid rgba(82, 172, 140, 0.05)",
-                                  transition: "all 0.2s ease",
-                                  "&:hover": {
-                                    backgroundColor: "rgba(82, 172, 140, 0.03)",
-                                    borderRadius: "8px",
-                                  },
+                                  backgroundColor: "rgba(82, 172, 140, 0.05)",
                                 }}
                               >
-                                {/* Mobile Labels */}
-                                <Box
-                                  sx={{
-                                    display: { xs: "flex", sm: "none" },
-                                    justifyContent: "space-between",
-                                    mb: 0.5,
-                                  }}
+                                <TableCell
+                                  sx={{ fontWeight: 700, fontSize: "12px" }}
                                 >
-                                  <Typography
-                                    fontSize="10px"
-                                    color="text.secondary"
-                                    fontWeight="600"
-                                  >
-                                    Medication
-                                  </Typography>
-                                </Box>
-                                <Typography
-                                  sx={{
-                                    fontWeight: "400",
-                                    fontSize: { xs: "12px", sm: "10px" },
-                                    color: "#000000",
-                                    gridColumn: {
-                                      xs: "1 / -1",
-                                      sm: "auto",
-                                    },
-                                  }}
+                                  MEDICATION
+                                </TableCell>
+                                <TableCell
+                                  sx={{ fontWeight: 700, fontSize: "12px" }}
                                 >
-                                  {item.drugName}
-                                </Typography>
-                                <Box
-                                  sx={{
-                                    display: { xs: "flex", sm: "none" },
-                                    justifyContent: "space-between",
-                                    mb: 0.5,
-                                  }}
+                                  DOSAGE
+                                </TableCell>
+                                <TableCell
+                                  sx={{ fontWeight: 700, fontSize: "12px" }}
                                 >
-                                  <Typography
-                                    fontSize="10px"
-                                    color="text.secondary"
-                                    fontWeight="600"
-                                  >
-                                    Dosage
-                                  </Typography>
-                                </Box>
-                                <Typography
-                                  component="span"
-                                  sx={{
-                                    fontWeight: "500",
-                                    fontSize: { xs: "12px", sm: "11px" },
-                                    color: "#898989",
-                                    gridColumn: {
-                                      xs: "1 / -1",
-                                      sm: "auto",
-                                    },
-                                  }}
+                                  FREQUENCY
+                                </TableCell>
+                                <TableCell
+                                  sx={{ fontWeight: 700, fontSize: "12px" }}
                                 >
-                                  {item.dosage}
-                                </Typography>
-                                <Box
-                                  sx={{
-                                    display: { xs: "flex", sm: "none" },
-                                    justifyContent: "space-between",
-                                    mb: 0.5,
-                                  }}
-                                >
-                                  <Typography
-                                    fontSize="10px"
-                                    color="text.secondary"
-                                    fontWeight="600"
-                                  >
-                                    Frequency
-                                  </Typography>
-                                </Box>
-                                <Typography
-                                  sx={{
-                                    fontWeight: "",
-                                    fontSize: { xs: "12px", sm: "11px" },
-                                    color: "#898989",
-                                    gridColumn: {
-                                      xs: "1 / -1",
-                                      sm: "auto",
-                                    },
-                                  }}
-                                >
-                                  {item.frequency}
-                                </Typography>
-                                <Box
-                                  sx={{
-                                    display: { xs: "flex", sm: "none" },
-                                    justifyContent: "space-between",
-                                    mb: 0.5,
-                                  }}
-                                >
-                                  <Typography
-                                    fontSize="10px"
-                                    color="text.secondary"
-                                    fontWeight="600"
-                                  >
-                                    Status
-                                  </Typography>
-                                </Box>
-                                <Chip
-                                  label="Active"
-                                  size="small"
-                                  sx={{
-                                    width: "fit-content",
-                                    height: "24px",
-                                    backgroundColor: "rgba(59, 130, 246, 0.1)",
-                                    color: "#1D4ED8",
-                                    fontWeight: 600,
-                                    fontSize: { xs: "10px", sm: "11px" },
-                                    border: "1px solid #1D4ED8",
-                                    gridColumn: {
-                                      xs: "1 / -1",
-                                      sm: "auto",
-                                    },
-                                  }}
-                                />
-                              </Box>
-                            ))
-                          )}
-                        </Stack>
+                                  STATUS
+                                </TableCell>
+                              </TableRow>
+                            </TableHead>
+
+                            {/* Body */}
+                            <TableBody>
+                              {displayedPrescriptions?.map((prescription) =>
+                                prescription?.medications?.map(
+                                  (item, index) => (
+                                    <TableRow
+                                      key={item.id || index}
+                                      sx={{
+                                        "&:hover": {
+                                          backgroundColor:
+                                            "rgba(82, 172, 140, 0.03)",
+                                        },
+                                      }}
+                                    >
+                                      {/* MEDICATION */}
+                                      <TableCell
+                                        sx={{
+                                          fontSize: "13px",
+                                          fontWeight: 500,
+                                        }}
+                                      >
+                                        {item.drugName}
+                                      </TableCell>
+
+                                      {/* DOSAGE */}
+                                      <TableCell
+                                        sx={{
+                                          fontSize: "13px",
+                                          color: "#898989",
+                                        }}
+                                      >
+                                        {item.dosage}
+                                      </TableCell>
+
+                                      {/* FREQUENCY */}
+                                      <TableCell
+                                        sx={{
+                                          fontSize: "13px",
+                                          color: "#898989",
+                                        }}
+                                      >
+                                        {item.frequency}
+                                      </TableCell>
+
+                                      {/* STATUS */}
+                                      <TableCell>
+                                        <Chip
+                                          label="Active"
+                                          size="small"
+                                          sx={{
+                                            height: "24px",
+                                            backgroundColor:
+                                              "rgba(59, 130, 246, 0.1)",
+                                            color: "#1D4ED8",
+                                            fontWeight: 600,
+                                            fontSize: "11px",
+                                            border: "1px solid #1D4ED8",
+                                          }}
+                                        />
+                                      </TableCell>
+                                    </TableRow>
+                                  )
+                                )
+                              )}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+
+                        {/* Show More */}
                         {prescriptionsList.length > 4 && (
                           <Stack width="100%" alignItems="flex-end" mt={2}>
                             <Button
@@ -1812,7 +1758,7 @@ console.log("Medical Records List:", Array.isArray(appoinDetails?.data?.medicalR
                               }
                               sx={{
                                 textTransform: "none",
-                                fontSize: { xs: "12px", sm: "13px" },
+                                fontSize: "13px",
                                 fontWeight: 600,
                                 color: "#10B981",
                                 "&:hover": {
@@ -1836,11 +1782,7 @@ console.log("Medical Records List:", Array.isArray(appoinDetails?.data?.medicalR
                           borderRadius: "12px",
                         }}
                       >
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          fontSize={{ xs: "12px", sm: "14px" }}
-                        >
+                        <Typography variant="body2" color="text.secondary">
                           No prescriptions recorded yet
                         </Typography>
                       </Box>
@@ -1963,12 +1905,16 @@ console.log("Medical Records List:", Array.isArray(appoinDetails?.data?.medicalR
                           ? "#667EEA"
                           : "primary.main",
                         backgroundColor: "white",
-                        cursor: !buttonState.isEligible ? "not-allowed" : "pointer",
+                        cursor: !buttonState.isEligible
+                          ? "not-allowed"
+                          : "pointer",
                         "&:hover": {
                           backgroundColor: !buttonState.isEligible
                             ? "white"
                             : "rgba(82, 172, 140, 0.05)",
-                          borderColor: !buttonState.isEligible ? "#ddd" : "#3D8B6F",
+                          borderColor: !buttonState.isEligible
+                            ? "#ddd"
+                            : "#3D8B6F",
                         },
                         transition: "all 0.3s ease",
                         "&:disabled": {
@@ -2170,6 +2116,7 @@ console.log("Medical Records List:", Array.isArray(appoinDetails?.data?.medicalR
             </Grid>
           </Grid>
         </Box>
+        <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
       </Stack>
     </>
   );

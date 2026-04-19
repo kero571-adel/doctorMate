@@ -13,7 +13,6 @@ import {
   Grid,
 } from "@mui/material";
 import { Alert } from "@mui/material";
-import { Snackbar } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
@@ -22,6 +21,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useDispatch, useSelector } from "react-redux";
 import { addDiagnoses } from "../../../redux/schedule/addDiagnoses";
 import { getAppDetById } from "../../../redux/schedule/appoinmantDetals";
+import { useSnackbar } from "../../../hooks/useSnackbar";
+import GlobalSnackbar from '../../../components/GlobalSnackbar'; 
 const style = {
   position: "absolute",
   top: "50%",
@@ -40,8 +41,8 @@ const style = {
   },
 };
 export default function AddDiagnosis({ openDiagnosis, setopenDiagnosis }) {
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
   const [showAlert, setShowAlert] = useState(false);
-  const [openSnack, setOpenSnack] = useState(false);
   const selectedPatient = useSelector(
     (state) => state.schedule.selectedPatient
   );
@@ -53,10 +54,31 @@ export default function AddDiagnosis({ openDiagnosis, setopenDiagnosis }) {
   //const handleOpen = () => setOpen(true);
   const handleClose = () => setopenDiagnosis(false);
   const handleSave = async () => {
+    // ✅ 1. التحقق من وجود Medical Record أولاً
     if (!medicalRecordId?.data?.id) {
-      alert("You must add a medical record first.");
+      showSnackbar("You must add a medical record first.", "warning");
       return;
     }
+  
+    // ✅ 2. التحقق من الحقول المطلوبة (الجزء الجديد)
+    const errors = [];
+    
+    if (!description?.trim()) {
+      errors.push("Clinical Description");
+    }
+    if (!icdCode?.trim()) {
+      errors.push("ICD-10 Code");
+    }
+    // severity دايماً ليها قيمة افتراضية "moderate" فـ مش محتاجة تحقق
+    
+    // لو في أخطاء، اعرض رسالة واضحة
+    if (errors.length > 0) {
+      const message = `Please fill in: ${errors.join(" & ")}`;
+      showSnackbar(message, "warning");
+      return;
+    }
+  
+    // ✅ 3. لو كل حاجة تمام، نفذ الحفظ
     try {
       await dispatch(
         addDiagnoses({
@@ -67,16 +89,22 @@ export default function AddDiagnosis({ openDiagnosis, setopenDiagnosis }) {
           severity,
         })
       ).unwrap();
-      // Refresh appointment details
-      await dispatch(getAppDetById({ id: selectedPatient?.id }));
-      setOpenSnack(true);
+      
+      await dispatch(getAppDetById({ id: selectedPatient?.id })).unwrap();
+      
+      showSnackbar("Diagnosis added successfully!", "success");
       setopenDiagnosis(false);
+      
       // Reset form
       setDescription("");
       setIcdCode("");
       setSeverity("moderate");
     } catch (err) {
       console.log(err);
+      showSnackbar(
+        err?.message || err?.data?.message || "Something went wrong",
+        "error"
+      );
     }
   };
   useEffect(() => {
@@ -331,20 +359,7 @@ export default function AddDiagnosis({ openDiagnosis, setopenDiagnosis }) {
           </Box>
         </Box>
       </Modal>
-      <Snackbar
-        open={openSnack}
-        autoHideDuration={3000}
-        onClose={() => setOpenSnack(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setOpenSnack(false)}
-          severity="success"
-          sx={{ width: '100%' }}
-        >
-          Diagnosis added successfully!
-        </Alert>
-      </Snackbar>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </div>
   );
 }

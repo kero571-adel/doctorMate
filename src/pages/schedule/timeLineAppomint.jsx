@@ -33,8 +33,10 @@ import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PhoneIcon from "@mui/icons-material/Phone";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import { useEffect } from "react";
 import { useTheme, useMediaQuery } from "@mui/material";
 import { useSelector } from "react-redux";
+import { useSnackbar } from '../../hooks/useSnackbar';
 // ==================== Responsive Config ====================
 const getResponsiveValues = (theme) => ({
   isXs: useMediaQuery(theme.breakpoints.down("xs")),
@@ -765,6 +767,7 @@ const AppointmentScheduleTable = ({
   setPage,
   page,
 }) => {
+  const { showSnackbar } = useSnackbar();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { data } = useSelector((state) => state.schedule);
@@ -783,6 +786,15 @@ const AppointmentScheduleTable = ({
   const sortedDates = Object.keys(groupedAppointments).sort(
     (a, b) => new Date(a) - new Date(b)
   );
+  useEffect(() => {
+    if (error) {
+      const message = typeof error === "string" 
+        ? error 
+        : error.message || JSON.stringify(error);
+      showSnackbar(message, "error");
+    }
+  }, [error, showSnackbar]);
+
 
   // Loading state
   if (loading) {
@@ -808,30 +820,7 @@ const AppointmentScheduleTable = ({
       </Card>
     );
   }
-
-  // Error state
-  if (error) {
-    return (
-      <Alert
-        severity="error"
-        sx={{
-          mb: 3,
-          borderRadius: { xs: "12px", sm: "14px", md: "16px" },
-          border: "2px solid #f44336",
-          boxShadow: "0 4px 20px rgba(244, 67, 54, 0.15)",
-          fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem" },
-        }}
-        action={
-          <IconButton color="inherit" size="small" onClick={onRefresh}>
-            <RefreshIcon />
-          </IconButton>
-        }
-      >
-        {error}
-      </Alert>
-    );
-  }
-
+ 
   // Empty state
   if (!appointments?.length) {
     return (
@@ -888,7 +877,7 @@ const AppointmentScheduleTable = ({
       </Card>
     );
   }
-
+  
   return (
     <Card
       sx={{

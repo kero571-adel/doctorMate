@@ -28,7 +28,9 @@ import IosShareIcon from "@mui/icons-material/IosShare";
 import AddIcon from "@mui/icons-material/Add";
 import NavBar from "../../components/navBar";
 import WestIcon from "@mui/icons-material/West";
-import { useDispatch,useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { useSnackbar } from "../../hooks/useSnackbar";
+import GlobalSnackbar from "../../components/GlobalSnackbar";
 const exams = [
   {
     id: 1,
@@ -86,6 +88,7 @@ export default function Dicom() {
   //   dispatch(getDataDoctor());
   // })
   const navigate = useNavigate();
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
   return (
     <Stack direction="row">
       <NavBar />
@@ -258,7 +261,10 @@ export default function Dicom() {
         {/* Table */}
         {/* Box wrapper to handle horizontal scroll on mobile */}
         <Box sx={{ overflowX: "auto", borderRadius: 3 }}>
-          <TableContainer component={Paper} sx={{ borderRadius: 3, minWidth: 800 }}>
+          <TableContainer
+            component={Paper}
+            sx={{ borderRadius: 3, minWidth: 800 }}
+          >
             <Table>
               <TableHead sx={{ backgroundColor: "primary.main" }}>
                 <TableRow>
@@ -406,16 +412,10 @@ export default function Dicom() {
                         >
                           <VisibilityIcon />
                         </IconButton>
-                        <IconButton
-                          size="small"
-                          sx={{ color: "primary.main" }}
-                        >
+                        <IconButton size="small" sx={{ color: "primary.main" }}>
                           <DownloadIcon />
                         </IconButton>
-                        <IconButton
-                          size="small"
-                          sx={{ color: "primary.main" }}
-                        >
+                        <IconButton size="small" sx={{ color: "primary.main" }}>
                           <IosShareIcon />
                         </IconButton>
                       </Stack>
@@ -427,6 +427,7 @@ export default function Dicom() {
           </TableContainer>
         </Box>
       </Box>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </Stack>
   );
 }

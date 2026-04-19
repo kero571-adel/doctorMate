@@ -33,6 +33,9 @@ import NavBar from "../../components/navBar";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchDoctorDashboard } from "../../redux/overViews/overView";
 import { getDataDoctor } from "../../redux/doctor/doctor";
+// ✅ أضف ده بعد باقي الـ imports
+import { useSnackbar } from "../../hooks/useSnackbar";
+import GlobalSnackbar from "../../components/GlobalSnackbar";
 export default function Dashboard() {
   const dispatch = useDispatch();
   const {
@@ -43,13 +46,22 @@ export default function Dashboard() {
     loading,
     error,
   } = useSelector((state) => state.overView);
-  console.log("🚀 ~ file: dashboard.jsx:28 ~ Dashboard ~ stats:", todayAppointments);
+  console.log(
+    "🚀 ~ file: dashboard.jsx:28 ~ Dashboard ~ stats:",
+    todayAppointments
+  );
   const userLS = JSON.parse(localStorage.getItem("user") || "{}");
 
   useEffect(() => {
     dispatch(fetchDoctorDashboard());
     dispatch(getDataDoctor());
   }, [dispatch]);
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
+  useEffect(() => {
+    if (error) {
+      showSnackbar(error, "error");
+    }
+  }, [error, showSnackbar]);
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -211,22 +223,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </Fade>
-
-        {/* Error Alert */}
-        {error && (
-          <Alert
-            severity="error"
-            sx={{
-              mb: 3,
-              borderRadius: "16px",
-              border: "2px solid #f44336",
-              boxShadow: "0 4px 20px rgba(244, 67, 54, 0.2)",
-              fontWeight: 600,
-            }}
-          >
-            {error}
-          </Alert>
-        )}
 
         {/* Stats Cards */}
         <Stack
@@ -463,62 +459,125 @@ export default function Dashboard() {
                           },
                         }}
                       >
-                        <CardContent sx={{ p: 2.5 }}>
+                        <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
                           <Stack
-                            direction="row"
-                            spacing={2}
-                            alignItems="center"
+                            direction={{
+                              xs: "column",
+                              sm: "row",
+                            }} /* عمودي في الموبايل، أفقي في الشاشات الأكبر */
+                            spacing={{ xs: 1.5, sm: 2 }}
+                            alignItems={{ xs: "flex-start", sm: "center" }}
                           >
+                            {/* Avatar */}
                             <Avatar
                               src={appointment.patientImage}
                               sx={{
-                                width: 52,
-                                height: 52,
+                                width: { xs: 44, sm: 48, md: 52 },
+                                height: { xs: 44, sm: 48, md: 52 },
                                 border: "3px solid white",
                                 boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                                fontSize: {
+                                  xs: "14px",
+                                  sm: "16px",
+                                  md: "18px",
+                                } /* حجم الحرف الأول */,
                               }}
                             >
                               {appointment.patientName?.charAt(0)}
                             </Avatar>
-                            <Box flex={1}>
+
+                            {/* Patient Info */}
+                            <Box
+                              flex={{
+                                xs: "none",
+                                sm: 1,
+                              }} /* يأخذ المساحة المتبقية في الشاشات الكبيرة */
+                              width={{ xs: "100%", sm: "auto" }}
+                              sx={{
+                                minWidth: 0 /* مهم عشان الـ text-overflow: ellipsis يشتغل */,
+                              }}
+                            >
                               <Typography
                                 variant="subtitle1"
                                 fontWeight="700"
                                 color="primary.main"
+                                sx={{
+                                  fontSize: {
+                                    xs: "14px",
+                                    sm: "15px",
+                                    md: "16px",
+                                  },
+                                  lineHeight: 1.3,
+                                  /* منع النص من الخروج عن الحاوية */
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                  width: "100%",
+                                }}
                               >
                                 {appointment.patientName}
                               </Typography>
+
                               <Stack
                                 direction="row"
-                                spacing={1}
+                                spacing={0.5}
                                 alignItems="center"
+                                sx={{ mt: { xs: 0.5, sm: 0 } }}
                               >
                                 <AccessTimeIcon
                                   sx={{
-                                    fontSize: 16,
+                                    fontSize: { xs: 14, sm: 16 },
                                     color: "primary.main",
                                     opacity: 0.7,
+                                    flexShrink: 0 /* منع الأيقونة من الانكماش */,
                                   }}
                                 />
                                 <Typography
                                   variant="caption"
                                   color="text.secondary"
                                   fontWeight="500"
+                                  sx={{
+                                    fontSize: {
+                                      xs: "11px",
+                                      sm: "12px",
+                                      md: "13px",
+                                    },
+                                    /* منع النص من الخروج */
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                  }}
                                 >
                                   {formatTime(appointment.scheduledStart)}
                                 </Typography>
                               </Stack>
                             </Box>
+
+                            {/* Status Chip */}
                             <Chip
                               label={appointment.status || "Scheduled"}
                               size="small"
                               sx={{
+                                /* في الموبايل: يأخذ عرض كامل، في الشاشات الأكبر: عرض تلقائي */
+                                width: { xs: "100%", sm: "auto" },
+                                maxWidth: { xs: "100%", sm: "120px" },
+
                                 background:
                                   appointment.status === "Completed"
                                     ? "linear-gradient(135deg, #52AC8C 0%, #3D8B6F 100%)"
                                     : "linear-gradient(135deg, #FFA726 0%, #FB8C00 100%)",
                                 color: "white",
                                 fontWeight: 600,
+
+                                /* تحسينات للتجاوب */
+                                "& .MuiChip-label": {
+                                  px: {
+                                    xs: 1,
+                                    sm: 1.5,
+                                  } /* padding أفقي أصغر في الموبايل */,
+                                  fontSize: { xs: "11px", sm: "12px" },
+                                },
+                                height: { xs: 24, sm: 28 },
                               }}
                             />
                           </Stack>
@@ -1032,6 +1091,7 @@ export default function Dashboard() {
           </Typography>
         </Box>
       </Box>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </Stack>
   );
 }

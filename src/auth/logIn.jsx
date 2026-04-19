@@ -1,5 +1,4 @@
 import {
-  Container,
   Stack,
   Box,
   Typography,
@@ -8,8 +7,6 @@ import {
   Divider,
   InputAdornment,
   IconButton,
-  Alert,
-  Fade,
 } from "@mui/material";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
@@ -18,12 +15,13 @@ import LockIcon from "@mui/icons-material/Lock";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useSelector, useDispatch } from "react-redux";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { signIn } from "../redux/auth/authSlice";
 import { Link } from "react-router";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useNavigate } from "react-router";
-import { forgotPass, setForgotPasswordEmail } from "../redux/auth/authSlice";
+import { useSnackbar } from "../hooks/useSnackbar";
+import GlobalSnackbar from "../components/GlobalSnackbar";
 export default function LogIn() {
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.auth);
@@ -31,15 +29,9 @@ export default function LogIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [localError, setLocalError] = useState("");
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
-
-  useEffect(() => {
-    if (error) {
-      setLocalError(error);
-    }
-  }, [error]);
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
   const isValidEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
@@ -47,41 +39,39 @@ export default function LogIn() {
 
   // → Handle login click
   const handleLogin = () => {
-    setLocalError("");
-
     if (!email && !password) {
-      setLocalError("Please enter email and password");
+      showSnackbar("Please enter email and password", "error");
       return;
     }
     if (!password) {
-      setLocalError("Please enter password");
+      showSnackbar("Please enter password", "error");
       return;
     }
     if (!email) {
-      setLocalError("Please enter email");
+      showSnackbar("Please enter email", "error");
       return;
     }
     if (!isValidEmail(email)) {
-      setLocalError("Please enter a valid email");
+      showSnackbar("Please enter a valid email", "error");
       return;
     }
+
     dispatch(signIn({ emailOrPhone: email, password }))
       .unwrap()
       .then((response) => {
         if (response.data.user.isVerified == false) {
-          dispatch(
-            setForgotPasswordEmail({
-              email: email,
-              forgotPass: false,
-            })
-          );
           dispatch(forgotPass({ email, isForgetPass: false }));
           navigate("/logIn/forgetpass/otp");
         } else if (response.data.user.isCompletedProfile == false) {
           navigate("/compeleteprofile");
         } else {
+          // ✅ لو نجح اللوجين، اعرض رسالة نجاح
+          showSnackbar("Welcome back!", "success");
           navigate("/");
         }
+      })
+      .catch((error) => {
+        showSnackbar(error || "Login failed. Please try again.", "error");
       });
   };
   return (
@@ -178,23 +168,6 @@ export default function LogIn() {
             Please login to continue
           </Typography>
 
-          {/* Error Alert */}
-          {localError && (
-            <Fade in={!!localError}>
-              <Alert
-                severity="error"
-                sx={{
-                  width: "90%",
-                  mb: 2,
-                  borderRadius: "10px",
-                }}
-                onClose={() => setLocalError("")}
-              >
-                {localError}
-              </Alert>
-            </Fade>
-          )}
-
           {/* Email */}
           <TextField
             label="Email Address"
@@ -202,7 +175,6 @@ export default function LogIn() {
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
-              setLocalError("");
             }}
             onFocus={() => setEmailFocused(true)}
             onBlur={() => setEmailFocused(false)}
@@ -248,7 +220,6 @@ export default function LogIn() {
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);
-              setLocalError("");
             }}
             onFocus={() => setPasswordFocused(true)}
             onBlur={() => setPasswordFocused(false)}
@@ -470,6 +441,7 @@ export default function LogIn() {
           </Typography>
         </Stack>
       </Box>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </Stack>
   );
 }

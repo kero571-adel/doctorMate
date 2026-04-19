@@ -9,19 +9,10 @@ import {
   InputAdornment,
   Menu,
   MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
-  Alert,
-  Fade,
 } from "@mui/material";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import PersonIcon from "@mui/icons-material/Person";
-import EmailIcon from "@mui/icons-material/Email";
-import PhoneIcon from "@mui/icons-material/Phone";
-import LockIcon from "@mui/icons-material/Lock";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import { useSelector, useDispatch } from "react-redux";
 import { signUp, clearAuthError } from "../redux/auth/authSlice";
@@ -29,6 +20,8 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { Link } from "react-router";
 import { useNavigate } from "react-router";
 import { forgotPass } from "../redux/auth/authSlice";
+import { useSnackbar } from "../hooks/useSnackbar";
+import GlobalSnackbar from "../components/GlobalSnackbar";
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -79,9 +72,8 @@ export default function SignUp() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [localError, setLocalError] = useState("");
   const [role, setRole] = useState("Doctor");
-
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
   const isValidEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
@@ -96,7 +88,8 @@ export default function SignUp() {
     handleCloseMenu();
   };
   const handleSignUp = () => {
-    setLocalError("");
+    // مفيش حاجة هنا، هنستخدم showSnackbar مباشرة
+
     if (
       !firstName ||
       !lastName ||
@@ -106,20 +99,20 @@ export default function SignUp() {
       !confirmPassword ||
       !role
     ) {
-      setLocalError("⚠️ Please fill in all fields");
+      showSnackbar("⚠️ Please fill in all fields", "warning");
       return;
     }
     if (password !== confirmPassword) {
-      setLocalError("⚠️ Passwords do not match");
+      showSnackbar("⚠️ Passwords do not match", "error");
       return;
     }
     const allValid = Object.values(passwordValidation).every(Boolean);
     if (!allValid) {
-      setLocalError("⚠️ Password does not meet all requirements");
+      showSnackbar("⚠️ Password does not meet all requirements", "warning");
       return;
     }
     if (!isValidEmail(email)) {
-      setLocalError("Please enter a valid email");
+      showSnackbar("Please enter a valid email", "error");
       return;
     }
 
@@ -128,18 +121,23 @@ export default function SignUp() {
     dispatch(signUp({ fullName, email, phoneNumber, password, role }))
       .unwrap()
       .then((data) => {
-        // data هو اللي بيرجع من الـ thunk بعد unwrap
-        const user = data.data.user; // حسب هيكل الرد اللي بيرجع من السيرفر
+        const user = data.data.user;
         if (user?.isVerified === false) {
           dispatch(forgotPass({ email, isForgetPass: false }));
           navigate("/logIn/forgetpass/otp");
         } else {
+          // ✅ لو نجح التسجيل، اعرض رسالة نجاح
+          showSnackbar("Account created successfully!", "success");
           navigate("/completeProfile");
         }
       })
       .catch((err) => {
         console.error("SignUp failed:", err);
-        // هنا ممكن تعرض رسالة للمستخدم أو تحفظها في state
+        // ✅ لو فشل، اعرض الخطأ
+        showSnackbar(
+          err || "Sign up failed. Please try again.",
+          "error"
+        );
       });
   };
   const getPasswordValidation = (password) => ({
@@ -246,27 +244,6 @@ export default function SignUp() {
           >
             Join DoctorMate today
           </Typography>
-
-          {/* Error Alert */}
-          {(localError || error) && (
-            <Fade in={!!(localError || error)}>
-              <Alert
-                severity="error"
-                sx={{
-                  width: "90%",
-                  mb: 2,
-                  borderRadius: "10px",
-                }}
-                onClose={() => {
-                  setLocalError("");
-                  dispatch(clearAuthError());
-                }}
-              >
-                {localError || error}
-              </Alert>
-            </Fade>
-          )}
-
           {/* FIRST + LAST NAME */}
           <Stack
             direction={"row"}
@@ -278,7 +255,7 @@ export default function SignUp() {
               value={firstName}
               onChange={(e) => {
                 setFirstName(e.target.value);
-                setLocalError("");
+
                 dispatch(clearAuthError());
               }}
               fullWidth
@@ -296,7 +273,7 @@ export default function SignUp() {
               value={lastName}
               onChange={(e) => {
                 setLastName(e.target.value);
-                setLocalError("");
+
                 dispatch(clearAuthError());
               }}
               fullWidth
@@ -318,7 +295,7 @@ export default function SignUp() {
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
-              setLocalError("");
+
               dispatch(clearAuthError());
             }}
             sx={{
@@ -385,7 +362,7 @@ export default function SignUp() {
               value={phone}
               onChange={(e) => {
                 setPhone(e.target.value);
-                setLocalError("");
+
                 dispatch(clearAuthError());
               }}
               fullWidth
@@ -409,7 +386,7 @@ export default function SignUp() {
             onChange={(e) => {
               setPassword(e.target.value);
               setPasswordValidation(getPasswordValidation(e.target.value));
-              setLocalError(""); // مسح أي خطأ موجود
+
               dispatch(clearAuthError());
             }}
             sx={{
@@ -488,7 +465,7 @@ export default function SignUp() {
             value={confirmPassword}
             onChange={(e) => {
               setConfirmPassword(e.target.value);
-              setLocalError("");
+
               dispatch(clearAuthError());
             }}
             sx={{
@@ -530,25 +507,6 @@ export default function SignUp() {
               "Create Account"
             )}
           </Button>
-
-          {/* SHOW LOCAL ERROR */}
-          {/* SHOW ERROR */}
-          {(localError || error) && (
-            <Box
-              sx={{
-                width: "90%",
-                mt: 2,
-                p: 2,
-                backgroundColor: "#ffe6e6",
-                color: "#cc0000",
-                borderRadius: "10px",
-                fontSize: "15px",
-                textAlign: "center",
-              }}
-            >
-              {localError || error}
-            </Box>
-          )}
 
           {/* TERMS */}
           <Stack
@@ -600,6 +558,7 @@ export default function SignUp() {
           </Typography>
         </Stack>
       </Box>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </Stack>
   );
 }

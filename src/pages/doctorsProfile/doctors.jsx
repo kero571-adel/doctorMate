@@ -29,7 +29,8 @@ import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import VerifiedIcon from "@mui/icons-material/Verified";
-
+import { useSnackbar } from "../../hooks/useSnackbar";
+import GlobalSnackbar from "../../components/GlobalSnackbar";
 const cardStyle = {
   borderRadius: "20px",
   boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
@@ -51,7 +52,12 @@ export default function DoctorProfile() {
     dispatch(getDataDoctor());
     dispatch(getPatient());
   }, [dispatch]);
-
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
+  useEffect(() => {
+    if (error) {
+      showSnackbar(error, "error");
+    }
+  }, [error, showSnackbar]);
   return (
     <Stack direction="row">
       <NavBar />
@@ -622,7 +628,10 @@ export default function DoctorProfile() {
                                 spacing={1}
                                 flexWrap="wrap"
                                 gap={1}
-                                sx={{ justifyContent: "flex-start",alignItems:"center" }}
+                                sx={{
+                                  justifyContent: "flex-start",
+                                  alignItems: "center",
+                                }}
                               >
                                 {user?.data?.workingDays?.map((day, index) => (
                                   <Chip
@@ -694,11 +703,7 @@ export default function DoctorProfile() {
                         alignItems="center"
                         mb={3}
                       >
-                        <Typography
-                      
-                          fontWeight="700"
-                          color="primary.main"
-                        >
+                        <Typography fontWeight="700" color="primary.main">
                           Patient List
                         </Typography>
                         <Chip
@@ -799,6 +804,7 @@ export default function DoctorProfile() {
           </Card>
         </Fade>
       </Box>
+      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
     </Stack>
   );
 }
