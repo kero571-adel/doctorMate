@@ -66,17 +66,12 @@ export default function MedicalImaging() {
   const [uploadingFiles, setUploadingFiles] = useState([]);
   const [displayedImages, setDisplayedImages] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
-  // const [snackbar, setSnackbar] = useState({
-  //   open: false,
-  //   message: "",
-  //   severity: "success",
-  //});
   const [openDescriptionModal, setOpenDescriptionModal] = useState(false);
   const [pendingFiles, setPendingFiles] = useState([]);
   const [imageDescription, setImageDescription] = useState("");
   const [itemsPerPage] = useState(4);
   const [currentPage, setCurrentPage] = useState(1);
-
+  const appoinDetails = useSelector((state) => state.patientdet.dataApp);
   const selectedPatient = useSelector(
     (state) => state.schedule.selectedPatient
   );
@@ -306,7 +301,7 @@ export default function MedicalImaging() {
       const formData = new FormData();
       formData.append("File", file);
       formData.append("Description", description || "");
-      formData.append("AppointmentId", selectedPatient?.id || "");
+      formData.append("AppointmentId", appoinDetails?.data?.id || "");
 
       await dispatch(
         addMedicalImg({
