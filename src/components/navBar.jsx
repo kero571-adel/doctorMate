@@ -22,7 +22,6 @@ export default function NavBar() {
   const { pathname } = useLocation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  console.log("isOpen = ", isOpen);
   const handleLogout = () => {
     dispatch(logout());
     navigate("/logIn");

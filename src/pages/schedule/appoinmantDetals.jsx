@@ -15,6 +15,11 @@ import {
   IconButton,
 } from "@mui/material";
 import {
+  isDicomFile,
+  loadDicomOnElement,
+  cleanupDicomElement,
+} from "../../utils/dicomUtils";
+import {
   Table,
   TableBody,
   TableCell,
@@ -136,7 +141,6 @@ export default function AppointmentsDetails() {
     sessionStatus,
     sessionError,
   } = useSelector((state) => state.communication);
-  console.log("sessionError:", sessionError);
 
   // 🔹 Fetch Data on Mount
   useEffect(() => {
@@ -291,21 +295,17 @@ export default function AppointmentsDetails() {
 
     try {
       // 1. Try to start session via API/Redux
-      console.log(
-        "🔹 Attempting to start session for appointment:",
-        appointmentId
-      );
 
       const result = await dispatch(startSession({ appointmentId })).unwrap();
 
-      // ✅ Success: Session created
-      console.log("✅ Session started successfully:", result);
+      // Success: Session created
+
       dispatch(setSelectedPatient(appoinDetails.data));
       navigate("/message");
     } catch (error) {
       console.error("❌ Failed to start session:", error);
 
-      // ✅ Handle "session already exists" gracefully (409 Conflict or similar)
+      // Handle "session already exists" gracefully (409 Conflict or similar)
       const errorMessage =
         typeof error === "string"
           ? error
@@ -316,12 +316,6 @@ export default function AppointmentsDetails() {
         errorMessage?.includes?.("active chat session") ||
         errorMessage?.includes?.("409")
       ) {
-        console.log(
-          "⚠️ Session already exists - proceeding with existing session"
-        );
-
-        // ✅ FIX: Instead of calling the broken API endpoint,
-        // manually dispatch a fulfilled action to update Redux state
         dispatch({
           type: "communication/startSession/fulfilled",
           payload: {
@@ -329,7 +323,7 @@ export default function AppointmentsDetails() {
             sessionId: appointmentId, // Adjust based on your API response structure
             appointmentId: appointmentId,
             status: "active",
-            // ✅ Add any other fields your UI expects
+            //  Add any other fields your UI expects
             patientId: appoinDetails?.data?.patientId,
             doctorId: appoinDetails?.data?.doctorId,
             createdAt: new Date().toISOString(),
@@ -340,7 +334,6 @@ export default function AppointmentsDetails() {
         dispatch(setSelectedPatient(appoinDetails.data));
         navigate("/message");
       } else {
-        // ❌ Real error - show to user
         console.error("❌ Unhandled error:", error);
         showSnackbar(`Failed to join chat: ${errorMessage}`, "error");
       }
@@ -414,10 +407,7 @@ export default function AppointmentsDetails() {
     : appoinDetails?.data?.medicalRecord
     ? [appoinDetails?.data?.medicalRecord]
     : [];
-  console.log(
-    "Medical Records List:",
-    Array.isArray(appoinDetails?.data?.medicalRecord)
-  );
+
   const displayedRecords = showMoreRecords
     ? medicalRecordsList
     : medicalRecordsList.slice(0, 4);
@@ -431,7 +421,28 @@ export default function AppointmentsDetails() {
   const displayedPrescriptions = showMorePrescriptions
     ? prescriptionsList
     : prescriptionsList.slice(0, 4);
+  useEffect(() => {
+    const elements = document.querySelectorAll(".appointment-dicom-element");
 
+    elements.forEach((el, index) => {
+      const image = appoinDetails?.data?.medicalImages?.[index];
+      if (!image || !el) return;
+
+      const isDicom = isDicomFile(image.fileType, image.fileName);
+      if (isDicom && image.viewerUrl) {
+        loadDicomOnElement(el, image.viewerUrl, {
+          baseUrl: import.meta.env.VITE_ORTHANC_URL || "http://localhost:8042",
+          fitToWindow: true,
+          onError: (err) =>
+            console.error(`❌ Failed to load ${image.fileName}:`, err),
+        });
+      }
+    });
+
+    return () => {
+      elements.forEach((el) => cleanupDicomElement(el));
+    };
+  }, [appoinDetails?.data?.medicalImages]);
   return (
     <>
       <AddPrescription
@@ -1486,9 +1497,29 @@ export default function AppointmentsDetails() {
                       {appoinDetails?.data?.medicalImages?.map((item) => (
                         <Box
                           key={item.id}
-                          onClick={() => {
-                            handleImageClick(item);
+                          onClick={() => handleImageClick(item)}
+                          // ✅ أضف الـ ref callback ده (هنا التحميل هيحصل)
+                          ref={(el) => {
+                            if (
+                              el &&
+                              isDicomFile(item.fileType, item.fileName) &&
+                              item.viewerUrl
+                            ) {
+                              loadDicomOnElement(el, item.viewerUrl, {
+                                baseUrl:
+                                  import.meta.env.VITE_ORTHANC_URL ||
+                                  "http://localhost:8042",
+                                fitToWindow: true,
+                                onError: (err) =>
+                                  console.error(
+                                    `❌ Failed to load ${item.fileName}:`,
+                                    err
+                                  ),
+                              });
+                            }
                           }}
+                          // ✅ أضف الكلاس ده عشان الـ cleanup يشتغل
+                          className="appointment-dicom-element"
                           sx={{
                             width: "100%",
                             paddingTop: "100%",
@@ -1498,24 +1529,45 @@ export default function AppointmentsDetails() {
                             cursor: "pointer",
                             transition: "all 0.3s ease",
                             boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                            // ✅ خلفية ديناميكية حسب نوع الملف
+                            bgcolor: isDicomFile(item.fileType, item.fileName)
+                              ? "#000"
+                              : "#f5f5f5",
                             "&:hover": {
                               transform: "scale(1.05)",
                               boxShadow: "0 4px 16px rgba(82, 172, 140, 0.3)",
                             },
                           }}
                         >
-                          <img
-                            src={item.viewerUrl}
-                            alt={item.fileName || item.description}
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
+                          {/* ✅ عرض الصورة حسب النوع */}
+                          {isDicomFile(item.fileType, item.fileName) ? (
+                            <Box
+                              sx={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                height: "100%",
+                                bgcolor: "#000",
+                                zIndex: 1, // ✅ عشان الوصف يظهر فوق الصورة
+                              }}
+                            />
+                          ) : (
+                            <img
+                              src={item.viewerUrl}
+                              alt={item.fileName || item.description}
+                              style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              }}
+                            />
+                          )}
+
+                          {/* ✅ الوصف */}
                           {item.description && (
                             <Box
                               sx={{
@@ -1529,6 +1581,7 @@ export default function AppointmentsDetails() {
                                 padding: "8px",
                                 fontSize: { xs: "9px", sm: "10px" },
                                 fontWeight: 600,
+                                zIndex: 2, // ✅ عشان يظهر فوق الصورة
                               }}
                             >
                               {item.description}

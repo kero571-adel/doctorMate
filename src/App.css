@@ -8,3 +8,6 @@
 .css-8gna6x-MuiStack-root>:not(style)~:not(style){
   margin-top: 0 !important;
 }
+.css-m2ydrm-MuiStack-root {
+  margin-bottom: 0!important;
+}

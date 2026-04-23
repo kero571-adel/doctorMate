@@ -5,7 +5,6 @@ export const getReport = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get("reports/doctor-summary");
-      console.log("response.data = ", response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(

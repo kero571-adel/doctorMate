@@ -3,9 +3,6 @@ import api from "../../utils/api";
 export const addMedicalImg = createAsyncThunk(
   "MedicalImg/addMedicalImg",
   async ({ formData, onUploadProgress }, { rejectWithValue }) => {
-    console.log([...formData.entries()]);
-    console.log("onUploadProgress: ", onUploadProgress);
-    console.log("formData: ", formData);
     try {
       const response = await api.post("/medical-images", formData, {
         onUploadProgress,
@@ -30,7 +27,6 @@ export const getMedicalImg = createAsyncThunk(
 export const delMedicalImg = createAsyncThunk(
   "MedicalImg/delMedicalImg",
   async (id, { rejectWithValue }) => {
-    console.log("id: ", id);
     try {
       const response = await api.delete(`/medical-images/${id}`);
       return response.data;

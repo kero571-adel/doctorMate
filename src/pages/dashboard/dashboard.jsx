@@ -46,10 +46,7 @@ export default function Dashboard() {
     loading,
     error,
   } = useSelector((state) => state.overView);
-  console.log(
-    "🚀 ~ file: dashboard.jsx:28 ~ Dashboard ~ stats:",
-    todayAppointments
-  );
+
   const userLS = JSON.parse(localStorage.getItem("user") || "{}");
 
   useEffect(() => {

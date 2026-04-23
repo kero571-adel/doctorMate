@@ -11,7 +11,6 @@ export const signIn = createAsyncThunk(
         "https://doctormate.runasp.net/api/Login",
         { emailOrPhone, password }
       );
-     console.log("signIn response.data = ", response.data);
       const { token, user } = response.data.data;
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
@@ -27,7 +26,6 @@ export const forgotPass = createAsyncThunk(
   "auth/forgotpass",
   async ({ email, isForgetPass }, { rejectWithValue }) => {
     try {
-     
       const response = await axios.post(
         "https://doctormate.runasp.net/api/Otp/send",
         { email, isForgetPass: false }
@@ -46,16 +44,11 @@ export const signUp = createAsyncThunk(
     { fullName, email, phoneNumber, role, password },
     { rejectWithValue }
   ) => {
-    console.log("fullName = ", fullName);
-    console.log("email = ", email);
-    console.log("phoneNumber = ", phoneNumber);
-    console.log("role = ", role);
     try {
       const response = await axios.post(
         "https://doctormate.runasp.net/api/Register",
         { email, phoneNumber, password, role, fullName }
       );
-      console.log("response.data = ", response.data);
       const { token, user } = response.data.data;
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
@@ -70,9 +63,6 @@ export const signUp = createAsyncThunk(
 export const verfyOtp = createAsyncThunk(
   "auth/verfyOtp",
   async ({ email, otp, isForgetPass }, { rejectWithValue }) => {
-    console.log("verfyOtp email: ", email);
-    console.log("verfyOtp otp  ", otp);
-    console.log("verfyOtp isForgetPass: ", isForgetPass);
     try {
       const response = await axios.post(
         "https://doctormate.runasp.net/api/Otp/verify",
@@ -121,12 +111,8 @@ export const fetchSpecialties = createAsyncThunk(
 export const completeProfile = createAsyncThunk(
   "user/completeProfile",
   async (profileData, { rejectWithValue }) => {
-    console.log("profileData = ", profileData);
     try {
-      const response = await api.post(
-        "/CompleteProfile/complete",
-        profileData
-      );
+      const response = await api.post("/CompleteProfile/complete", profileData);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -140,8 +126,8 @@ export const completeProfile = createAsyncThunk(
 const authSlice = createSlice({
   name: "auth",
   initialState: {
-    user: localStorage.getItem("user") 
-      ? JSON.parse(localStorage.getItem("user")) 
+    user: localStorage.getItem("user")
+      ? JSON.parse(localStorage.getItem("user"))
       : null,
     token: localStorage.getItem("token") || null,
     loading: false,

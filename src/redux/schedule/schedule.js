@@ -9,7 +9,6 @@ export const appointmentsDoctor = createAsyncThunk(
       const response = await api.get(
         `/appointments/Doctor?page=${page}&limit=${limit}`
       );
-      console.log("response.data = ", response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -21,8 +20,6 @@ export const appointmentsDoctor = createAsyncThunk(
 export const appointmentsStatus = createAsyncThunk(
   "schedule/appointmentsStatus",
   async ({ status, id }, { rejectWithValue }) => {
-    console.log("id: ", id);
-    console.log("status: ", status);
     try {
       const response = await api.put(`/appointments/${id}/status`, {
         status: status,

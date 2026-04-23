@@ -7,7 +7,6 @@ export const getDataDoctor = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get("/Profile_Management");
-      console.log("response.data = ", response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -23,7 +22,6 @@ export const getPatient = createAsyncThunk(
       const response = await api.get(
         "/doctor/patients?page=1&limit=10"
       );
-      console.log("response.data = ", response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(

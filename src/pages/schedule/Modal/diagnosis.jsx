@@ -22,7 +22,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { addDiagnoses } from "../../../redux/schedule/addDiagnoses";
 import { getAppDetById } from "../../../redux/schedule/appoinmantDetals";
 import { useSnackbar } from "../../../hooks/useSnackbar";
-import GlobalSnackbar from '../../../components/GlobalSnackbar'; 
+import GlobalSnackbar from "../../../components/GlobalSnackbar";
+import { clearDataMedical } from "../../../redux/schedule/addMedicaql";
 const style = {
   position: "absolute",
   top: "50%",
@@ -59,10 +60,20 @@ export default function AddDiagnosis({ openDiagnosis, setopenDiagnosis }) {
       showSnackbar("You must add a medical record first.", "warning");
       return;
     }
-  
+
     // ✅ 2. التحقق من الحقول المطلوبة (الجزء الجديد)
     const errors = [];
-    
+    const MIN_DESCRIPTION_LENGTH = 10;
+    if (!description?.trim()) {
+      errors.push("Clinical Description");
+      showSnackbar("This field is required");
+    } else if (description.trim().length < MIN_DESCRIPTION_LENGTH) {
+      errors.push("Clinical Description");
+      showSnackbar(
+        `Description must be at least ${MIN_DESCRIPTION_LENGTH} characters`
+      );
+    }
+
     if (!description?.trim()) {
       errors.push("Clinical Description");
     }
@@ -70,14 +81,14 @@ export default function AddDiagnosis({ openDiagnosis, setopenDiagnosis }) {
       errors.push("ICD-10 Code");
     }
     // severity دايماً ليها قيمة افتراضية "moderate" فـ مش محتاجة تحقق
-    
+
     // لو في أخطاء، اعرض رسالة واضحة
     if (errors.length > 0) {
       const message = `Please fill in: ${errors.join(" & ")}`;
       showSnackbar(message, "warning");
       return;
     }
-  
+
     // ✅ 3. لو كل حاجة تمام، نفذ الحفظ
     try {
       await dispatch(
@@ -88,19 +99,22 @@ export default function AddDiagnosis({ openDiagnosis, setopenDiagnosis }) {
           icdCode,
           severity,
         })
-      ).unwrap();
-      
+      )
+        .unwrap()
+        .then(() => {
+          dispatch(clearDataMedical());
+        });
+
       await dispatch(getAppDetById({ id: selectedPatient?.id })).unwrap();
-      
+
       showSnackbar("Diagnosis added successfully!", "success");
       setopenDiagnosis(false);
-      
+
       // Reset form
       setDescription("");
       setIcdCode("");
       setSeverity("moderate");
     } catch (err) {
-      console.log(err);
       showSnackbar(
         err?.message || err?.data?.message || "Something went wrong",
         "error"
@@ -109,21 +123,15 @@ export default function AddDiagnosis({ openDiagnosis, setopenDiagnosis }) {
   };
   useEffect(() => {
     if (openDiagnosis && !medicalRecordId?.data?.id) {
-      setShowAlert(true);
+      showSnackbar(
+        "You must add a medical record before adding a diagnosis.",
+        "error"
+      );
       setopenDiagnosis(false);
     }
   }, [openDiagnosis, medicalRecordId]);
   return (
     <div>
-      {showAlert && (
-        <Alert
-          severity="warning"
-          onClose={() => setShowAlert(false)}
-          sx={{ mb: 2 }}
-        >
-          You must add a medical record before adding a diagnosis.
-        </Alert>
-      )}
       <Modal
         open={openDiagnosis}
         onClose={handleClose}
@@ -199,7 +207,6 @@ export default function AddDiagnosis({ openDiagnosis, setopenDiagnosis }) {
               <Typography sx={{ fontWeight: 600, mb: 1 }}>
                 Clinical Description
               </Typography>
-
               <TextField
                 onChange={(e) => {
                   setDescription(e.target.value);
@@ -208,6 +215,7 @@ export default function AddDiagnosis({ openDiagnosis, setopenDiagnosis }) {
                 multiline
                 rows={4}
                 placeholder="Enter detailed clinical findings, symptoms, and patient observations ..."
+                value={description}
                 sx={{
                   mb: 4,
                   "& .MuiOutlinedInput-root": {

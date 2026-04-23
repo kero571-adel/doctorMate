@@ -1,13 +1,11 @@
 import React from "react";
 import {
   Box,
-  //Grid,
   Paper,
   Typography,
   TextField,
   InputAdornment,
   Avatar,
-  //Card,
   useTheme,
   alpha,
   Stack,
@@ -157,7 +155,6 @@ export default function Reports() {
   const dispatch = useDispatch();
   const { data } = useSelector((state) => state.report);
   const report = data?.data;
-  console.log("Report Data:", data?.data);
   const theme = useTheme();
   const { user, error } = useSelector((state) => state.doctor);
   //const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -174,23 +171,23 @@ export default function Reports() {
   return (
     <Stack direction="row">
       <NavBar />
-      {/* ✅ Main Container - Flex Column Layout */}
+      {/*  Main Container - Flex Column Layout */}
       <Box
         sx={{
           backgroundColor: "#F5F7FA",
           padding: { xs: "10px", md: "20px" },
           height: "100vh",
-          display: "flex", // ✅ تفعيل Flexbox
-          flexDirection: "column", // ✅ ترتيب العناصر عموديًا
+          display: "flex",
+          flexDirection: "column",
           flex: 1,
-          overflow: "hidden", // ✅ منع السكرول على الكونتينر الرئيسي
+          overflow: "hidden",
         }}
       >
-        {/* ✅ Scrollable Content Area */}
+        {/* Scrollable Content Area */}
         <Box
           sx={{
-            flex: 1, // ✅ ياخد المساحة الفاضية ويدفع الفوتر لتحت
-            overflowY: "auto", // ✅ السكرول يشتغل على المحتوى بس
+            flex: 1,
+            overflowY: "auto",
             overflowX: "hidden",
             width: "100%",
           }}
@@ -210,7 +207,7 @@ export default function Reports() {
                 justifyContent: "space-between",
                 alignItems: "center",
                 mb: { xs: 2, md: "0" },
-                flexWrap: "wrap", // ✅ لمنع تداخل العناصر في الموبايل
+                flexWrap: "wrap",
                 gap: { xs: 2, md: 0 },
               }}
             >
@@ -223,27 +220,7 @@ export default function Reports() {
               >
                 Reports
               </Typography>
-              <TextField
-                size="small"
-                placeholder="Search reports..."
-                variant="outlined"
-                sx={{
-                  display: { xs: "none", sm: "flex" },
-                  width: 350,
-                  mb: { xs: 3, sm: "0" },
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 2,
-                    backgroundColor: alpha(theme.palette.grey[100], 0.5),
-                  },
-                }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon sx={{ color: "text.secondary" }} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
+
               <Stack direction={"row"} sx={{ alignItems: "center", mb: 1 }}>
                 <Divider
                   orientation="vertical"
@@ -261,29 +238,6 @@ export default function Reports() {
                   {user?.data?.imageUrl ? "" : <PersonIcon />}
                 </Avatar>
               </Stack>
-            </Stack>
-            <Stack sx={{ justifyContent: "center", alignItems: "center" }}>
-              <TextField
-                size="small"
-                placeholder="Search reports..."
-                variant="outlined"
-                sx={{
-                  width: "90%",
-                  display: { xs: "flex", sm: "none" },
-                  mt: { xs: 3, sm: "0" },
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 2,
-                    backgroundColor: alpha(theme.palette.grey[100], 0.5),
-                  },
-                }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon sx={{ color: "text.secondary" }} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
             </Stack>
           </Box>
           {/* Stats Cards */}
@@ -304,15 +258,6 @@ export default function Reports() {
               width="300px"
               icon={<AssessmentIcon sx={{ fontSize: 28 }} />}
             />
-
-            {/* <StatCard
-              title="TOTAL APPOINTMENTS"
-              value="1,247"
-              
-              color="purple"
-              width="300px"
-              icon={<CalendarIcon sx={{ fontSize: 28 }} />}
-            /> */}
 
             <StatCard
               title="COMPLETED APPOINTMENTS"
@@ -605,7 +550,6 @@ export default function Reports() {
           </Grid> */}
         </Box>{" "}
         {/* ✅ End of Scrollable Content Area */}
-        {/* ✅ Footer - خارج منطقة السكرول عشان يفضل ثابت في الآخر */}
         <Stack
           sx={{
             pt: 3,
@@ -613,8 +557,8 @@ export default function Reports() {
             flexDirection: { xs: "column", md: "row" },
             justifyContent: { xs: "center", md: "space-between" },
             alignItems: "center",
-            flexShrink: 0, // ✅ منع الانكماش
-            backgroundColor: "#F5F7FA", // ✅ نفس خلفية الصفحة عشان الدمج يكون نضيف
+            flexShrink: 0,
+            backgroundColor: "#F5F7FA",
             pb: { xs: 2, md: 0 },
           }}
         >

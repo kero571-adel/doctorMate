@@ -23,7 +23,7 @@ export const profileManagement = createAsyncThunk(
         "/Profile_Management/update",
         formData
       );
-      console.log("response.data = ", response.data);
+     
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || "Server Error");

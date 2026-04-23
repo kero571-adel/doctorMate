@@ -5,15 +5,10 @@ export const addPrescriptions = createAsyncThunk(
   "prescriptions/addPrescriptions",
   async ({ diagnosisId, medications }, { rejectWithValue }) => {
     try {
-      console.log("diagnosisId: ",diagnosisId);
-      console.log("medications: ",medications);
-      const response = await api.post(
-        "/prescriptions",
-        {
-          diagnosisId,
-          medications,
-        }
-      );
+      const response = await api.post("/prescriptions", {
+        diagnosisId,
+        medications,
+      });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || "حدث خطأ");

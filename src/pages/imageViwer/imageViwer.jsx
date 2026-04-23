@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import cornerstone from "cornerstone-core";
+import {
+  isDicomFile,
+  loadDicomOnElement,
+  cleanupDicomElement,
+  getDisplayImageUrl,
+} from "../../utils/dicomUtils";
 import {
   Box,
   Typography,
@@ -56,6 +63,7 @@ import { setSelectedPatient } from "../../redux/schedule/schedule";
 import { useSelector, useDispatch } from "react-redux";
 import { useSnackbar } from "../../hooks/useSnackbar";
 import GlobalSnackbar from "../../components/GlobalSnackbar";
+
 export default function DicomViewer() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -73,6 +81,7 @@ export default function DicomViewer() {
   const userInfo = useSelector((state) => state.dataSliceImgViwer.userInfo);
   console.log("userInfo: ", userInfo);
   console.log("medicalImages: ", medicalImages);
+
   // Get images from navigation state or use default
   const receivedImages = location.state?.allImages || [];
   const selectedImage = location.state?.image;
@@ -84,71 +93,87 @@ export default function DicomViewer() {
     id: "_",
     lastVisit: "_",
   };
+
   // Add DICOM file to default images
-  const dicomFile = {
-    src: "/assets/IMG-0001-00001.dcm",
-    thumbnail: "/assets/dashboard/dicom/Rectangle 48.png",
-    description: "DICOM Medical Scan",
-    type: "DICOM",
-    uploadDate: new Date().toISOString(),
-    isDicom: true,
-  };
+
   // Convert DICOM images to the format expected by the viewer
+  // ✅ الكود الجديد: يعرض فقط الصور الجاية من الـ Backend
   const images =
     medicalImages?.length > 0
-      ? [
-          dicomFile,
-          ...medicalImages.map((img) => ({
-            src: img.viewerUrl,
-            thumbnail: img.viewerUrl,
-            description: img.description || img.fileName,
-            type: img.type,
-            uploadDate: img.uploadDate,
-          })),
-        ]
-      : [
-          dicomFile,
-          {
-            src: "/assets/imageView/image 1.png",
-            thumbnail: "/assets/imageView/image 2.png",
-            description: "Sample Medical Image 1",
-            type: "X-Ray",
-          },
-          {
-            src: "/assets/imageView/image 3.png",
-            thumbnail: "/assets/imageView/image 3.png",
-            description: "Sample Medical Image 2",
-            type: "MRI",
-          },
-        ];
+      ? medicalImages.map((img) => ({
+          src: img.viewerUrl,
+          thumbnail: img.viewerUrl, // أو رابط thumbnail لو موجود
+          description: img.description || img.fileName || "Medical Image",
+          type: img.fileType || ".dcm",
+          fileName: img.fileName,
+          uploadDate: img.createdAt,
+          id: img.id,
+        }))
+      : [];
 
   // Set initial image based on selected image
+  // ✅ الجديد (من غير +1):
   useEffect(() => {
-    if (selectedImage && medicalImages.length > 0) {
+    if (selectedImage && medicalImages?.length > 0) {
       const index = medicalImages.findIndex(
         (img) => img.id === selectedImage.id
       );
       if (index !== -1) {
-        setCurrentImage(index + 1); // +1 because we added dicomFile at beginning
+        setCurrentImage(index); // ✅ من غير +1
       }
     }
   }, [selectedImage, medicalImages]);
-  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
-  // useEffect(() => {
-  //   const fetchImages = async () => {
-  //     try {
-  //       // const response = await api.get('/dicom/images');
-  //       // setImages(response.data);
-  //     } catch (error) {
-  //       showSnackbar(
-  //         "Failed to load medical images. Please try again.",
-  //         "error"
-  //       );
-  //     }
-  //   };
 
-  //   fetchImages();
-  // }, []);
+  const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
+
+  // ✅ تحميل وعرض صورة DICOM عند تغيير الصورة الحالية
+  useEffect(() => {
+    const current = images[currentImage];
+    const element = imageRef.current;
+
+    if (!element || !current?.src) return;
+
+    // ✅ نظّف فقط لو الصورة السابقة كانت DICOM
+    if (isDicomFile(current.type, current.fileName)) {
+      cleanupDicomElement(element); // تنظيف قبل التحميل الجديد
+
+      loadDicomOnElement(element, current.src, {
+        baseUrl: import.meta.env.VITE_ORTHANC_URL || "http://localhost:8042",
+        fitToWindow: false, // ✅ غيّر من true لـ false (مهم جداً)
+        onLoading: () => console.log("🔄 Loading DICOM..."),
+        onSuccess: () => {
+          console.log("✅ DICOM loaded");
+          setTimeout(() => applyCornerstoneTransforms(), 100); // ✅ طبق الـ transforms بعد التحميل
+        },
+        onError: (err) => console.error("❌ DICOM error:", err),
+      });
+    }
+
+    // ✅ Cleanup عند تغيير الصورة أو الـ unmount
+    return () => {
+      if (isDicomFile(current?.type, current?.fileName)) {
+        cleanupDicomElement(element);
+      }
+    };
+  }, [currentImage, images]);
+  // ✅ useEffect جديد: يطبق الـ transforms لما الـ controls تتغير
+  useEffect(() => {
+    const current = images[currentImage];
+    // ✅ يطبق الـ transforms فقط لو الصورة الحالية نوعها DICOM
+    if (isDicomFile(current?.type, current?.fileName)) {
+      applyCornerstoneTransforms();
+    }
+  }, [zoom, brightness, contrast, rotation, inverted, currentImage]); // ✅ يعتمد على كل الـ controls
+
+  // ✅ Cleanup عند الـ unmount
+  useEffect(() => {
+    return () => {
+      document.querySelectorAll(".dicom-viewer-element").forEach((el) => {
+        cleanupDicomElement(el);
+      });
+    };
+  }, []);
+
   const handlePrevious = () => {
     setCurrentImage((prev) => (prev > 0 ? prev - 1 : images.length - 1));
   };
@@ -161,20 +186,182 @@ export default function DicomViewer() {
     setCurrentImage(index);
   };
 
+  // const handleZoomIn = () => {
+  //   setZoom((prev) => Math.min(prev + 10, 300));
+  // };
+
+  // const handleZoomOut = () => {
+  //   setZoom((prev) => Math.max(prev - 10, 25));
+  // };
+
+  // const handleRotateRight = () => {
+  //   setRotation((prev) => (prev + 90) % 360);
+  // };
+
+  // const handleRotateLeft = () => {
+  //   setRotation((prev) => (prev - 90 + 360) % 360);
+  //};
+
+  // const handleReset = () => {
+  //   setZoom(100);
+  //   setRotation(0);
+  //   // setBrightness(100);
+  //   // setContrast(100);
+  //   setInverted(false);
+  // };
+
+  const handleInvert = () => {
+    const newInverted = !inverted;
+    setInverted(newInverted);
+
+    // ✅ لو الصورة الحالية DICOM، طبق الـ invert فوراً
+    if (
+      isDicomFile(images[currentImage]?.type, images[currentImage]?.fileName)
+    ) {
+      const element = imageRef.current;
+      if (element) {
+        const viewport = cornerstone.getViewport(element);
+        if (viewport) {
+          cornerstone.setViewport(element, {
+            ...viewport,
+            invert: newInverted,
+          });
+        }
+      }
+    }
+  };
+  const toggleFullscreen = () => {
+    const targetElement =
+      document.querySelector(".dicom-viewer-element") || imageRef.current;
+
+    if (!document.fullscreenElement && targetElement) {
+      targetElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else if (document.fullscreenElement) {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+  // ✅ دالة تطبيق الـ transforms على صور الـ DICOM
+  const applyCornerstoneTransforms = () => {
+    const element = imageRef.current;
+    if (!element) return;
+
+    try {
+      cornerstone.setZoom(element, zoom / 100);
+
+      const viewport = cornerstone.getViewport(element);
+      if (viewport) {
+        cornerstone.setViewport(element, {
+          ...viewport,
+          voi: {
+            windowWidth: (contrast / 100) * 4096,
+            windowCenter: (brightness - 100) * 20,
+          },
+          rotation: rotation,
+          invert: inverted,
+        });
+      }
+    } catch (error) {
+      console.warn("⚠️ Cornerstone transform error:", error);
+    }
+  };
+
+  // ✅ دوال التحكم المعدلة عشان تشتغل مع DICOM فوراً
+
   const handleZoomIn = () => {
-    setZoom((prev) => Math.min(prev + 10, 300));
+    const newZoom = Math.min(zoom + 10, 300);
+    setZoom(newZoom);
+    // ✅ لو الصورة الحالية DICOM، طبق الـ zoom فوراً
+    if (
+      isDicomFile(images[currentImage]?.type, images[currentImage]?.fileName)
+    ) {
+      const element = imageRef.current;
+      if (element) cornerstone.setZoom(element, newZoom / 100);
+    }
   };
 
   const handleZoomOut = () => {
-    setZoom((prev) => Math.max(prev - 10, 25));
+    const newZoom = Math.max(zoom - 10, 25);
+    setZoom(newZoom);
+    if (
+      isDicomFile(images[currentImage]?.type, images[currentImage]?.fileName)
+    ) {
+      const element = imageRef.current;
+      if (element) cornerstone.setZoom(element, newZoom / 100);
+    }
+  };
+
+  const handleBrightnessChange = (e, val) => {
+    setBrightness(val);
+    if (
+      isDicomFile(images[currentImage]?.type, images[currentImage]?.fileName)
+    ) {
+      const element = imageRef.current;
+      if (element) {
+        const viewport = cornerstone.getViewport(element);
+        if (viewport) {
+          cornerstone.setViewport(element, {
+            ...viewport,
+            voi: { ...viewport.voi, windowCenter: (val - 100) * 20 },
+          });
+        }
+      }
+    }
+  };
+
+  const handleContrastChange = (e, val) => {
+    setContrast(val);
+    if (
+      isDicomFile(images[currentImage]?.type, images[currentImage]?.fileName)
+    ) {
+      const element = imageRef.current;
+      if (element) {
+        const viewport = cornerstone.getViewport(element);
+        if (viewport) {
+          cornerstone.setViewport(element, {
+            ...viewport,
+            voi: { ...viewport.voi, windowWidth: (val / 100) * 4096 },
+          });
+        }
+      }
+    }
   };
 
   const handleRotateRight = () => {
-    setRotation((prev) => (prev + 90) % 360);
+    const newRotation = (rotation + 90) % 360;
+    setRotation(newRotation);
+    if (
+      isDicomFile(images[currentImage]?.type, images[currentImage]?.fileName)
+    ) {
+      const element = imageRef.current;
+      if (element) {
+        const viewport = cornerstone.getViewport(element);
+        if (viewport)
+          cornerstone.setViewport(element, {
+            ...viewport,
+            rotation: newRotation,
+          });
+      }
+    }
   };
 
   const handleRotateLeft = () => {
-    setRotation((prev) => (prev - 90 + 360) % 360);
+    const newRotation = (rotation - 90 + 360) % 360;
+    setRotation(newRotation);
+    if (
+      isDicomFile(images[currentImage]?.type, images[currentImage]?.fileName)
+    ) {
+      const element = imageRef.current;
+      if (element) {
+        const viewport = cornerstone.getViewport(element);
+        if (viewport)
+          cornerstone.setViewport(element, {
+            ...viewport,
+            rotation: newRotation,
+          });
+      }
+    }
   };
 
   const handleReset = () => {
@@ -183,29 +370,34 @@ export default function DicomViewer() {
     setBrightness(100);
     setContrast(100);
     setInverted(false);
-  };
 
-  const handleInvert = () => {
-    setInverted((prev) => !prev);
-  };
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      imageRef.current?.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
+    // ✅ لو الصورة الحالية DICOM، طبق الـ reset فوراً
+    if (
+      isDicomFile(images[currentImage]?.type, images[currentImage]?.fileName)
+    ) {
+      const element = imageRef.current;
+      if (element) {
+        cornerstone.reset(element);
+      }
     }
   };
+  const getImageStyle = () => {
+    // ✅ لو الصورة الحالية DICOM، مرجعش أي ستايل (لأن Cornerstone هيمسكها)
+    if (
+      isDicomFile(images[currentImage]?.type, images[currentImage]?.fileName)
+    ) {
+      return {};
+    }
 
-  const getImageStyle = () => ({
-    transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
-    filter: `brightness(${brightness}%) contrast(${contrast}%) ${
-      inverted ? "invert(1)" : ""
-    }`,
-    transition: "transform 0.3s ease, filter 0.3s ease",
-  });
+    // ✅ للصور العادية، طبق الـ CSS transforms زي ما هو
+    return {
+      transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
+      filter: `brightness(${brightness}%) contrast(${contrast}%) ${
+        inverted ? "invert(1)" : ""
+      }`,
+      transition: "transform 0.3s ease, filter 0.3s ease",
+    };
+  };
 
   return (
     <Box
@@ -375,13 +567,9 @@ export default function DicomViewer() {
                 <Box
                   sx={{
                     p: { xs: 2, md: 2.5 },
-
-                    // 📱 موبايل أفقي
                     overflowX: { xs: "auto", md: "hidden" },
                     overflowY: { xs: "hidden", md: "auto" },
-
                     scrollSnapType: { xs: "x mandatory", md: "none" },
-
                     "&::-webkit-scrollbar": {
                       height: { xs: "6px", md: "8px" },
                       width: { md: "8px" },
@@ -395,92 +583,114 @@ export default function DicomViewer() {
                     },
                   }}
                 >
-                  <Stack direction={{ xs: "row", md: "column" }} spacing={2}>
-                    {images.map((image, index) => (
-                      <Box
-                        key={index}
-                        onClick={() => handleThumbnailClick(index)}
-                        sx={{
-                          cursor: "pointer",
-
-                          // 📱 عرض ثابت في الموبايل
-                          minWidth: { xs: 120, md: "100%" },
-                          maxWidth: { xs: 120, md: "100%" },
-
-                          scrollSnapAlign: "start",
-
-                          border:
-                            currentImage === index
-                              ? "3px solid"
-                              : "2px solid transparent",
-                          borderColor: "primary.main",
-                          borderRadius: "12px",
-                          overflow: "hidden",
-                          transition: "all 0.3s ease",
-                          position: "relative",
-                          "&:hover": {
-                            transform: "scale(1.05)",
-                            boxShadow: "0 4px 12px rgba(82, 172, 140, 0.3)",
-                          },
-                        }}
+                  {images.length === 0 ? (
+                    <Box
+                      sx={{
+                        p: 3,
+                        textAlign: "center",
+                        color: "text.secondary",
+                        fontSize: "14px",
+                      }}
+                    >
+                      <Typography fontSize="24px" mb={1}>
+                        📷
+                      </Typography>
+                      <Typography fontWeight={600}>
+                        No images available
+                      </Typography>
+                      <Typography
+                        fontSize="12px"
+                        color="text.secondary"
+                        mt={0.5}
                       >
-                        <img
-                          src={image.thumbnail}
-                          alt={image.description}
-                          style={{
-                            width: "100%",
-                            height: "120px",
-                            objectFit: "cover",
-                            display: "block",
+                        Images will appear here when uploaded
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Stack direction={{ xs: "row", md: "column" }} spacing={2}>
+                      {images.map((image, index) => (
+                        <Box
+                          key={index}
+                          onClick={() => handleThumbnailClick(index)}
+                          sx={{
+                            cursor: "pointer",
+                            minWidth: { xs: 120, md: "100%" },
+                            maxWidth: { xs: 120, md: "100%" },
+                            scrollSnapAlign: "start",
+                            border:
+                              currentImage === index
+                                ? "3px solid"
+                                : "2px solid transparent",
+                            borderColor: "primary.main",
+                            borderRadius: "12px",
+                            overflow: "hidden",
+                            transition: "all 0.3s ease",
+                            position: "relative",
+                            "&:hover": {
+                              transform: "scale(1.05)",
+                              boxShadow: "0 4px 12px rgba(82, 172, 140, 0.3)",
+                            },
                           }}
-                        />
+                        >
+                          <img
+                            src={image.thumbnail}
+                            alt={image.description}
+                            style={{
+                              width: "100%",
+                              height: "120px",
+                              objectFit: "cover",
+                              display: "block",
+                            }}
+                          />
 
-                        {currentImage === index && (
+                          {currentImage === index && (
+                            <Box
+                              sx={{
+                                position: "absolute",
+                                top: 4,
+                                right: 4,
+                                bgcolor: "primary.main",
+                                borderRadius: "50%",
+                                width: 24,
+                                height: 24,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                color="white"
+                                fontWeight={700}
+                              >
+                                ✓
+                              </Typography>
+                            </Box>
+                          )}
+
                           <Box
                             sx={{
                               position: "absolute",
-                              top: 4,
-                              right: 4,
-                              bgcolor: "primary.main",
-                              borderRadius: "50%",
-                              width: 24,
-                              height: 24,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              bgcolor: "rgba(0,0,0,0.6)",
+                              color: "white",
+                              p: 0.5,
+                              fontSize: "10px",
+                              textAlign: "center",
                             }}
                           >
-                            <Typography
-                              variant="caption"
-                              color="white"
-                              fontWeight={700}
-                            >
-                              ✓
-                            </Typography>
+                            {index + 1}
                           </Box>
-                        )}
-
-                        <Box
-                          sx={{
-                            position: "absolute",
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            bgcolor: "rgba(0,0,0,0.6)",
-                            color: "white",
-                            p: 0.5,
-                            fontSize: "10px",
-                            textAlign: "center",
-                          }}
-                        >
-                          {index + 1}
                         </Box>
-                      </Box>
-                    ))}
-                  </Stack>
+                      ))}
+                    </Stack>
+                  )}
                 </Box>
               </Card>
             </Grid>
+
             {/* Center - Main Viewer */}
             <Grid size={{ xs: 12, md: 6 }}>
               <Card
@@ -498,8 +708,8 @@ export default function DicomViewer() {
                   width: "100%",
                 }}
               >
+                {/* ✅ Container واحد بس للعرض - بدون ref هنا */}
                 <Box
-                  ref={imageRef}
                   sx={{
                     bgcolor: "#000",
                     height: "100%",
@@ -510,15 +720,52 @@ export default function DicomViewer() {
                     overflow: "hidden",
                   }}
                 >
-                  <img
-                    src={images[currentImage].src}
-                    alt={images[currentImage].description}
-                    style={{
-                      maxWidth: "100%",
-                      maxHeight: "100%",
-                      ...getImageStyle(),
-                    }}
-                  />
+                  {/* ✅ عرض الصورة حسب النوع */}
+                  {images.length > 0 &&
+                  isDicomFile(
+                    images[currentImage]?.type,
+                    images[currentImage]?.fileName
+                  ) ? (
+                    // 🩻 عرض بـ Cornerstone للـ DICOM
+                    <Box
+                      ref={imageRef}
+                      className="dicom-viewer-element"
+                      sx={{ width: "100%", height: "100%", bgcolor: "#000" }}
+                    />
+                  ) : images.length > 0 ? (
+                    // 🖼️ عرض عادي للصور (.jpg, .png)
+                    <img
+                      ref={imageRef}
+                      src={getDisplayImageUrl(
+                        images[currentImage].src,
+                        import.meta.env.VITE_ORTHANC_URL
+                      )}
+                      alt={images[currentImage].description}
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "100%",
+                        ...getImageStyle(),
+                      }}
+                    />
+                  ) : (
+                    // ✅ لو مفيش صور، اعرض رسالة في الـ viewer كمان
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: "100%",
+                        bgcolor: "#1a1a1a",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "white",
+                        flexDirection: "column",
+                        gap: 2,
+                      }}
+                    >
+                      <Typography fontSize="32px">🩻</Typography>
+                      <Typography fontSize="16px">No image selected</Typography>
+                    </Box>
+                  )}
 
                   {/* Image Overlay Info */}
                   <Box
@@ -597,6 +844,7 @@ export default function DicomViewer() {
                 </Box>
               </Card>
             </Grid>
+
             {/* Controls */}
             <Grid size={{ xs: 12, md: 3, lg: 4 }}>
               <Card
@@ -662,7 +910,19 @@ export default function DicomViewer() {
                     </Stack>
                     <Slider
                       value={zoom}
-                      onChange={(e, val) => setZoom(val)}
+                      onChange={(e, val) => {
+                        setZoom(val);
+                        // ✅ لو الصورة الحالية DICOM، طبق الـ zoom فوراً
+                        if (
+                          isDicomFile(
+                            images[currentImage]?.type,
+                            images[currentImage]?.fileName
+                          )
+                        ) {
+                          const element = imageRef.current;
+                          if (element) cornerstone.setZoom(element, val / 100);
+                        }
+                      }}
                       min={25}
                       max={300}
                       sx={{ color: "primary.main" }}
@@ -670,6 +930,7 @@ export default function DicomViewer() {
                   </Box>
 
                   {/* Brightness */}
+
                   <Box sx={{ mb: { xs: 2.5, md: 3 } }}>
                     <Stack
                       direction="row"
@@ -681,7 +942,6 @@ export default function DicomViewer() {
                         variant="caption"
                         color="text.secondary"
                         fontWeight={600}
-                        sx={{ fontSize: { xs: "12px", md: "13px" } }}
                       >
                         Brightness
                       </Typography>
@@ -695,7 +955,7 @@ export default function DicomViewer() {
                     </Stack>
                     <Slider
                       value={brightness}
-                      onChange={(e, val) => setBrightness(val)}
+                      onChange={handleBrightnessChange} // ✅ غيّر من (e, val) => setBrightness(val) للدالة الجديدة
                       min={0}
                       max={200}
                       sx={{ color: "primary.main" }}
@@ -714,7 +974,6 @@ export default function DicomViewer() {
                         variant="caption"
                         color="text.secondary"
                         fontWeight={600}
-                        sx={{ fontSize: { xs: "12px", md: "13px" } }}
                       >
                         Contrast
                       </Typography>
@@ -728,7 +987,7 @@ export default function DicomViewer() {
                     </Stack>
                     <Slider
                       value={contrast}
-                      onChange={(e, val) => setContrast(val)}
+                      onChange={handleContrastChange} // ✅ غيّر من (e, val) => setContrast(val) للدالة الجديدة
                       min={0}
                       max={200}
                       sx={{ color: "primary.main" }}
@@ -801,6 +1060,7 @@ export default function DicomViewer() {
               </Card>
             </Grid>
           </Grid>
+
           {/* Patient Information */}
           <Card
             sx={{
@@ -819,7 +1079,6 @@ export default function DicomViewer() {
                 Patient Information
               </Typography>
 
-              {/* <Grid container spacing={2}> */}
               <Stack
                 direction={{ xs: "column", sm: "row" }}
                 sx={{
@@ -856,20 +1115,20 @@ export default function DicomViewer() {
                   },
                   {
                     label: "Patient ID",
-                    value: patientInfo.id.slice(-6),
+                    value: patientInfo.id?.slice(-6) || "_",
                     icon: <Badge />,
                     color: "#9c27b0",
                   },
                 ].map((item, index) => (
                   <Card
-                    key={index}
+                    key={item.id||index}
                     sx={{
-                      width: "200px", // ✅ عرض ثابت
+                      width: "200px",
                       minWidth: "200px",
                       borderRadius: "16px",
                       boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                       transition: "all 0.3s ease",
-                      flexShrink: 0, // ✅ يمنع الانكماش
+                      flexShrink: 0,
                       "&:hover": {
                         transform: "translateY(-4px)",
                         boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
@@ -912,7 +1171,6 @@ export default function DicomViewer() {
                   </Card>
                 ))}
               </Stack>
-              {/* </Grid> */}
 
               <Divider sx={{ my: 3 }} />
 

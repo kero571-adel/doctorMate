@@ -250,68 +250,40 @@ class AgoraService {
     const createdTracks = { audio: null, video: null };
 
     try {
-      // 🎤 إنشاء وتشغيل صوت المايك
       if (publishAudio) {
-        console.log("🎤 Creating microphone track...");
         const audioTrack = await AgoraRTC.createMicrophoneAudioTrack(
           audioOptions
         );
         createdTracks.audio = audioTrack;
         tracksToPublish.push(audioTrack);
-        console.log("✅ Audio track created, ID:", audioTrack?.getTrackId?.());
       }
-
-      // 📹 إنشاء وتشغيل كاميرا الفيديو
       if (publishVideo) {
-        console.log("📹 Creating camera track...");
         const videoTrack = await AgoraRTC.createCameraVideoTrack({
           encoderConfig: "640x480",
           ...videoOptions,
         });
         createdTracks.video = videoTrack;
         tracksToPublish.push(videoTrack);
-        console.log("✅ Video track created, ID:", videoTrack?.getTrackId?.());
       }
-
-      // ⚠️ لو مفيش حاجة تنشر، ارمي خطأ
       if (tracksToPublish.length === 0) {
         throw new Error(
           "No tracks to publish: both audio and video are disabled"
         );
       }
-
-      // ✅ FIX: Store tracks locally BEFORE publishing to prevent race conditions
       // This ensures mute/unmute controls work immediately even if publish is slow
       this.localTracks = {
         audio: createdTracks.audio,
         video: createdTracks.video,
       };
 
-      // 🚀 نشر الـ tracks على القناة
-      console.log(
-        `🔹 [AGORA] Publishing ${tracksToPublish.length} track(s)...`
-      );
       await this.client.publish(tracksToPublish);
-      console.log("✅ [AGORA] Tracks published successfully!");
-
-      console.log("✅ Local tracks stored:", {
-        audio: !!createdTracks.audio,
-        video: !!createdTracks.video,
-      });
-
-      // 🎁 إرجاع الـ tracks عشان الـ UI يقدر يشغلها في الـ DOM
       return createdTracks;
     } catch (error) {
       console.error("❌ [AGORA] Publish failed:", error);
-
-      // 🧹 FIX: Comprehensive cleanup on error to prevent memory leaks
-      console.log("🔹 [AGORA] Cleaning up tracks after error...");
-
       if (createdTracks.audio) {
         try {
           createdTracks.audio.stop?.();
           createdTracks.audio.close?.();
-          console.log("✅ [AGORA] Audio track cleaned up");
         } catch (cleanupErr) {
           console.warn("⚠️ [AGORA] Audio cleanup error:", cleanupErr);
         }
@@ -321,7 +293,6 @@ class AgoraService {
         try {
           createdTracks.video.stop?.();
           createdTracks.video.close?.();
-          console.log("✅ [AGORA] Video track cleaned up");
         } catch (cleanupErr) {
           console.warn("⚠️ [AGORA] Video cleanup error:", cleanupErr);
         }
@@ -343,7 +314,7 @@ class AgoraService {
    */
   async subscribeToRemoteStream(user, mediaType = "both") {
     const result = { audio: null, video: null };
-  
+
     if (mediaType === "both") {
       await this.client.subscribe(user, ["audio", "video"]);
       result.audio = user.audioTrack || null;
@@ -356,7 +327,7 @@ class AgoraService {
         result.audio = user.audioTrack || null;
       }
     }
-  
+
     return result; // ❌ بدون play هنا
   }
 
@@ -366,10 +337,7 @@ class AgoraService {
    * @returns {Promise<void>}
    */
   async leaveChannel() {
-    console.log("🔹 [AGORA] leaveChannel called");
-
     if (!this.isInitialized || !this.client) {
-      console.log("⚠️ [AGORA] Client not initialized, skipping leave");
       return;
     }
 
@@ -379,17 +347,14 @@ class AgoraService {
 
       // ✅ 2. مغادرة القناة
       await this.client.leave();
-      console.log("✅ [AGORA] Left channel");
 
       // ✅ 3. تنظيف الـ client state بالكامل للسماح بإعادة الاستخدام
       this.client = null;
       this.isInitialized = false;
       this.eventListenersSetup = false;
       this.localTracks = { audio: null, video: null };
-
-      console.log("✅ [AGORA] Channel left and state cleaned up");
     } catch (error) {
-      console.error("❌ [AGORA] Leave failed:", error);
+      console.error(" [AGORA] Leave failed:", error);
       // حتى لو فشل، نظّف الـ state لمنع حالة غير متسقة تسمح بإعادة المحاولة
       this.client = null;
       this.isInitialized = false;
@@ -405,7 +370,7 @@ class AgoraService {
    * @param {boolean} muted - true للكتم، false للإعادة
    */
   async muteLocalAudio(muted) {
-    console.log(`🔹 [AGORA] muteLocalAudio called: ${muted}`);
+
 
     if (!this.localTracks?.audio) {
       console.warn("⚠️ [AGORA] Audio track not available");
@@ -417,7 +382,7 @@ class AgoraService {
     try {
       // ✅ Agora SDK: setEnabled(false) = mute, setEnabled(true) = unmute
       await this.localTracks.audio.setEnabled(!muted);
-      console.log(`✅ [AGORA] Audio ${muted ? "muted" : "unmuted"}`);
+
     } catch (error) {
       console.error("❌ [AGORA] muteLocalAudio failed:", error);
       throw error;
@@ -425,22 +390,18 @@ class AgoraService {
   }
 
   /**
-   * إخفاء/إظهار الفيديو المحلي
+
    * @param {boolean} muted - true للإخفاء، false للإظهار
    */
   async muteLocalVideo(muted) {
-    console.log(`🔹 [AGORA] muteLocalVideo called: ${muted}`);
-
     if (!this.localTracks?.video) {
       console.warn("⚠️ [AGORA] Video track not available");
       throw new Error(
         "Video track not initialized. Call publishLocalStream() first."
       );
     }
-
     try {
       await this.localTracks.video.setEnabled(!muted);
-      console.log(`✅ [AGORA] Video ${muted ? "disabled" : "enabled"}`);
     } catch (error) {
       console.error("❌ [AGORA] muteLocalVideo failed:", error);
       throw error;
@@ -452,8 +413,6 @@ class AgoraService {
    * @returns {Promise<void>}
    */
   async switchCamera() {
-    console.log("🔹 [AGORA] switchCamera called");
-
     if (!this.localTracks?.video) {
       console.warn("⚠️ [AGORA] Video track not available");
       throw new Error("Video track not initialized");
@@ -469,8 +428,6 @@ class AgoraService {
       await this.localTracks.video.replaceTrack(newVideoTrack);
       this.localTracks.video.close(); // Close old track
       this.localTracks.video = newVideoTrack;
-
-      console.log("✅ [AGORA] Camera switched");
     } catch (error) {
       console.error("❌ [AGORA] switchCamera failed:", error);
       throw error;
@@ -483,19 +440,11 @@ class AgoraService {
    * Call this when component unmounts or app closes to prevent memory leaks
    */
   async cleanup() {
-    console.log("🔹 [AGORA] cleanup called");
-
-    // ✅ 1. Remove all event listeners first (prevents callbacks on unmounted components)
     this.removeEventListeners();
-
-    // ✅ 2. Clean up local tracks properly
     await this._cleanupLocalTracks();
-
-    // ✅ 3. Leave channel if still joined
     if (this.client && this.isInitialized) {
       try {
         await this.client.leave();
-        console.log("✅ [AGORA] Left channel during cleanup");
       } catch (e) {
         console.warn(
           "⚠️ [AGORA] Leave during cleanup failed (expected if not joined):",
@@ -503,15 +452,11 @@ class AgoraService {
         );
       }
     }
-
-    // ✅ 4. Reset ALL state to allow clean re-initialization
     this.client = null;
     this.isInitialized = false;
     this.eventListenersSetup = false;
     this.localTracks = { audio: null, video: null };
     this.appId = null;
-
-    console.log("✅ [AGORA] Full cleanup complete");
   }
 
   // ================= PRIVATE HELPERS =================
@@ -521,13 +466,10 @@ class AgoraService {
    * @private
    */
   async _cleanupLocalTracks() {
-    console.log("🔹 [AGORA] Cleaning up local tracks...");
-
     if (this.localTracks.audio) {
       try {
         this.localTracks.audio.stop();
         this.localTracks.audio.close();
-        console.log("✅ [AGORA] Audio track closed");
       } catch (e) {
         console.warn("⚠️ [AGORA] Audio track cleanup error:", e);
       }
@@ -538,7 +480,6 @@ class AgoraService {
       try {
         this.localTracks.video.stop();
         this.localTracks.video.close();
-        console.log("✅ [AGORA] Video track closed");
       } catch (e) {
         console.warn("⚠️ [AGORA] Video track cleanup error:", e);
       }
@@ -554,7 +495,6 @@ class AgoraService {
     if (this.client) {
       this.client.removeAllListeners();
       this.eventListenersSetup = false;
-      console.log("✅ [AGORA] Event listeners removed");
     }
   }
 

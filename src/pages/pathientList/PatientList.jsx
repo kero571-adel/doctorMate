@@ -40,13 +40,8 @@ export default function PatientList() {
   const { patients, pagination, loading, error } = useSelector(
     (state) => state.patients
   );
-  console.log(
-    "🚀 ~ file: PatientList.jsx:28 ~ PatientList ~ patients:",
-    patients
-  );
   const userLS = JSON.parse(localStorage.getItem("user") || "{}");
   const { user } = useSelector((state) => state.doctor);
-
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");

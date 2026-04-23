@@ -230,24 +230,38 @@ export default function DoctorProfile() {
                         />
                       </Box>
 
-                      <Grid container spacing={2} mt={2}>
-                        <Grid item xs={12} sm={6} lg={3}>
+                      <Grid container spacing={{ xs: 2, sm: 2, md: 3 }} mt={2}>
+                        {/* 📍 Location Card */}
+                        <Grid item xs={12} sm={6} md={4} lg={3}>
                           <Box
                             sx={{
-                              p: 2,
+                              p: { xs: 1.5, sm: 2 },
                               borderRadius: "12px",
                               background:
                                 "linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(244, 67, 54, 0.05) 100%)",
                               border: "1px solid rgba(244, 67, 54, 0.2)",
+                              height: "auto", // ✅ مهم: خلي الارتفاع يتعدل حسب المحتوى
+                              minHeight: { xs: "70px", sm: "80px" }, // ✅ حد أدني عشان الشكل يفضل متناسق
+                              display: "flex",
+                              alignItems: "center",
+                              width: "100%", // ✅ عشان الـ Box مايزيدش عن عرض الـ Grid
+                              boxSizing: "border-box", // ✅ عشان الـ padding مايحسبش في العرض
                             }}
                           >
                             <Stack
                               direction="row"
                               spacing={1.5}
-                              alignItems="center"
+                              alignItems="flex-start"
+                              width="100%"
                             >
-                              <LocationOnIcon sx={{ color: "#f44336" }} />
-                              <Box>
+                              <LocationOnIcon
+                                sx={{
+                                  color: "#f44336",
+                                  fontSize: { xs: 20, sm: 24 },
+                                  flexShrink: 0,
+                                }}
+                              />
+                              <Box sx={{ minWidth: 0, flex: 1 }}>
                                 <Typography
                                   variant="caption"
                                   color="text.secondary"
@@ -259,6 +273,15 @@ export default function DoctorProfile() {
                                   variant="body2"
                                   fontWeight={600}
                                   color="text.primary"
+                                  sx={{
+                                    wordBreak: "break-word",
+                                    overflowWrap: "break-word",
+                                    whiteSpace: "normal",
+                                    minWidth: 0,
+                                    width: "100%",
+                                    fontSize: { xs: "0.85rem", sm: "0.9rem" },
+                                    lineHeight: 1.4,
+                                  }}
                                 >
                                   {user?.data?.address || "N/A"}
                                 </Typography>
@@ -267,22 +290,36 @@ export default function DoctorProfile() {
                           </Box>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} lg={3}>
+                        {/* 📧 Email Card */}
+                        <Grid item xs={12} sm={6} md={4} lg={3}>
                           <Box
                             sx={{
-                              p: 2,
+                              p: { xs: 1.5, sm: 2 },
                               borderRadius: "12px",
                               background:
                                 "linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.05) 100%)",
                               border: "1px solid rgba(33, 150, 243, 0.2)",
+                              height: "auto",
+                              minHeight: { xs: "70px", sm: "80px" },
+                              display: "flex",
+                              alignItems: "center",
+                              width: "100%",
+                              boxSizing: "border-box",
                             }}
                           >
                             <Stack
                               direction="row"
                               spacing={1.5}
-                              alignItems="center"
+                              alignItems="flex-start"
+                              width="100%"
                             >
-                              <EmailIcon sx={{ color: "#2196f3" }} />
+                              <EmailIcon
+                                sx={{
+                                  color: "#2196f3",
+                                  fontSize: { xs: 20, sm: 24 },
+                                  flexShrink: 0,
+                                }}
+                              />
                               <Box sx={{ minWidth: 0, flex: 1 }}>
                                 <Typography
                                   variant="caption"
@@ -295,10 +332,16 @@ export default function DoctorProfile() {
                                   variant="body2"
                                   fontWeight={600}
                                   color="text.primary"
-                                  noWrap
                                   sx={{
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
+                                    wordBreak: "break-all", // ✅ للأيميل: يكسر عند أي حرف عشان مايطلعش بره
+                                    overflowWrap: "break-word",
+                                    whiteSpace: "normal",
+                                    minWidth: 0,
+                                    width: "100%",
+                                    fontSize: { xs: "0.85rem", sm: "0.9rem" },
+                                    lineHeight: 1.4,
+                                    direction: "ltr", // عشان الإيميل يظهر من الشمال لليمين
+                                    textAlign: "left",
                                   }}
                                 >
                                   {user?.data?.email}
@@ -308,23 +351,37 @@ export default function DoctorProfile() {
                           </Box>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} lg={3}>
+                        {/* 📞 Phone Card */}
+                        <Grid item xs={12} sm={6} md={4} lg={3}>
                           <Box
                             sx={{
-                              p: 2,
+                              p: { xs: 1.5, sm: 2 },
                               borderRadius: "12px",
                               background:
                                 "linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%)",
                               border: "1px solid rgba(76, 175, 80, 0.2)",
+                              height: "auto",
+                              minHeight: { xs: "70px", sm: "80px" },
+                              display: "flex",
+                              alignItems: "center",
+                              width: "100%",
+                              boxSizing: "border-box",
                             }}
                           >
                             <Stack
                               direction="row"
                               spacing={1.5}
-                              alignItems="center"
+                              alignItems="flex-start"
+                              width="100%"
                             >
-                              <PhoneIcon sx={{ color: "#4caf50" }} />
-                              <Box>
+                              <PhoneIcon
+                                sx={{
+                                  color: "#4caf50",
+                                  fontSize: { xs: 20, sm: 24 },
+                                  flexShrink: 0,
+                                }}
+                              />
+                              <Box sx={{ minWidth: 0, flex: 1 }}>
                                 <Typography
                                   variant="caption"
                                   color="text.secondary"
@@ -336,6 +393,17 @@ export default function DoctorProfile() {
                                   variant="body2"
                                   fontWeight={600}
                                   color="text.primary"
+                                  sx={{
+                                    wordBreak: "break-all", // ✅ للرقم: يكسر لو طويل جداً
+                                    overflowWrap: "break-word",
+                                    whiteSpace: "normal",
+                                    minWidth: 0,
+                                    width: "100%",
+                                    fontSize: { xs: "0.85rem", sm: "0.9rem" },
+                                    lineHeight: 1.4,
+                                    direction: "ltr",
+                                    textAlign: "left",
+                                  }}
                                 >
                                   {user?.data?.phone}
                                 </Typography>
@@ -344,33 +412,44 @@ export default function DoctorProfile() {
                           </Box>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} lg={3}>
+                        {/* ⭐ Rating Card */}
+                        <Grid item xs={12} sm={6} md={4} lg={3}>
                           <Box
                             sx={{
-                              p: 2,
+                              p: { xs: 1.5, sm: 2 },
                               borderRadius: "12px",
                               background:
                                 "linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, rgba(255, 152, 0, 0.05) 100%)",
                               border: "1px solid rgba(255, 152, 0, 0.2)",
+                              height: "auto",
+                              minHeight: { xs: "70px", sm: "80px" },
+                              display: "flex",
+                              alignItems: "center",
+                              width: "100%",
+                              boxSizing: "border-box",
                             }}
                           >
                             <Stack
                               direction="row"
                               spacing={1.5}
                               alignItems="center"
+                              width="100%"
                             >
                               <Box
                                 sx={{
-                                  width: 24,
-                                  height: 24,
+                                  width: { xs: 20, sm: 24 },
+                                  height: { xs: 20, sm: 24 },
                                   display: "flex",
                                   alignItems: "center",
                                   justifyContent: "center",
+                                  flexShrink: 0,
                                 }}
                               >
-                                <Typography fontSize={20}>⭐</Typography>
+                                <Typography fontSize={{ xs: 16, sm: 20 }}>
+                                  ⭐
+                                </Typography>
                               </Box>
-                              <Box>
+                              <Box sx={{ minWidth: 0, flex: 1 }}>
                                 <Typography
                                   variant="caption"
                                   color="text.secondary"
@@ -700,20 +779,46 @@ export default function DoctorProfile() {
                       <Stack
                         direction="row"
                         justifyContent="space-between"
-                        alignItems="center"
-                        mb={3}
+                        alignItems={{ xs: "center", sm: "center" }}
+                        flexWrap="wrap"
+                        gap={{ xs: 1, sm: 1.5, md: 2 }}
+                        mb={{ xs: 2, sm: 3, md: 3.5 }} 
                       >
-                        <Typography fontWeight="700" color="primary.main">
+                        <Typography
+                          variant="h6"
+                          fontWeight="700"
+                          color="primary.main"
+                          sx={{
+                            fontSize: {
+                              xs: "1rem",
+                              sm: "1.125rem",
+                              md: "1.25rem",
+                            },
+                            lineHeight: 1.2,
+                            minWidth: 0,
+                          }}
+                        >
                           Patient List
                         </Typography>
+
                         <Chip
                           label="Today"
-                          icon={<CalendarTodayIcon sx={{ fontSize: 14 }} />}
+                          icon={
+                            <CalendarTodayIcon
+                              sx={{ fontSize: { xs: 14, sm: 16 } }}
+                            />
+                          }
                           sx={{
                             background:
                               "linear-gradient(135deg, #52AC8C 0%, #45988F 100%)",
                             color: "white",
                             fontWeight: 600,
+                            fontSize: { xs: "0.7rem", sm: "0.8rem" }, 
+                            height: { xs: 28, sm: 32, md: 34 }, 
+                            borderRadius: "8px",
+                            "& .MuiChip-label": {
+                              px: { xs: 1, sm: 2 }, 
+                            },
                           }}
                         />
                       </Stack>
@@ -782,7 +887,7 @@ export default function DoctorProfile() {
                                   fontWeight={600}
                                   color="text.primary"
                                 >
-                                  {p.fullName}
+                                  {p.name}
                                 </Typography>
                                 <Typography
                                   fontSize="12px"

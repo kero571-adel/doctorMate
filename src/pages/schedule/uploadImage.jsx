@@ -1,5 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
+  isDicomFile,
+  loadDicomOnElement,
+  cleanupDicomElement,
+} from "../../utils/dicomUtils";
+import {
   Box,
   Typography,
   Button,
@@ -15,7 +20,6 @@ import {
   DialogActions,
   TextField,
   FormControl,
-  Chip,
 } from "@mui/material";
 import {
   CloudUpload as CloudUploadIcon,
@@ -39,25 +43,25 @@ import { useSnackbar } from "../../hooks/useSnackbar";
 import GlobalSnackbar from "../../components/GlobalSnackbar";
 
 // ✅ Initialize Cornerstone with proper configuration
-cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
-cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
+// cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+// cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
 
-cornerstoneWADOImageLoader.configure({
-  useWebWorkers: true,
-  decodeConfig: {
-    convertFloatPixelDataToInt: true,
-  },
-});
+// cornerstoneWADOImageLoader.configure({
+//   useWebWorkers: true,
+//   decodeConfig: {
+//     convertFloatPixelDataToInt: true,
+//   },
+// });
 
-// Register image loaders
-cornerstone.registerImageLoader(
-  "wadouri",
-  cornerstoneWADOImageLoader.loadImage
-);
-cornerstone.registerImageLoader(
-  "dicomweb",
-  cornerstoneWADOImageLoader.loadImage
-);
+// // Register image loaders
+// cornerstone.registerImageLoader(
+//   "wadouri",
+//   cornerstoneWADOImageLoader.loadImage
+// );
+// cornerstone.registerImageLoader(
+//   "dicomweb",
+//   cornerstoneWADOImageLoader.loadImage
+// );
 
 export default function MedicalImaging() {
   const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
@@ -79,8 +83,6 @@ export default function MedicalImaging() {
   const { data, images, error, loading } = useSelector(
     (state) => state.MedicalImg
   );
-  console.log("images: ", images);
-  // ✅ تعريف آمن للبيانات
   const allImages = images?.data || [];
   const displayableImages =
     displayedImages.length > 0 ? displayedImages : allImages;
@@ -110,66 +112,122 @@ export default function MedicalImaging() {
   };
 
   // ✅ دالة لعرض محتوى الصورة
+  // const renderImageContent = (image) => {
+  //   const isDicomFile =
+  //     image.fileType?.toLowerCase() === ".dcm" ||
+  //     image.fileType?.toLowerCase() === ".dicom" ||
+  //     image.fileName?.toLowerCase().endsWith(".dcm");
+
+  //   if (isDicomFile) {
+  //     return (
+  //       <Box
+  //         className="cornerstone-element"
+  //         ref={(el) => {
+  //           if (el && image.id) {
+  //             try {
+  //               // تفعيل العنصر
+  //               cornerstone.enable(el);
+
+  //               const imageUrl = getImageUrl(image);
+  //               if (!imageUrl) {
+  //                 console.warn("No image URL for DICOM:", image);
+  //                 el.innerHTML =
+  //                   '<div style="color:#999;text-align:center;padding:20px;height:100%;display:flex;align-items:center;justify-content:center;">No URL</div>';
+  //                 return;
+  //               }
+
+  //               // تحميل وعرض صورة DICOM
+  //               const imageId = imageUrl.includes("wadouri:")
+  //                 ? imageUrl
+  //                 : `wadouri:${imageUrl}`;
+
+  //               cornerstone
+  //                 .loadAndCacheImage(imageId)
+  //                 .then((img) => {
+  //                   if (el) {
+  //                     cornerstone.displayImage(el, img);
+  //                   }
+  //                 })
+  //                 .catch((err) => {
+  //                   console.error("Error loading DICOM:", err);
+  //                   if (el) {
+  //                     el.innerHTML =
+  //                       '<div style="color:#f44336;text-align:center;padding:20px;font-size:12px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;"><div style="font-size:20px;margin-bottom:8px;">⚠️</div><div>Failed to load</div></div>';
+  //                   }
+  //                 });
+  //             } catch (err) {
+  //               console.error("Cornerstone error:", err);
+  //             }
+  //           }
+  //         }}
+  //         sx={{
+  //           position: "absolute",
+  //           top: 0,
+  //           left: 0,
+  //           width: "100%",
+  //           height: "100%",
+  //           bgcolor: "#1a1a1a",
+  //           display: "flex",
+  //           alignItems: "center",
+  //           justifyContent: "center",
+  //         }}
+  //       >
+  //         <Box
+  //           sx={{
+  //             position: "absolute",
+  //             top: 8,
+  //             left: 8,
+  //             bgcolor: "#5cb998",
+  //             color: "white",
+  //             px: 1,
+  //             py: 0.3,
+  //             borderRadius: "4px",
+  //             fontSize: "10px",
+  //             fontWeight: 600,
+  //             zIndex: 2,
+  //           }}
+  //         >
+  //           {image.modality || "DICOM"}
+  //         </Box>
+  //       </Box>
+  //     );
+  //   }
+
+  //   return (
+  //     <CardMedia
+  //       component="img"
+  //       image={getImageUrl(image)}
+  //       alt={image.fileName}
+  //       sx={{
+  //         position: "absolute",
+  //         top: 0,
+  //         left: 0,
+  //         width: "100%",
+  //         height: "100%",
+  //         objectFit: "cover",
+  //       }}
+  //     />
+  //   );
+  // };
+  // ✅ دالة عرض الصورة باستخدام utils
+  // ✅ دالة عرض الصورة باستخدام utils
   const renderImageContent = (image) => {
-    const isDicomFile =
-      image.fileType?.toLowerCase() === ".dcm" ||
-      image.fileType?.toLowerCase() === ".dicom" ||
-      image.fileName?.toLowerCase().endsWith(".dcm");
+    const isDicom = isDicomFile(image.fileType, image.fileName);
 
-    if (isDicomFile) {
+    if (isDicom) {
       return (
-        <Box
-          className="cornerstone-element"
-          ref={(el) => {
-            if (el && image.id) {
-              try {
-                // تفعيل العنصر
-                cornerstone.enable(el);
-
-                const imageUrl = getImageUrl(image);
-                if (!imageUrl) {
-                  console.warn("No image URL for DICOM:", image);
-                  el.innerHTML =
-                    '<div style="color:#999;text-align:center;padding:20px;height:100%;display:flex;align-items:center;justify-content:center;">No URL</div>';
-                  return;
-                }
-
-                // تحميل وعرض صورة DICOM
-                const imageId = imageUrl.includes("wadouri:")
-                  ? imageUrl
-                  : `wadouri:${imageUrl}`;
-
-                cornerstone
-                  .loadAndCacheImage(imageId)
-                  .then((img) => {
-                    if (el) {
-                      cornerstone.displayImage(el, img);
-                    }
-                  })
-                  .catch((err) => {
-                    console.error("Error loading DICOM:", err);
-                    if (el) {
-                      el.innerHTML =
-                        '<div style="color:#f44336;text-align:center;padding:20px;font-size:12px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;"><div style="font-size:20px;margin-bottom:8px;">⚠️</div><div>Failed to load</div></div>';
-                    }
-                  });
-              } catch (err) {
-                console.error("Cornerstone error:", err);
-              }
-            }
-          }}
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            bgcolor: "#1a1a1a",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
+        <>
+          <Box
+            className="cornerstone-element"
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              bgcolor: "#1a1a1a",
+            }}
+          />
           <Box
             sx={{
               position: "absolute",
@@ -187,7 +245,7 @@ export default function MedicalImaging() {
           >
             {image.modality || "DICOM"}
           </Box>
-        </Box>
+        </>
       );
     }
 
@@ -207,7 +265,6 @@ export default function MedicalImaging() {
       />
     );
   };
-
   // ✅ Improved file validation with clear messages
   const validateFile = (file) => {
     const validExtensions = [
@@ -294,9 +351,7 @@ export default function MedicalImaging() {
       progress: 0,
       status: "uploading",
     };
-
     setUploadingFiles((prev) => [...prev, newFile]);
-
     try {
       const formData = new FormData();
       formData.append("File", file);
@@ -342,21 +397,15 @@ export default function MedicalImaging() {
       }
     } catch (err) {
       console.error("❌ Upload error full details:", err);
-      console.error("Error response:", err?.response?.data);
-      console.error("Error message:", err?.message);
-      console.error("Error status:", err?.response?.status);
-
-      setUploadingFiles((prev) =>
-        prev.map((f) =>
-          f.id === uploadId ? { ...f, status: "error", progress: 100 } : f
-        )
-      );
 
       const serverErrorMessage = extractServerError(err);
       showSnackbar(
         `Failed to upload ${file.name}: ${serverErrorMessage}`,
         "error"
       );
+      setTimeout(() => {
+        setUploadingFiles((prev) => prev.filter((f) => f.id !== uploadId));
+      }, 1500);
     }
   };
 
@@ -501,10 +550,11 @@ export default function MedicalImaging() {
     if (selectedPatient?.id) {
       dispatch(getMedicalImg(selectedPatient?.id));
     }
-    // ✅ Cleanup: تعطيل جميع عناصر cornerstone عندUnmount
+    
+    // ✅ Cleanup: استخدام الـ utility function
     return () => {
       const elements = document.querySelectorAll(".cornerstone-element");
-      elements.forEach((el) => cornerstone.disable(el));
+      elements.forEach((el) => cleanupDicomElement(el));
     };
   }, [selectedPatient?.id, dispatch]);
 
@@ -538,6 +588,36 @@ export default function MedicalImaging() {
       showSnackbar(message, "error");
     }
   }, [error, showSnackbar]);
+  // ✅ أضف الكود ده بعد:
+  // }, [error, showSnackbar]);
+
+  // ✅ تحميل وعرض صور الـ DICOM في الـ gallery
+  useEffect(() => {
+    const elements = document.querySelectorAll(".cornerstone-element");
+
+    elements.forEach((el, index) => {
+      const image = images?.data?.[index];
+      if (!image || !el) return;
+
+      const isDicom = isDicomFile(image.fileType, image.fileName);
+      if (isDicom) {
+        const imageUrl = getImageUrl(image);
+        if (imageUrl) {
+          loadDicomOnElement(el, imageUrl, {
+            baseUrl:
+              import.meta.env.VITE_ORTHANC_URL || "http://localhost:8042",
+            fitToWindow: true,
+            onError: (err) =>
+              console.error(`❌ Failed to load ${image.fileName}:`, err),
+          });
+        }
+      }
+    });
+
+    return () => {
+      elements.forEach((el) => cleanupDicomElement(el));
+    };
+  }, [images?.data]);
   return (
     <>
       <input
@@ -561,68 +641,121 @@ export default function MedicalImaging() {
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: "16px",
-            p: { xs: 1, sm: 2 },
+            borderRadius: { xs: "12px", sm: "16px" },
+            maxHeight: { xs: "85vh", sm: "90vh" }, // ✅ يمنع الـ Dialog من الخروج عن الشاشة
+            overflow: "hidden",
+            margin: { xs: 1, sm: 2 }, // ✅ مسافة أمان من حواف الشاشة في الموبايل
+            boxSizing: "border-box",
           },
         }}
       >
+        {/* 📌 العنوان + زر الإغلاق */}
         <DialogTitle
           sx={{
-            fontWeight: 700,
-            fontSize: { xs: "18px", sm: "20px" },
             display: "flex",
+            justifyContent: "space-between", // ✅ بديل آمن للـ absolute positioning
             alignItems: "center",
+            pt: { xs: 2, sm: 3 },
+            pb: { xs: 1, sm: 2 },
+            px: { xs: 2, sm: 3 },
             gap: 1,
           }}
         >
-          <Avatar sx={{ bgcolor: "#5cb998", width: 32, height: 32 }}>
-            <Description fontSize="small" />
-          </Avatar>
-          Add Image Details
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1.5}
+            sx={{ minWidth: 0, flex: 1 }}
+          >
+            <Avatar
+              sx={{ bgcolor: "#5cb998", width: 32, height: 32, flexShrink: 0 }}
+            >
+              <Description fontSize="small" />
+            </Avatar>
+            <Typography
+              variant="h6"
+              sx={{
+                fontSize: { xs: "16px", sm: "20px" },
+                fontWeight: 700,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                minWidth: 0, // ✅ ضروري عشان الـ Flexbox مايدفعش النص بره
+              }}
+            >
+              Add Image Details
+            </Typography>
+          </Stack>
+
           <IconButton
             onClick={() => {
               setOpenDescriptionModal(false);
               setPendingFiles([]);
               setImageDescription("");
             }}
-            sx={{
-              position: "absolute",
-              right: 16,
-              top: 16,
-              color: (theme) => theme.palette.grey[500],
-            }}
+            sx={{ color: (theme) => theme.palette.grey[500], flexShrink: 0 }}
+            aria-label="close"
           >
             <Close />
           </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <Stack spacing={2.5}>
-            {/* File preview */}
+
+        {/* 📦 محتوى الـ Dialog */}
+        <DialogContent
+          sx={{
+            px: { xs: 2, sm: 3 },
+            py: { xs: 1.5, sm: 2 },
+            overflowY: "auto",
+          }}
+        >
+          <Stack spacing={{ xs: 2, sm: 2.5 }}>
+            {/* 📁 عرض الملفات */}
             <Box
               sx={{
-                p: 2,
+                p: { xs: 1.5, sm: 2 },
                 borderRadius: "12px",
                 bgcolor: "#f0f9f4",
                 border: "1px solid #5cb998",
+                width: "100%",
+                boxSizing: "border-box",
               }}
             >
-              <Stack direction="row" alignItems="center" spacing={2}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={2}
+                sx={{ width: "100%" }}
+              >
                 <Avatar
                   sx={{
                     width: 40,
                     height: 40,
                     bgcolor: "#5cb998",
                     color: "white",
+                    flexShrink: 0,
                   }}
                 >
                   <InsertDriveFile fontSize="small" />
                 </Avatar>
-                <Box>
+                <Box
+                  sx={{
+                    minWidth: 0,
+                    flex: 1,
+                    width: "100%",
+                    overflow: "hidden",
+                  }}
+                >
                   <Typography
                     variant="body2"
                     fontWeight={600}
-                    fontSize={{ xs: "12px", sm: "14px" }}
+                    fontSize={{ xs: "13px", sm: "14px" }}
                     color="#2d3748"
+                    sx={{
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      mb: 0.5,
+                    }}
                   >
                     {pendingFiles.length} DICOM file
                     {pendingFiles.length > 1 ? "s" : ""}
@@ -630,13 +763,15 @@ export default function MedicalImaging() {
                   <Typography
                     variant="caption"
                     color="text.secondary"
-                    fontSize={{ xs: "10px", sm: "12px" }}
+                    fontSize={{ xs: "11px", sm: "12px" }}
                     sx={{
                       display: "block",
-                      maxWidth: 300,
+                      maxWidth: "100%", // ✅ تم إزالة الـ 300px الثابتة
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
+                      width: "100%",
+                      boxSizing: "border-box",
                     }}
                   >
                     {pendingFiles.map((f) => f.name).join(", ")}
@@ -645,7 +780,7 @@ export default function MedicalImaging() {
               </Stack>
             </Box>
 
-            {/* Description field */}
+            {/* 📝 حقل الوصف */}
             <FormControl fullWidth>
               <TextField
                 label="Description / Medical Notes"
@@ -656,8 +791,8 @@ export default function MedicalImaging() {
                 onChange={(e) => setImageDescription(e.target.value)}
                 required
                 fullWidth
-                helperText="This description will help organize medical images"
                 sx={{
+                  width: "100%",
                   "& .MuiOutlinedInput-root": {
                     borderRadius: "12px",
                     fontSize: { xs: "13px", sm: "14px" },
@@ -670,7 +805,17 @@ export default function MedicalImaging() {
             </FormControl>
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 2, pt: 1, gap: 1 }}>
+
+        {/* 🔘 أزرار التحكم */}
+        <DialogActions
+          sx={{
+            p: { xs: 1.5, sm: 2 },
+            pt: { xs: 1, sm: 1.5 },
+            gap: { xs: 1.5, sm: 1.5 },
+            flexWrap: "wrap",
+            flexDirection: { xs: "column-reverse", sm: "row" }, // ✅ ترتيب الأزرار يتغير حسب الشاشة
+          }}
+        >
           <Button
             onClick={() => {
               setOpenDescriptionModal(false);
@@ -682,6 +827,7 @@ export default function MedicalImaging() {
               fontSize: { xs: "13px", sm: "14px" },
               fontWeight: 500,
               color: "text.secondary",
+              width: { xs: "100%", sm: "auto" }, // ✅ يأخذ عرض كامل في الموبايل
             }}
           >
             Cancel
@@ -696,10 +842,12 @@ export default function MedicalImaging() {
               fontWeight: 600,
               bgcolor: "#5cb998",
               px: 3,
+              py: { xs: 1.2, sm: 1 },
               color: "white",
               borderRadius: "10px",
               "&:hover": { bgcolor: "#4caf8a" },
               "&.Mui-disabled": { bgcolor: "#ccc" },
+              width: { xs: "100%", sm: "auto" }, // ✅ يأخذ عرض كامل في الموبايل
             }}
           >
             {loading ? "Uploading..." : "Upload Images"}

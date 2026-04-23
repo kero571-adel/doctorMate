@@ -72,12 +72,7 @@ const Message = () => {
   const { session, sessionStatus, messages, call } = useSelector(
     (state) => state.communication
   );
-  console.log("📊 Communication State:", {
-    session,
-    sessionStatus,
-    messages,
-    call,
-  });
+
   const selectedPatient = useSelector(
     (state) => state.schedule.selectedPatient
   );
@@ -255,10 +250,8 @@ const Message = () => {
     try {
       // Agora SDK: track.play() attaches the video to the container
       track.play(container);
-      console.log(`✅ [VIDEO] ${label} playing successfully`);
       return true;
     } catch (err) {
-      console.error(`❌ [VIDEO] Failed to play ${label}:`, err);
       // Retry a few times in case of transient DOM issues
       let attempts = 0;
       const maxAttempts = 5;
@@ -268,11 +261,7 @@ const Message = () => {
           setTimeout(() => {
             try {
               track.play(container);
-              console.log(
-                `✅ [VIDEO] ${label} playing after retry #${attempts}`
-              );
             } catch (e) {
-              console.warn(`⚠️ [VIDEO] Retry #${attempts} failed for ${label}`);
               retry();
             }
           }, 150 * attempts); // Exponential backoff
@@ -283,12 +272,10 @@ const Message = () => {
     }
   }, []);
 
-  // ✅ FIX: Subscribe and play remote user's tracks - handles both new and existing users
+  //  FIX: Subscribe and play remote user's tracks - handles both new and existing users
   const handleRemoteUserTracks = useCallback(
     async (user, mediaType = "both") => {
       try {
-        console.log(`🔹 Subscribing to ${mediaType} for user ${user.uid}`);
-
         // Subscribe to the tracks via Agora SDK
         const { audio, video } = await agoraService.subscribeToRemoteStream(
           user,
@@ -337,8 +324,6 @@ const Message = () => {
             }));
           }
         }
-
-        console.log(`✅ Subscribed to tracks for user ${user.uid}`);
       } catch (err) {
         console.error(`❌ Failed to handle tracks for user ${user?.uid}:`, err);
         showSnackbar("Failed to load remote media", "error");
@@ -349,8 +334,6 @@ const Message = () => {
 
   // ✅ FIX: Main call flow - CORRECT ORDER IS CRITICAL
   const handleStartCall = async () => {
-    console.log("🎥 [CALL] STEP 1 - Starting call...");
-
     // ✅ 1. Check media permissions first
     const hasPermission = await checkMediaPermissions();
     if (!hasPermission) {
@@ -360,7 +343,6 @@ const Message = () => {
 
     // ✅ 2. If call already active, end it first
     if (isInCall) {
-      console.log("⚠️ [CALL] Call already active, ending it first...");
       await handleEndCall();
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
@@ -386,7 +368,6 @@ const Message = () => {
     let uidToUse = 1;
 
     try {
-      console.log("🎥 [CALL] Fetching token from backend...");
       const callResult = await dispatch(startCall({ appointmentId })).unwrap();
 
       tokenToUse = callResult.token;
@@ -404,8 +385,6 @@ const Message = () => {
     }
 
     try {
-      console.log("🎥 [CALL] Initializing Agora...");
-
       const appId =
         import.meta.env.VITE_AGORA_APP_ID || process.env.REACT_APP_AGORA_APP_ID;
 
@@ -415,15 +394,10 @@ const Message = () => {
 
       await agoraService.initializeClient(appId);
 
-      // ✅ CRITICAL FIX #1: Setup event listeners BEFORE joining
+      // CRITICAL FIX #1: Setup event listeners BEFORE joining
       // This ensures we don't miss "user-published" events from users already in channel
-      console.log(
-        "🔹 [CALL] Setting up event listeners (MUST be before join)..."
-      );
       agoraService.setupEventListeners({
         onUserJoined: async (user) => {
-          console.log("👤 User joined:", user.uid);
-
           setRemoteUsersStatus((prev) => ({
             ...prev,
             [user.uid]: { hasAudio: false, hasVideo: false },
@@ -431,14 +405,11 @@ const Message = () => {
         },
 
         onUserPublished: async (user, mediaType) => {
-          console.log("📤 User published:", mediaType, "for user:", user.uid);
           await handleRemoteUserTracks(user, mediaType);
         },
 
         onUserUnpublished: (user, mediaType) => {
-          console.log("🔇 User unpublished:", mediaType, "user:", user.uid);
           const updates = {};
-
           if (mediaType === "video") {
             updates.hasVideo = false;
             if (remoteVideoTracksRef.current[user.uid]?.video)
@@ -460,7 +431,6 @@ const Message = () => {
         },
 
         onUserLeft: (user) => {
-          console.log("🚪 User left:", user.uid);
           // Clean up this user's tracks
           if (remoteVideoTracksRef.current[user.uid]) {
             const tracks = remoteVideoTracksRef.current[user.uid];
@@ -491,19 +461,9 @@ const Message = () => {
         },
       });
 
-      // ✅ CRITICAL FIX #2: Join the channel
-      console.log("🎥 [CALL] Joining channel:", channelToUse);
       await agoraService.joinChannel(tokenToUse, channelToUse, uidToUse);
-      console.log("✅ [CALL] Joined successfully");
-
-      // ✅ CRITICAL FIX #3: Handle users who were ALREADY in channel with published tracks
-      // Agora does NOT fire user-published for tracks that were published before you joined
-      // We must manually subscribe to existing remote users' tracks
       const remoteUsers = agoraService.getRemoteUsers();
-      console.log(`🔹 Found ${remoteUsers.length} existing remote user(s)`);
-
       for (const user of remoteUsers) {
-        console.log(`🔹 Subscribing to existing user ${user.uid}`);
         // Check what tracks this user has already published
         if (user.hasVideo || user.videoTrack) {
           await handleRemoteUserTracks(user, "video");
@@ -513,8 +473,6 @@ const Message = () => {
         }
       }
 
-      // ✅ CRITICAL FIX #4: Publish local stream AFTER joining
-      console.log("🎥 [CALL] Publishing local stream...");
       const tracks = await agoraService.publishLocalStream({
         audioOptions: {
           echoCancellation: true,
@@ -523,8 +481,6 @@ const Message = () => {
         },
         videoOptions: { encoderConfig: "640x480" },
       });
-
-      // ✅ CRITICAL FIX #5: Store and play local video IMMEDIATELY after publish
       // Don't wait for state updates - use refs for immediate access
       if (tracks.video) {
         localVideoTrackRef.current = tracks.video;
@@ -537,9 +493,7 @@ const Message = () => {
         localVideoTrackRef.current = localVideoTrackRef.current || {};
       }
 
-      console.log("✅ [CALL] Local stream published and playing");
-
-      // ✅ Update UI state last
+      // Update UI state last
       setIsInCall(true);
       setShowVideo(true);
     } catch (error) {
@@ -555,8 +509,6 @@ const Message = () => {
   // ✅ FIX: Proper cleanup when ending call
   const handleEndCall = async () => {
     try {
-      console.log("🔹 Ending call...");
-
       // Stop and close all remote tracks
       Object.values(remoteVideoTracksRef.current).forEach((tracks) => {
         if (tracks.video) {
@@ -588,8 +540,6 @@ const Message = () => {
       setShowVideo(false);
       setRemoteUsersStatus({});
       localVideoTrackRef.current = null;
-
-      console.log("✅ Call ended and cleaned up successfully");
     } catch (error) {
       console.error("❌ Failed to end call:", error);
     }
@@ -597,8 +547,6 @@ const Message = () => {
 
   const handleToggleMute = async () => {
     try {
-      console.log("🎤 Toggle mute - current state:", isMuted);
-
       const tracks = agoraService.getLocalTracks();
       if (!tracks.audio) {
         console.warn("⚠️ Audio track not found!");
@@ -608,8 +556,6 @@ const Message = () => {
 
       await agoraService.muteLocalAudio(!isMuted);
       setIsMuted((prev) => !prev);
-
-      console.log("✅ Mute toggled successfully:", !isMuted);
       showSnackbar(isMuted ? "Microphone enabled" : "Microphone muted", "info");
     } catch (error) {
       console.error("❌ Failed to toggle mute:", error);
@@ -619,8 +565,6 @@ const Message = () => {
 
   const handleToggleVideo = async () => {
     try {
-      console.log("📹 Toggle video - current state:", isVideoOff);
-
       const tracks = agoraService.getLocalTracks();
       if (!tracks.video) {
         console.warn("⚠️ Video track not found!");
@@ -631,7 +575,6 @@ const Message = () => {
       await agoraService.muteLocalVideo(!isVideoOff);
       setIsVideoOff((prev) => !prev);
 
-      console.log("✅ Video toggled successfully:", !isVideoOff);
       showSnackbar(isVideoOff ? "Camera enabled" : "Camera disabled", "info");
     } catch (error) {
       console.error("❌ Failed to toggle video:", error);
@@ -782,7 +725,6 @@ const Message = () => {
   // ✅ FIX: Cleanup effect - runs on unmount to prevent memory leaks
   useEffect(() => {
     return () => {
-      console.log("🔹 [CLEANUP] Component unmounting, cleaning Agora...");
       // Cleanup Agora resources
       agoraService.cleanup();
       // Clear refs
@@ -829,7 +771,6 @@ const Message = () => {
 
     // لو الوقت خلص بالفعل أو خلص دلوقتي
     if (timeLeft <= 0) {
-      console.log("⏰ Session already expired. Ending call immediately...");
       handleEndCall();
       showSnackbar(
         "⏰ The session has expired. The call has been automatically closed.",
@@ -838,13 +779,9 @@ const Message = () => {
       return;
     }
 
-    // ✅ ضبط مؤقت دقيق لوقت الانتهاء بالضبط
-    console.log(
-      `⏱️ Expiry timer set for ${Math.round(timeLeft / 1000)} seconds`
-    );
+    //  ضبط مؤقت دقيق لوقت الانتهاء بالض
     expiryTimerRef.current = setTimeout(() => {
       if (isInCall) {
-        console.log("⏰ Session expired via timer. Ending call...");
         handleEndCall();
         showSnackbar(
           "⏰ The session has expired. The call has been automatically closed.",

@@ -85,12 +85,6 @@ export default function Schedule() {
 
   const handleStatusChange = (newStatus, appointment = null) => {
     const targetAppointment = appointment || selectedAppointment;
-    console.log(
-      "🔹 Changing status to:",
-      newStatus,
-      "for appointment:",
-      targetAppointment
-    );
     if (targetAppointment) {
       dispatch(
         appointmentsStatus({
@@ -231,8 +225,6 @@ export default function Schedule() {
   useEffect(() => {
     dispatch(getDataDoctor());
   }, []);
-
-  // ✅ أضف ده بعد الـ useEffect الحالي:
   useEffect(() => {
     if (error) {
       const message =
@@ -243,37 +235,27 @@ export default function Schedule() {
     }
   }, [error, showSnackbar]);
   const handleStartCommunication = async (session) => {
-    console.log("🔹 Start Communication clicked");
     if (
       activeSession &&
       (activeSession.appointmentId === session.id ||
         activeSession.sessionId === session.id)
     ) {
-      console.log("⚠️ Session already active → navigate مباشرة");
-
       dispatch(setSelectedPatient(session));
       navigate("/message");
       return;
     }
-
     try {
       const result = await dispatch(
         startSession({ appointmentId: session.id })
       ).unwrap();
-
-      console.log("✅ Session started");
-
       dispatch(setSelectedPatient(session));
       navigate("/message");
     } catch (error) {
       console.error("❌ Error:", error);
-
       if (
         error?.includes?.("already exists") ||
         error?.includes?.("active chat session")
       ) {
-        console.log("⚠️ Backend says session exists → reuse it");
-
         dispatch({
           type: "communication/startSession/fulfilled",
           payload: {
@@ -416,9 +398,6 @@ export default function Schedule() {
             </CardContent>
           </Card>
         </Fade>
-
-        
-
         {/* Filter Tabs Card */}
         <Card
           sx={{

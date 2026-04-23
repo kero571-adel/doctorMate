@@ -1,21 +1,24 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../utils/api";
+const toSerializableTimestamp = (timestamp) => {
+  if (!timestamp) return null;
+  if (timestamp?.toDate && typeof timestamp.toDate === "function") {
+    return timestamp.toDate().toISOString();
+  }
+  if (timestamp instanceof Date) {
+    return timestamp.toISOString();
+  }
+  return timestamp;
+};
 
-// ========================== START SESSION ==========================
+// ========================== START SESSION ===\=======================
 export const startSession = createAsyncThunk(
   "communication/startSession",
   async ({ appointmentId }, { rejectWithValue }) => {
-    console.log("🔹 [START SESSION] Beginning session creation...");
-    console.log("🔹 [START SESSION] Appointment ID:", appointmentId);
     try {
-      console.log(
-        "🔹 [START SESSION] Sending API request to /communication/sessions..."
-      );
       const response = await api.post("/communication/sessions", {
         appointmentId,
       });
-      console.log("✅ [START SESSION] API Response:", response.data);
-      console.log("✅ [START SESSION] Session created successfully!");
       return response.data.data;
     } catch (error) {
       console.error("❌ [START SESSION] Error occurred:", error);
@@ -32,19 +35,11 @@ export const startSession = createAsyncThunk(
 export const endSession = createAsyncThunk(
   "communication/endSession",
   async ({ sessionId }, { rejectWithValue }) => {
-    console.log("🔹 [END SESSION] Beginning session end...");
-    console.log("🔹 [END SESSION] Session ID:", sessionId);
-
     try {
-      console.log("🔹 [END SESSION] Sending API request to close session...");
       const response = await api.post(
         `/communication/sessions/${sessionId}/close`,
         {}
       );
-
-      console.log("✅ [END SESSION] API Response:", response.data);
-      console.log("✅ [END SESSION] Session ended successfully!");
-
       return response.data.data;
     } catch (error) {
       console.error("❌ [END SESSION] Error occurred:", error);
@@ -61,25 +56,10 @@ export const endSession = createAsyncThunk(
 export const startCall = createAsyncThunk(
   "communication/startCall",
   async ({ appointmentId }, { rejectWithValue }) => {
-    console.log("🔹 [START CALL] Beginning call initialization...");
-    console.log("🔹 [START CALL] Session ID:", appointmentId);
     try {
-      console.log(
-        "🔹 [START CALL] Sending API request to /communication/call-token..."
-      );
       const response = await api.post("/communication/call-token", {
         appointmentId,
       });
-
-      console.log("✅ [START CALL] API Response:", response.data);
-      console.log("✅ [START CALL] Call token received successfully!");
-      console.log(
-        "✅ [START CALL] Token:",
-        response.data.data?.token?.substring(0, 20) + "..."
-      );
-      console.log("✅ [START CALL] Channel:", response.data.data?.channelName);
-      console.log("✅ [START CALL] UID:", response.data.data?.uid);
-
       return response.data.data;
     } catch (error) {
       console.error("❌ [START CALL] Error occurred:", error);
@@ -110,24 +90,25 @@ const communicationSlice = createSlice({
     callError: null,
   },
   reducers: {
+    // ✅ الكود الجديد
     setMessages: (state, action) => {
-      console.log(
-        "🔹 [SET MESSAGES] Messages updated:",
-        action.payload.length,
-        "messages"
-      );
-      state.messages = action.payload;
+      state.messages = action.payload.map((msg) => ({
+        ...msg,
+        timestamp: toSerializableTimestamp(msg.timestamp),
+      }));
     },
+    // ✅ الكود الجديد
     addMessage: (state, action) => {
-      console.log("🔹 [ADD MESSAGE] New message added:", action.payload);
-      state.messages.push(action.payload);
+      const serializableMsg = {
+        ...action.payload,
+        timestamp: toSerializableTimestamp(action.payload.timestamp),
+      };
+      state.messages.push(serializableMsg);
     },
     setCallActive: (state, action) => {
-      console.log("🔹 [SET CALL ACTIVE] Call status:", action.payload);
       state.call.active = action.payload;
     },
     clearSession: (state) => {
-      console.log("🔹 [CLEAR SESSION] Clearing all session data...");
       state.session = null;
       state.sessionStatus = "idle";
       state.messages = [];
@@ -139,14 +120,12 @@ const communicationSlice = createSlice({
       };
     },
     clearMessages: (state) => {
-      console.log("🔹 [CLEAR MESSAGES] Clearing all messages...");
       state.messages = [];
     },
     clearSessionError: (state) => {
       state.sessionError = null;
     },
     setSessionStatus: (state, action) => {
-      console.log("🔹 [SET STATUS] Session status changed to:", action.payload);
       state.sessionStatus = action.payload;
     },
   },
@@ -154,18 +133,10 @@ const communicationSlice = createSlice({
     // ===== START SESSION =====
     builder
       .addCase(startSession.pending, (state) => {
-        console.log("⏳ [START SESSION] Pending...");
         state.sessionStatus = "loading";
         state.sessionError = null;
       })
-      // .addCase(startSession.fulfilled, (state, action) => {
-      //   console.log("✅ [START SESSION] Fulfilled! Session:", action.payload);
-      //   state.sessionStatus = "active";
-      //   state.session = action.payload;
-      //   state.sessionError = null;
-      // })
       .addCase(startSession.fulfilled, (state, action) => {
-        console.log("✅ [START SESSION] Fulfilled! Session:", action.payload);
         state.sessionStatus = "active";
         // ✅ تأكد إن الـ session فيه كلا الحقلين
         state.session = {
@@ -179,16 +150,13 @@ const communicationSlice = createSlice({
         state.sessionStatus = "idle";
         state.sessionError = action.payload;
       });
-      
-     
+
     // ===== END SESSION =====
     builder
       .addCase(endSession.pending, (state) => {
-        console.log("⏳ [END SESSION] Pending...");
         state.sessionStatus = "loading";
       })
       .addCase(endSession.fulfilled, (state) => {
-        console.log("✅ [END SESSION] Fulfilled! Session ended.");
         state.sessionStatus = "ended";
         state.session = null;
         state.call.active = false;
@@ -202,14 +170,13 @@ const communicationSlice = createSlice({
     // ===== START CALL =====
     builder
       .addCase(startCall.pending, (state) => {
-        console.log("⏳ [START CALL] Pending...");
         state.callError = null;
       })
       .addCase(startCall.fulfilled, (state, action) => {
         state.call = {
           active: true,
           token: action.payload.token,
-          channelName: action.payload.channel, 
+          channelName: action.payload.channel,
           uid: action.payload.uid || 1,
         };
       })

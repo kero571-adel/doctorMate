@@ -10,11 +10,9 @@ const dataSliceImgViwer = createSlice({
   initialState,
   reducers: {
     setUserInfo: (state, action) => {
-      console.log("setUserInfo", action.payload);
       state.userInfo = action.payload;
     },
     setMediclImage: (state, action) => {
-      console.log("setMediclImage", action.payload);
       state.mediclImage = action.payload;
     },
     // updateFirstData: (state, action) => {

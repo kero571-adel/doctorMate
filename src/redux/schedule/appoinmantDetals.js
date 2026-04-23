@@ -17,9 +17,7 @@ export const getPatientDetals2 = createAsyncThunk(
   "patientdet/getPatientDetals2",
   async ({ id }, { rejectWithValue }) => {
     try {
-      console.log("id: ", id);
       const response = await api.get(`/doctor/patients/${id}/details`);
-      console.log("getPatientDetals response.data: ", response.data.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || "حدث خطأ");
@@ -29,10 +27,8 @@ export const getPatientDetals2 = createAsyncThunk(
 export const getAppDetById = createAsyncThunk(
   "patientdet/getAppDetById",
   async ({ id }, { rejectWithValue }) => {
-    console.log(" getAppDetById id: ", id);
     try {
       const response = await api.get(`/appointments/${id}/details`);
-      console.log("response.data: ", response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || "حدث خطأ");
@@ -42,10 +38,8 @@ export const getAppDetById = createAsyncThunk(
 export const getAppDetById2 = createAsyncThunk(
   "patientdet/getAppDetById2",
   async ({ id }, { rejectWithValue }) => {
-    console.log(" getAppDetById id: ", id);
     try {
       const response = await api.get(`/appointments/${id}/details`);
-      console.log("response.data: ", response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || "حدث خطأ");

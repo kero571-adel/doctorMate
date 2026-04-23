@@ -9,7 +9,6 @@ import {
   Button,
   Chip,
   Divider,
-  TextField,
   Stack,
   Card,
   CardContent,
@@ -29,11 +28,11 @@ import {
   useTheme,
 } from "@mui/material";
 import {
-  Search as SearchIcon,
-  Visibility as ViewIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-} from "@mui/icons-material";
+  isDicomFile,
+  loadDicomOnElement,
+  cleanupDicomElement,
+  getDisplayImageUrl,
+} from "../../utils/dicomUtils";
 import PhoneIcon from "@mui/icons-material/Phone";
 import EmailIcon from "@mui/icons-material/Email";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
@@ -152,10 +151,8 @@ export default function Patients() {
   const pateintDet = useSelector((state) => state.patients.patientDet);
   const pateintDet2 = useSelector((state) => state.patients.patientDet2);
   const patientDetails = useSelector((state) => state.patientdet.datapatient);
-  console.log("patientDetails", patientDetails);
   const patientDetails2 = useSelector((state) => state.patientdet.datapatient2);
   const { patients, error } = useSelector((state) => state.patients);
-  console.log("patients", patients);
   function handleNextPatientClick() {
     dispatch(setpatientDet(patientDetails2.data.basicInfo));
     for (let index = 0; index < patients.length; index++) {
@@ -226,7 +223,15 @@ export default function Patients() {
       state: { image, allImages: displayImages },
     });
   };
-
+  // ✅ Cleanup لصور الـ DICOM عند الخروج من الصفحة
+  useEffect(() => {
+    return () => {
+      // تنظيف كل العناصر اللي فيها صور طبية
+      document.querySelectorAll(".dicom-thumbnail").forEach((el) => {
+        cleanupDicomElement(el);
+      });
+    };
+  }, []);
   return (
     <>
       <AddPrescription
@@ -627,12 +632,6 @@ export default function Patients() {
                   >
                     Appointment History
                   </Typography>
-                  <Button
-                    size="small"
-                    sx={{ color: "primary.main", fontSize: "12px" }}
-                  >
-                    View All
-                  </Button>
                 </Box>
                 <TableContainer>
                   <Table size="small">
@@ -648,16 +647,7 @@ export default function Patients() {
                         >
                           DATE
                         </TableCell>
-                        <TableCell
-                          sx={{
-                            color: "#898989",
-                            fontWeight: 600,
-                            fontSize: { xs: "10px", sm: "11px" },
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          DOCTOR
-                        </TableCell>
+
                         <TableCell
                           sx={{
                             color: "#898989",
@@ -692,16 +682,6 @@ export default function Patients() {
                             }}
                           >
                             {formatDate(apt.date)}
-                          </TableCell>
-                          <TableCell
-                            sx={{
-                              fontSize: { xs: "9px", sm: "11px" },
-                              fontWeight: "500",
-                              color: "#898989",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {apt.doctor ? apt.doctor : "N/A"}
                           </TableCell>
                           <TableCell
                             sx={{
@@ -1097,7 +1077,7 @@ export default function Patients() {
                           Medical Images
                         </Typography>
                       </Stack>
-                      <Button
+                      {/* <Button
                         size="small"
                         startIcon={<UploadIcon />}
                         variant="contained"
@@ -1122,74 +1102,149 @@ export default function Patients() {
                         onClick={() => navigate("/medicalimaging")}
                       >
                         Upload
-                      </Button>
+                      </Button> */}
                     </Stack>
-                    <Box
-                      sx={{
-                        display: "grid",
-                        gridTemplateColumns: {
-                          xs: "repeat(2, 1fr)",
-                          sm: "repeat(3, 1fr)",
-                          md: "repeat(auto-fill, minmax(110px, 1fr))",
-                        },
-                        gap: 2,
-                      }}
-                    >
-                      {displayImages?.map((item) => (
-                        <Box
-                          key={item.id}
-                          onClick={() => {
-                            handleImageClick(item);
-                            navigate("/dicom/imageViwer");
-                          }}
-                          sx={{
-                            width: "100%",
-                            paddingTop: "100%",
-                            position: "relative",
-                            overflow: "hidden",
-                            borderRadius: "12px",
-                            cursor: "pointer",
-                            transition: "all 0.3s ease",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                            "&:hover": {
-                              transform: "scale(1.05)",
-                              boxShadow: "0 4px 16px rgba(82, 172, 140, 0.3)",
-                            },
-                          }}
-                        >
-                          <img
-                            src={item.viewerUrl}
-                            alt={item.fileName || item.description}
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
-                          {item.description && (
-                            <Box
-                              sx={{
-                                position: "absolute",
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                background:
-                                  "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
-                                color: "white",
-                                padding: "8px",
-                                fontSize: { xs: "9px", sm: "10px" },
-                                fontWeight: 600,
-                              }}
-                            >
-                              {item.description}
-                            </Box>
-                          )}
-                        </Box>
-                      ))}
+                    {displayImages.length > 0 ? (
                       <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: {
+                            xs: "repeat(2, 1fr)",
+                            sm: "repeat(3, 1fr)",
+                            md: "repeat(auto-fill, minmax(110px, 1fr))",
+                          },
+                          gap: 2,
+                        }}
+                      >
+                        {displayImages?.map((item) => (
+                          <Box
+                            key={item.id}
+                            className="dicom-thumbnail"
+                            onClick={() => {
+                              handleImageClick(item);
+                              navigate("/dicom/imageViwer");
+                            }}
+                            // ✅ الـ ref اللي هيحاول يحمل أوتوماتيك
+                            ref={(el) => {
+                              if (
+                                el &&
+                                isDicomFile(item.fileType, item.fileName) &&
+                                item.viewerUrl
+                              ) {
+                                loadDicomOnElement(el, item.viewerUrl, {
+                                  baseUrl:
+                                    import.meta.env.VITE_ORTHANC_URL ||
+                                    "http://localhost:8042",
+                                  fitToWindow: true,
+                                  onSuccess: () => {
+                                    // ✅ لو نجح التحميل، اخفي الـ Placeholder
+                                    const placeholder =
+                                      el.querySelector(".dicom-placeholder");
+                                    if (placeholder)
+                                      placeholder.style.display = "none";
+                                  },
+                                  onError: () => {
+                                    // ✅ لو فشل التحميل، خلي الـ Placeholder ظاهر (من غير أخطاء)
+                                    console.warn(
+                                      `⚠️ Server unavailable, showing placeholder for ${item.fileName}`
+                                    );
+                                  },
+                                });
+                              }
+                            }}
+                            sx={{
+                              width: "100%",
+                              paddingTop: "100%",
+                              position: "relative",
+                              overflow: "hidden",
+                              borderRadius: "12px",
+                              cursor: "pointer",
+                              transition: "all 0.3s ease",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                              bgcolor: "#1a1a1a",
+                              "&:hover": {
+                                transform: "scale(1.05)",
+                                boxShadow: "0 4px 16px rgba(82, 172, 140, 0.3)",
+                              },
+                            }}
+                          >
+                            {/* 🩻 الـ Placeholder اللي هيظهر لو السيرفر مش شغال */}
+                            {isDicomFile(item.fileType, item.fileName) && (
+                              <Box
+                                className="dicom-placeholder" // ✅ كلاس عشان الـ JS يقدر يخفيه
+                                sx={{
+                                  position: "absolute",
+                                  top: 0,
+                                  left: 0,
+                                  width: "100%",
+                                  height: "100%",
+                                  bgcolor: "#1a1a1a",
+                                  color: "white",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  flexDirection: "column",
+                                  gap: 1,
+                                  zIndex: 1,
+                                }}
+                              >
+                                <Typography fontSize="32px">🩻</Typography>
+                                <Typography fontSize="12px" fontWeight={600}>
+                                  DICOM
+                                </Typography>
+                                <Typography
+                                  fontSize="10px"
+                                  color="text.secondary"
+                                >
+                                  {item.fileName?.substring(0, 15)}...
+                                </Typography>
+                              </Box>
+                            )}
+
+                            {/* ✅ Badge للـ DICOM */}
+                            {isDicomFile(item.fileType, item.fileName) && (
+                              <Box
+                                sx={{
+                                  position: "absolute",
+                                  top: 8,
+                                  left: 8,
+                                  bgcolor: "#5cb998",
+                                  color: "white",
+                                  px: 1,
+                                  py: 0.3,
+                                  borderRadius: "4px",
+                                  fontSize: "10px",
+                                  fontWeight: 600,
+                                  zIndex: 2,
+                                }}
+                              >
+                                DICOM
+                              </Box>
+                            )}
+
+                            {/* ✅ الوصف */}
+                            {item.description && (
+                              <Box
+                                sx={{
+                                  position: "absolute",
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  background:
+                                    "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
+                                  color: "white",
+                                  padding: "8px",
+                                  fontSize: { xs: "9px", sm: "10px" },
+                                  fontWeight: 600,
+                                  zIndex: 2,
+                                }}
+                              >
+                                {item.description}
+                              </Box>
+                            )}
+                          </Box>
+                        ))}
+                        {/* <Box
                         onClick={() => navigate("/medicalimaging")}
                         sx={{
                           width: "100%",
@@ -1207,7 +1262,7 @@ export default function Patients() {
                           },
                         }}
                       >
-                        <Box
+                        {/* <Box
                           sx={{
                             position: "absolute",
                             top: "50%",
@@ -1233,10 +1288,28 @@ export default function Patients() {
                             }}
                           >
                             Add Image
-                          </Typography>
+                          </Typography> 
                         </Box>
+                      </Box> */}
                       </Box>
-                    </Box>
+                    ) : (
+                      <Box
+                        sx={{
+                          p: 3,
+                          textAlign: "center",
+                          backgroundColor: "rgba(82, 172, 140, 0.05)",
+                          borderRadius: "12px",
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontSize={{ xs: "12px", sm: "14px" }}
+                        >
+                          No  Medical Images yet
+                        </Typography>
+                      </Box>
+                    )}
                   </Card>
                 </Stack>
               </Fade>

@@ -99,7 +99,6 @@ export default function BasicModal({
       setRecordType("diagnosis");
       setSelectedFile(null);
     } catch (error) {
-      console.log("Error:", error);
       showSnackbar(
         error?.message || "Failed to add medical record. Please try again.",
         "error"

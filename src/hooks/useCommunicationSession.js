@@ -21,8 +21,6 @@ export const useCommunicationSession = () => {
   // Subscribe to messages when session becomes active
   useEffect(() => {
     if (sessionStatus === "active" && session?.id) {
-      console.log(`🔄 Subscribing to session: ${session.id}`);
-
       try {
         const unsubFunc = subscribeToSessionMessages(
           session.id,

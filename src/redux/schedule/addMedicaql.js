@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../utils/api";
+import { clearData } from "../imageViwer/data";
 
 // ========================== overViewSec2 profile ==========================
 export const addmedical = createAsyncThunk(
@@ -18,7 +19,6 @@ export const addmedical = createAsyncThunk(
           patientId,
         }
       );
-      console.log("Medical Record Added:", response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || "حدث خطأ");
@@ -32,6 +32,11 @@ const medical = createSlice({
     data: null,
     loading: false,
     error: null,
+  },
+  reducers: {
+    clearDataMedical: (state) => {
+      state.data = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -49,4 +54,5 @@ const medical = createSlice({
       });
   },
 });
+export const { clearDataMedical } = medical.actions;
 export default medical.reducer;
