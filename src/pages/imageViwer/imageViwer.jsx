@@ -1105,12 +1105,7 @@ export default function DicomViewer() {
                     icon: <CakeOutlined />,
                     color: "#8bc34a",
                   },
-                  {
-                    label: "Gender",
-                    value: patientInfo.gender,
-                    icon: <Male />,
-                    color: "#2196f3",
-                  },
+                
                   {
                     label: "Blood Type",
                     value: patientInfo.bloodType,
