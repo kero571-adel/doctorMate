@@ -243,17 +243,17 @@ export default function DicomViewer() {
     }
   };
   // ✅ دالة تطبيق الـ transforms على صور الـ DICOM
+  // ✅ دالة تطبيق الـ transforms على صور الـ DICOM (النسخة المصححة)
   const applyCornerstoneTransforms = () => {
     const element = imageRef.current;
     if (!element) return;
 
     try {
-      cornerstone.setZoom(element, zoom / 100);
-
       const viewport = cornerstone.getViewport(element);
       if (viewport) {
         cornerstone.setViewport(element, {
           ...viewport,
+          scale: zoom / 100, // ✅ الزوم هنا بدل setZoom
           voi: {
             windowWidth: (contrast / 100) * 4096,
             windowCenter: (brightness - 100) * 20,
@@ -920,7 +920,11 @@ export default function DicomViewer() {
                           )
                         ) {
                           const element = imageRef.current;
-                          if (element) cornerstone.setZoom(element, val / 100);
+                          if (element) {
+                            cornerstone.setViewport(element, {
+                              scale: val / 100,
+                            });
+                          }
                         }
                       }}
                       min={25}
@@ -1121,7 +1125,7 @@ export default function DicomViewer() {
                   },
                 ].map((item, index) => (
                   <Card
-                    key={item.id||index}
+                    key={item.id || index}
                     sx={{
                       width: "200px",
                       minWidth: "200px",
