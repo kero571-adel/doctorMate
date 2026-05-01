@@ -79,6 +79,7 @@ export default function MedicalImaging() {
   const [currentPage, setCurrentPage] = useState(1);
   const [localImages, setLocalImages] = useState([]);
   const appoinDetails = useSelector((state) => state.patientdet.dataApp);
+  const [hiddenDefaultImages, setHiddenDefaultImages] = useState([]);
   const navigate = useNavigate();
   console.log(
     "🚀 ~ file: uploadImage.jsx:34 ~ MedicalImaging ~ appoinDetails:",
@@ -206,31 +207,32 @@ export default function MedicalImaging() {
     if (image.isLocal && image.src) {
       return image.src;
     }
-  
+
     // لو صورة افتراضية
     if (image.isDefault && image.src) {
       return image.src;
     }
-  
+
     // إذا كانت الصورة تحتوي على رابط مباشر كامل
     if (image.src && image.src.startsWith("http")) return image.src;
     if (image.url && image.url.startsWith("http")) return image.url;
     if (image.fileUrl && image.fileUrl.startsWith("http")) return image.fileUrl;
-    if (image.viewerUrl && image.viewerUrl.startsWith("http")) return image.viewerUrl;
-  
+    if (image.viewerUrl && image.viewerUrl.startsWith("http"))
+      return image.viewerUrl;
+
     // إذا كانت الصورة لها رابط نسبي
     if (image.src) return image.src;
     if (image.url) return image.url;
     if (image.fileUrl) return image.fileUrl;
     if (image.viewerUrl) return image.viewerUrl;
-  
+
     // بناء رابط من معرف الملف والمريض
     if (image.id) {
       const apiBaseUrl =
         import.meta.env.VITE_API_URL || "http://localhost:5000";
       return `${apiBaseUrl}/api/medical-images/${image.id}/download`;
     }
-  
+
     // لو مفيش رابط، استخدم placeholder خارجي
     return "https://via.placeholder.com/200x200/5cb998/ffffff?text=No+Image";
   };
@@ -678,12 +680,25 @@ export default function MedicalImaging() {
   };
 
   const handleDeleteImage = (id) => {
+    // ✅ ابحث عن الصورة عشان نعرف نوعها
+    const imageToDelete = allGalleryImages.find((img) => img.id === id);
+
+    // ✅ لو الصورة افتراضية، اخفيها من الشاشة بس (من غير حذف فعلي)
+    if (imageToDelete?.isDefault) {
+      setHiddenDefaultImages((prev) => [...prev, id]);
+      showSnackbar("Image hidden", "info");
+      return; // ✅ اخرج عشان متحاولش تمسح من أي مكان تاني
+    }
+
     // ✅ امسح من localStorage لو الصورة محلية
     if (id.startsWith("local-")) {
       removeImageFromLocalStorage(id);
       setLocalImages((prev) => prev.filter((img) => img.id !== id));
+      showSnackbar("Image removed from local storage", "success");
+      return;
     }
 
+    // ✅ لو الصورة من الـ Backend، امسحها منه
     dispatch(delMedicalImg(id))
       .unwrap()
       .then(() => {
@@ -697,7 +712,6 @@ export default function MedicalImaging() {
         showSnackbar(`Failed to delete image: ${errorMessage}`, "error");
       });
   };
-
   // ✅ الجديد:
   const handleViewImage = (image) => {
     navigate("/dicom/imageViwer", {
@@ -788,19 +802,26 @@ export default function MedicalImaging() {
     }
   }, [error, showSnackbar]);
   const allGalleryImages = useMemo(() => {
-    // ✅ دمج الـ local images مع الـ default images
-    // الـ local images هتظهر الأول، وبعدين الـ default images
-    // مع منع التكرار (لو فيه صورة بنفس الاسم في الاتنين)
+    // ✅ دمج الـ local images مع الـ default images (باستثناء المخفية)
 
-    const uniqueDefaultImages = defaultMedicalImages.filter(
-      (defaultImg) =>
-        !localImages.some(
-          (localImg) => localImg.fileName === defaultImg.fileName
-        )
+    // 1️⃣ فلتر الـ default images: استبعد المكرر + استبعد المخفي
+    const visibleDefaultImages = defaultMedicalImages
+      .filter(
+        (defaultImg) =>
+          !localImages.some(
+            (localImg) => localImg.fileName === defaultImg.fileName
+          )
+      )
+      .filter((defaultImg) => !hiddenDefaultImages.includes(defaultImg.id)); // ✅ استبعد المخفية
+
+    // 2️⃣ فلتر الـ local images: استبعد المخفية (لو في حاجة حصلت)
+    const visibleLocalImages = localImages.filter(
+      (img) => !hiddenDefaultImages.includes(img.id)
     );
 
-    return [...localImages, ...uniqueDefaultImages];
-  }, [localImages]);
+    // 3️⃣ ارجع الاتنين مع بعض
+    return [...visibleLocalImages, ...visibleDefaultImages];
+  }, [localImages, hiddenDefaultImages]); // ✅ أضف hiddenDefaultImages للـ dependencies
   useEffect(() => {
     const elements = document.querySelectorAll(".cornerstone-element");
 
