@@ -180,7 +180,11 @@ export default function MedicalImaging() {
       id: `local-${Date.now()}`,
       appointmentId: appoinDetails?.data?.id || "",
       uploadedAt: new Date().toISOString(),
-      isLocal: true, // علامة إن الصورة من localStorage
+      isLocal: true,
+      // ✅ تأكد إن الـ src موجود وصحيح
+      src:
+        imageData.src ||
+        (imageData.file ? URL.createObjectURL(imageData.file) : null),
     };
     const updatedImages = [newImage, ...storedImages];
     saveToLocalStorage(updatedImages);
@@ -198,36 +202,35 @@ export default function MedicalImaging() {
   // ✅ بناء رابط الصورة من API response
   // ✅ بناء رابط الصورة من API response
   const getImageUrl = (image) => {
-    // لو الصورة محلية (من localStorage)
+    // ✅ الأولوية للـ local images
     if (image.isLocal && image.src) {
       return image.src;
     }
-
+  
     // لو صورة افتراضية
     if (image.isDefault && image.src) {
       return image.src;
     }
-
+  
     // إذا كانت الصورة تحتوي على رابط مباشر كامل
     if (image.src && image.src.startsWith("http")) return image.src;
     if (image.url && image.url.startsWith("http")) return image.url;
     if (image.fileUrl && image.fileUrl.startsWith("http")) return image.fileUrl;
-    if (image.viewerUrl && image.viewerUrl.startsWith("http"))
-      return image.viewerUrl;
-
+    if (image.viewerUrl && image.viewerUrl.startsWith("http")) return image.viewerUrl;
+  
     // إذا كانت الصورة لها رابط نسبي
     if (image.src) return image.src;
     if (image.url) return image.url;
     if (image.fileUrl) return image.fileUrl;
     if (image.viewerUrl) return image.viewerUrl;
-
+  
     // بناء رابط من معرف الملف والمريض
     if (image.id) {
       const apiBaseUrl =
         import.meta.env.VITE_API_URL || "http://localhost:5000";
       return `${apiBaseUrl}/api/medical-images/${image.id}/download`;
     }
-
+  
     // لو مفيش رابط، استخدم placeholder خارجي
     return "https://via.placeholder.com/200x200/5cb998/ffffff?text=No+Image";
   };
@@ -707,7 +710,7 @@ export default function MedicalImaging() {
   const handleLoadMore = () => {
     const nextPage = currentPage + 1;
     const endIndex = nextPage * itemsPerPage;
-    const newDisplayedImages = allGalleryImages.slice(0, endIndex); 
+    const newDisplayedImages = allGalleryImages.slice(0, endIndex); // ✅ استخدم allGalleryImages
 
     setDisplayedImages(newDisplayedImages);
     setCurrentPage(nextPage);
@@ -785,17 +788,24 @@ export default function MedicalImaging() {
     }
   }, [error, showSnackbar]);
   const allGalleryImages = useMemo(() => {
-    // ✅ استخدم الـ local images والـ default images بس
-    if (localImages.length > 0) {
-      return localImages;
-    }
-    return defaultMedicalImages;
+    // ✅ دمج الـ local images مع الـ default images
+    // الـ local images هتظهر الأول، وبعدين الـ default images
+    // مع منع التكرار (لو فيه صورة بنفس الاسم في الاتنين)
+
+    const uniqueDefaultImages = defaultMedicalImages.filter(
+      (defaultImg) =>
+        !localImages.some(
+          (localImg) => localImg.fileName === defaultImg.fileName
+        )
+    );
+
+    return [...localImages, ...uniqueDefaultImages];
   }, [localImages]);
   useEffect(() => {
     const elements = document.querySelectorAll(".cornerstone-element");
 
     elements.forEach((el, index) => {
-      
+      // ✅ استخدم allGalleryImages بدل backendImages
       const image = allGalleryImages?.[index];
       if (!image || !el) return;
 
@@ -1291,7 +1301,6 @@ export default function MedicalImaging() {
             <Typography variant="h6" fontWeight={600} mb={2.5}>
               Gallery ({allGalleryImages?.length} image
               {allGalleryImages?.length !== 1 ? "s" : ""})
-            
             </Typography>
             {allGalleryImages.length === 0 ? (
               <Box
@@ -1505,41 +1514,6 @@ export default function MedicalImaging() {
                     </Box>
                   ))}
                 </Box>
-{/* 
-                {hasMoreImages && (
-                  <Box
-                    display="flex"
-                    justifyContent="center"
-                    mt={{ xs: 2, sm: 3 }}
-                  >
-                    <Button
-                      endIcon={<ExpandMore />}
-                      onClick={handleLoadMore}
-                      disabled={loading}
-                      sx={{
-                        color: "#5cb998",
-                        textTransform: "none",
-                        fontWeight: 600,
-                        fontSize: { xs: "13px", sm: "14px" },
-                        px: 3,
-                        py: 1,
-                        border: "1px solid #5cb998",
-                        borderRadius: "10px",
-                        "&:hover": {
-                          bgcolor: "rgba(92, 185, 152, 0.05)",
-                          color: "#4caf8a",
-                          borderColor: "#4caf8a",
-                        },
-                        "&.Mui-disabled": {
-                          color: "#ccc",
-                          borderColor: "#ccc",
-                        },
-                      }}
-                    >
-                      {loading ? "Loading..." : "Load More Images"}
-                    </Button>
-                  </Box>
-                )} */}
               </>
             )}
           </Box>
