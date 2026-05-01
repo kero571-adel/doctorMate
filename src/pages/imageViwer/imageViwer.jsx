@@ -60,7 +60,7 @@ import { useSnackbar } from "../../hooks/useSnackbar";
 import GlobalSnackbar from "../../components/GlobalSnackbar";
 
 export default function DicomViewer() {
-  const [loadingFailed, setLoadingFailed] = useState(false);
+  const [loadingFailed, setLoadingFailed] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
   const [currentImage, setCurrentImage] = useState(0);
@@ -134,28 +134,25 @@ export default function DicomViewer() {
   // Add DICOM file to default images
 
   // Convert DICOM images to the format expected by the viewer
-
   const images = useMemo(() => {
-    // 1️⃣ لو مفيش صور من الـ Backend → مفيش صور خالص
-    if (!medicalImages?.length) {
-      return [];
+    // ✅ المنطق الجديد:
+    // 1️⃣ نبدأ بالـ default images فوراً (لأن loadingFailed = true)
+
+    // 2️⃣ لو التحميل نجح (loadingFailed = false) وفيه صور من الـ Backend → نعرضها
+    if (!loadingFailed && medicalImages?.length > 0) {
+      return medicalImages.map((img) => ({
+        src: img.viewerUrl,
+        thumbnail: img.viewerUrl,
+        description: img.description || img.fileName || "Medical Image",
+        type: img.fileType || ".dcm",
+        fileName: img.fileName,
+        uploadDate: img.createdAt,
+        id: img.id,
+      }));
     }
 
-    // 2️⃣ لو فيه صور من الـ Backend لكن التحميل فشل → استخدم الـ default
-    if (loadingFailed) {
-      return defaultDicomImages;
-    }
-
-    // 3️⃣ لو فيه صور من الـ Backend والتحميل نجح (أو لسه بيحاول) → استخدمها
-    return medicalImages.map((img) => ({
-      src: img.viewerUrl,
-      thumbnail: img.viewerUrl,
-      description: img.description || img.fileName || "Medical Image",
-      type: img.fileType || ".dcm",
-      fileName: img.fileName,
-      uploadDate: img.createdAt,
-      id: img.id,
-    }));
+    // 3️⃣ لو مفيش صور من الـ Backend أو التحميل فشل → نعرض الـ default
+    return defaultDicomImages;
   }, [medicalImages, loadingFailed]);
 
   // Set initial image based on selected image
@@ -180,31 +177,33 @@ export default function DicomViewer() {
 
     if (!element || !current?.src) return;
 
+    // ✅ لو الصورة من الـ default، متحاولش تحملها من السيرفر
     if (current.id?.startsWith("demo-")) {
       return;
     }
 
     // ✅ نظّف فقط لو الصورة السابقة كانت DICOM
     if (isDicomFile(current.type, current.fileName)) {
-      cleanupDicomElement(element); // تنظيف قبل التحميل الجديد
+      cleanupDicomElement(element);
 
       loadDicomOnElement(element, current.src, {
         baseUrl: import.meta.env.VITE_ORTHANC_URL || "http://localhost:8042",
-        fitToWindow: false, // ✅ غيّر من true لـ false (مهم جداً)
-        onLoading: () => console.log("🔄 Loading DICOM..."),
+        fitToWindow: false,
+        onLoading: () => console.log("🔄 Loading DICOM from backend..."),
         onSuccess: () => {
-          console.log("✅ DICOM loaded");
-          setLoadingFailed(false); // ✅ التحميل نجح
-          setTimeout(() => applyCornerstoneTransforms(), 100); // ✅ طبق الـ transforms بعد التحميل
+          console.log("✅ Backend DICOM loaded successfully");
+          // ✅ التحميل نجح → نغير loadingFailed لـ false عشان نعرض صور الـ Backend
+          setLoadingFailed(false);
+          setTimeout(() => applyCornerstoneTransforms(), 100);
         },
         onError: (err) => {
-          console.error("❌ DICOM error:", err);
-          setLoadingFailed(true); // ✅ التحميل فشل، استخدم الـ default
+          console.error("❌ Backend DICOM failed:", err);
+          // ✅ التحميل فشل → نفضل على الـ default images (loadingFailed = true)
+          // مفيش حاجة نتغير هنا لأننا بدأنا بـ true أصلاً
         },
       });
     }
 
-    // ✅ Cleanup عند تغيير الصورة أو الـ unmount
     return () => {
       if (isDicomFile(current?.type, current?.fileName)) {
         cleanupDicomElement(element);
