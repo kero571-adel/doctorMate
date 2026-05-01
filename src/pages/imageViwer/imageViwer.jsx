@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import cornerstone from "cornerstone-core";
 import {
@@ -10,11 +10,9 @@ import {
 import {
   Box,
   Typography,
-  Paper,
   IconButton,
   Button,
   Grid,
-  CardMedia,
   Divider,
   Tooltip,
   Stack,
@@ -23,9 +21,6 @@ import {
   CardContent,
   Fade,
   Slider,
-  ToggleButton,
-  ToggleButtonGroup,
-  Avatar,
 } from "@mui/material";
 import {
   ChevronLeft,
@@ -65,6 +60,7 @@ import { useSnackbar } from "../../hooks/useSnackbar";
 import GlobalSnackbar from "../../components/GlobalSnackbar";
 
 export default function DicomViewer() {
+  const [loadingFailed, setLoadingFailed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const [currentImage, setCurrentImage] = useState(0);
@@ -81,7 +77,48 @@ export default function DicomViewer() {
   const userInfo = useSelector((state) => state.dataSliceImgViwer.userInfo);
   console.log("userInfo: ", userInfo);
   console.log("medicalImages: ", medicalImages);
-
+  const defaultDicomImages = [
+    {
+      src: "/assets/default-dicom/concurrent-adrenal-phaeochromocytoma-and-adrenal-adenoma.jpeg",
+      thumbnail:
+        "/assets/default-dicom/concurrent-adrenal-phaeochromocytoma-and-adrenal-adenoma.jpeg",
+      description: "CT Head Scan",
+      type: ".jpg",
+      fileName: "ct-head.jpg",
+      uploadDate: new Date().toISOString(),
+      id: "demo-ct-1",
+    },
+    {
+      src: "/assets/default-dicom/patellar-resurfacing-heterotopic-ossification (1).jpeg",
+      thumbnail:
+        "/assets/default-dicom/patellar-resurfacing-heterotopic-ossification (1).jpeg",
+      description: "MRI Brain Scan",
+      type: ".jpg",
+      fileName: "mri-brain.jpg",
+      uploadDate: new Date().toISOString(),
+      id: "demo-mri-1",
+    },
+    {
+      src: "/assets/default-dicom/patellar-resurfacing-heterotopic-ossification.jpeg",
+      thumbnail:
+        "/assets/default-dicom/patellar-resurfacing-heterotopic-ossification.jpeg",
+      description: "Chest X-Ray",
+      type: ".jpg",
+      fileName: "xray-chest.jpg",
+      uploadDate: new Date().toISOString(),
+      id: "demo-xray-1",
+    },
+    {
+      src: "/assets/default-dicom/proximal-interphalangeal-dislocation-ulnarmedial.jpeg",
+      thumbnail:
+        "/assets/default-dicom/proximal-interphalangeal-dislocation-ulnarmedial.jpeg",
+      description: "Chest X-Ray",
+      type: ".jpg",
+      fileName: "xray-chest.jpg",
+      uploadDate: new Date().toISOString(),
+      id: "demo-xray-2",
+    },
+  ];
   // Get images from navigation state or use default
   const receivedImages = location.state?.allImages || [];
   const selectedImage = location.state?.image;
@@ -97,22 +134,32 @@ export default function DicomViewer() {
   // Add DICOM file to default images
 
   // Convert DICOM images to the format expected by the viewer
-  // ✅ الكود الجديد: يعرض فقط الصور الجاية من الـ Backend
-  const images =
-    medicalImages?.length > 0
-      ? medicalImages.map((img) => ({
-          src: img.viewerUrl,
-          thumbnail: img.viewerUrl, // أو رابط thumbnail لو موجود
-          description: img.description || img.fileName || "Medical Image",
-          type: img.fileType || ".dcm",
-          fileName: img.fileName,
-          uploadDate: img.createdAt,
-          id: img.id,
-        }))
-      : [];
+
+  const images = useMemo(() => {
+    // 1️⃣ لو مفيش صور من الـ Backend → مفيش صور خالص
+    if (!medicalImages?.length) {
+      return [];
+    }
+
+    // 2️⃣ لو فيه صور من الـ Backend لكن التحميل فشل → استخدم الـ default
+    if (loadingFailed) {
+      return defaultDicomImages;
+    }
+
+    // 3️⃣ لو فيه صور من الـ Backend والتحميل نجح (أو لسه بيحاول) → استخدمها
+    return medicalImages.map((img) => ({
+      src: img.viewerUrl,
+      thumbnail: img.viewerUrl,
+      description: img.description || img.fileName || "Medical Image",
+      type: img.fileType || ".dcm",
+      fileName: img.fileName,
+      uploadDate: img.createdAt,
+      id: img.id,
+    }));
+  }, [medicalImages, loadingFailed]);
 
   // Set initial image based on selected image
-  // ✅ الجديد (من غير +1):
+
   useEffect(() => {
     if (selectedImage && medicalImages?.length > 0) {
       const index = medicalImages.findIndex(
@@ -133,6 +180,10 @@ export default function DicomViewer() {
 
     if (!element || !current?.src) return;
 
+    if (current.id?.startsWith("demo-")) {
+      return;
+    }
+
     // ✅ نظّف فقط لو الصورة السابقة كانت DICOM
     if (isDicomFile(current.type, current.fileName)) {
       cleanupDicomElement(element); // تنظيف قبل التحميل الجديد
@@ -143,9 +194,13 @@ export default function DicomViewer() {
         onLoading: () => console.log("🔄 Loading DICOM..."),
         onSuccess: () => {
           console.log("✅ DICOM loaded");
+          setLoadingFailed(false); // ✅ التحميل نجح
           setTimeout(() => applyCornerstoneTransforms(), 100); // ✅ طبق الـ transforms بعد التحميل
         },
-        onError: (err) => console.error("❌ DICOM error:", err),
+        onError: (err) => {
+          console.error("❌ DICOM error:", err);
+          setLoadingFailed(true); // ✅ التحميل فشل، استخدم الـ default
+        },
       });
     }
 
@@ -242,8 +297,7 @@ export default function DicomViewer() {
       setIsFullscreen(false);
     }
   };
-  // ✅ دالة تطبيق الـ transforms على صور الـ DICOM
-  // ✅ دالة تطبيق الـ transforms على صور الـ DICOM (النسخة المصححة)
+
   const applyCornerstoneTransforms = () => {
     const element = imageRef.current;
     if (!element) return;
@@ -399,6 +453,17 @@ export default function DicomViewer() {
     };
   };
 
+  const getImageSrc = (image) => {
+    if (!image?.src) return null;
+    // لو الرابط كامل (بيبدأ بـ http) أو محلي (بيبدأ بـ /) → استخدمه زي ما هو
+    if (image.src.startsWith("http") || image.src.startsWith("/")) {
+      return image.src;
+    }
+    // لو رابط نسبي → اضف الـ base URL
+    return `${import.meta.env.VITE_ORTHANC_URL || "http://localhost:8042"}/${
+      image.src
+    }`;
+  };
   return (
     <Box
       sx={{
@@ -468,7 +533,7 @@ export default function DicomViewer() {
               {images[currentImage]?.type && (
                 <Chip
                   icon={<Info sx={{ color: "white !important" }} />}
-                  label={images[currentImage].type}
+                  label={".dcm"}
                   sx={{
                     background: "rgba(255, 255, 255, 0.25)",
                     color: "white",
@@ -632,6 +697,27 @@ export default function DicomViewer() {
                             },
                           }}
                         >
+                          {!medicalImages?.length &&
+                            image.id?.startsWith("demo-") && (
+                              <Box
+                                sx={{
+                                  position: "absolute",
+                                  top: 8,
+                                  right: 8,
+                                  bgcolor: "rgba(255, 193, 7, 0.95)",
+                                  color: "#000",
+                                  px: 1,
+                                  py: 0.5,
+                                  borderRadius: "4px",
+                                  fontSize: "10px",
+                                  fontWeight: 700,
+                                  zIndex: 10,
+                                  boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                                }}
+                              >
+                                📷 Demo
+                              </Box>
+                            )}
                           <img
                             src={image.thumbnail}
                             alt={image.description}
@@ -720,33 +806,31 @@ export default function DicomViewer() {
                     overflow: "hidden",
                   }}
                 >
-                  {/* ✅ عرض الصورة حسب النوع */}
-                  {images.length > 0 &&
-                  isDicomFile(
-                    images[currentImage]?.type,
-                    images[currentImage]?.fileName
-                  ) ? (
-                    // 🩻 عرض بـ Cornerstone للـ DICOM
-                    <Box
-                      ref={imageRef}
-                      className="dicom-viewer-element"
-                      sx={{ width: "100%", height: "100%", bgcolor: "#000" }}
-                    />
-                  ) : images.length > 0 ? (
-                    // 🖼️ عرض عادي للصور (.jpg, .png)
-                    <img
-                      ref={imageRef}
-                      src={getDisplayImageUrl(
-                        images[currentImage].src,
-                        import.meta.env.VITE_ORTHANC_URL
-                      )}
-                      alt={images[currentImage].description}
-                      style={{
-                        maxWidth: "100%",
-                        maxHeight: "100%",
-                        ...getImageStyle(),
-                      }}
-                    />
+                  {images.length > 0 ? (
+                    isDicomFile(
+                      images[currentImage]?.type,
+                      images[currentImage]?.fileName
+                    ) && !images[currentImage]?.id?.startsWith("demo-") ? (
+                      // 🩻 Cornerstone للـ DICOM الحقيقية
+                      <Box
+                        ref={imageRef}
+                        className="dicom-viewer-element"
+                        sx={{ width: "100%", height: "100%", bgcolor: "#000" }}
+                      />
+                    ) : (
+                      // 🖼️ <img> للصور العادية والـ Default Images
+                      <img
+                        ref={imageRef}
+                        src={getImageSrc(images[currentImage])}
+                        alt={images[currentImage]?.description || "No image"}
+                        style={{
+                          maxWidth: "100%",
+                          maxHeight: "100%",
+                          objectFit: "contain",
+                          ...getImageStyle(),
+                        }}
+                      />
+                    )
                   ) : (
                     // ✅ لو مفيش صور، اعرض رسالة في الـ viewer كمان
                     <Box
@@ -766,7 +850,6 @@ export default function DicomViewer() {
                       <Typography fontSize="16px">No image selected</Typography>
                     </Box>
                   )}
-
                   {/* Image Overlay Info */}
                   <Box
                     sx={{
@@ -786,7 +869,7 @@ export default function DicomViewer() {
                       alignItems="center"
                     >
                       <Typography variant="body2" fontWeight={600}>
-                        {images[currentImage].description}
+                        {images[currentImage]?.description || "No image"}
                       </Typography>
                       <Chip
                         label={`${zoom}%`}
@@ -801,7 +884,7 @@ export default function DicomViewer() {
                   </Box>
 
                   {/* Bottom Info */}
-                  {images[currentImage].uploadDate && (
+                  {images[currentImage]?.uploadDate && ( // ✅ أضف ?.
                     <Box
                       sx={{
                         position: "absolute",
@@ -817,8 +900,8 @@ export default function DicomViewer() {
                       <Typography variant="caption">
                         Uploaded:{" "}
                         {new Date(
-                          images[currentImage].uploadDate
-                        ).toLocaleDateString()}
+                          images[currentImage]?.uploadDate // ✅ أضف ?.
+                        )?.toLocaleDateString()}
                       </Typography>
                     </Box>
                   )}
@@ -1105,7 +1188,7 @@ export default function DicomViewer() {
                     icon: <CakeOutlined />,
                     color: "#8bc34a",
                   },
-                
+
                   {
                     label: "Blood Type",
                     value: patientInfo.bloodType,

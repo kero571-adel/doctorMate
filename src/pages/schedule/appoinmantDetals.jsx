@@ -53,7 +53,7 @@ import MedicalRecord from "./medicalRecord";
 import AddPrescription from "./Modal/prescriptionModal";
 import MedicalModal from "./Modal/MedicalModal";
 import AddDiagnosis from "./Modal/diagnosis";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { getPatientDetals } from "../../redux/schedule/appoinmantDetals";
 import { useSelector, useDispatch } from "react-redux";
@@ -114,7 +114,8 @@ export default function AppointmentsDetails() {
   const [openAddPrescription, setopenAddPrescription] = useState(false);
   const [openMedicalModal, setOpenMedicalModal] = useState(false);
   const [openDiagnosis, setOpenDiagnosis] = useState(false);
-
+  const [medicalImagesLoadingFailed, setMedicalImagesLoadingFailed] =
+    useState(false);
   // States for Show More / Show Less
   const [showMoreRecords, setShowMoreRecords] = useState(false);
   const [showMoreDiagnoses, setShowMoreDiagnoses] = useState(false);
@@ -134,8 +135,44 @@ export default function AppointmentsDetails() {
   const patientDetails = useSelector((state) => state.patientdet.datapatient);
   const appoinDetails = useSelector((state) => state.patientdet.dataApp);
   const appoinDetails2 = useSelector((state) => state.patientdet.dataApp2);
-
-  // ✅ NEW: Communication State from Redux
+  const defaultMedicalImages = [
+    {
+      id: "demo-ct-1",
+      viewerUrl:
+        "/assets/default-dicom/concurrent-adrenal-phaeochromocytoma-and-adrenal-adenoma.jpeg",
+      fileName: "ct-head.jpg",
+      fileType: ".jpg",
+      description: "CT Head Scan",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: "demo-mri-1",
+      viewerUrl:
+        "/assets/default-dicom/patellar-resurfacing-heterotopic-ossification (1).jpeg",
+      fileName: "mri-brain.jpg",
+      fileType: ".jpg",
+      description: "MRI Brain Scan",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: "demo-xray-1",
+      viewerUrl:
+        "/assets/default-dicom/patellar-resurfacing-heterotopic-ossification.jpeg",
+      fileName: "xray-chest.jpg",
+      fileType: ".jpg",
+      description: "Chest X-Ray",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: "demo-xray-2",
+      viewerUrl:
+        "/assets/default-dicom/proximal-interphalangeal-dislocation-ulnarmedial.jpeg",
+      fileName: "xray-chest2.jpg",
+      fileType: ".jpg",
+      description: "Chest X-Ray",
+      createdAt: new Date().toISOString(),
+    },
+  ];
   const {
     session: activeSession,
     sessionStatus,
@@ -421,20 +458,51 @@ export default function AppointmentsDetails() {
   const displayedPrescriptions = showMorePrescriptions
     ? prescriptionsList
     : prescriptionsList.slice(0, 4);
+
+  const displayedMedicalImages = useMemo(() => {
+    const backendImages = appoinDetails?.data?.medicalImages || [];
+
+    if (!backendImages.length) {
+      return []; // 1️⃣ مفيش صور من الـ Backend
+    }
+
+    if (medicalImagesLoadingFailed) {
+      return defaultMedicalImages;
+    }
+
+    return backendImages;
+  }, [appoinDetails?.data?.medicalImages, medicalImagesLoadingFailed]);
+
   useEffect(() => {
+    if (!appoinDetails?.data?.medicalImages?.length) {
+      return;
+    }
+
     const elements = document.querySelectorAll(".appointment-dicom-element");
 
     elements.forEach((el, index) => {
       const image = appoinDetails?.data?.medicalImages?.[index];
       if (!image || !el) return;
 
+      // ✅ لو الصورة من الـ default، متحاولش تحملها من السيرفر
+      if (image.id?.startsWith("demo-")) {
+        return;
+      }
+
       const isDicom = isDicomFile(image.fileType, image.fileName);
       if (isDicom && image.viewerUrl) {
         loadDicomOnElement(el, image.viewerUrl, {
           baseUrl: import.meta.env.VITE_ORTHANC_URL || "http://localhost:8042",
           fitToWindow: true,
-          onError: (err) =>
-            console.error(`❌ Failed to load ${image.fileName}:`, err),
+          onLoading: () => console.log("🔄 Loading medical image..."),
+          onSuccess: () => {
+            console.log("✅ Medical image loaded");
+            setMedicalImagesLoadingFailed(false); // ✅ التحميل نجح
+          },
+          onError: (err) => {
+            console.error(`❌ Failed to load ${image.fileName}:`, err);
+            setMedicalImagesLoadingFailed(true); // ✅ التحميل فشل
+          },
         });
       }
     });
@@ -443,6 +511,7 @@ export default function AppointmentsDetails() {
       elements.forEach((el) => cleanupDicomElement(el));
     };
   }, [appoinDetails?.data?.medicalImages]);
+
   return (
     <>
       <AddPrescription
@@ -1483,160 +1552,230 @@ export default function AppointmentsDetails() {
                         Upload
                       </Button>
                     </Stack>
-                    <Box
-                      sx={{
-                        display: "grid",
-                        gridTemplateColumns: {
-                          xs: "repeat(2, 1fr)",
-                          sm: "repeat(3, 1fr)",
-                          md: "repeat(auto-fill, minmax(110px, 1fr))",
-                        },
-                        gap: 2,
-                      }}
-                    >
-                      {appoinDetails?.data?.medicalImages?.map((item) => (
+
+                    {/* ✅ عرض الصور حسب الحالة */}
+                    {displayedMedicalImages.length === 0 ? (
+                      // 🔴 حالة 1: مفيش صور من الـ Backend
+                      <Box
+                        sx={{
+                          p: 4,
+                          textAlign: "center",
+                          bgcolor: "rgba(82, 172, 140, 0.05)",
+                          borderRadius: "12px",
+                        }}
+                      >
+                        <Typography fontWeight={600}>
+                          No medical images available
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: {
+                            xs: "repeat(2, 1fr)",
+                            sm: "repeat(3, 1fr)",
+                            md: "repeat(auto-fill, minmax(110px, 1fr))",
+                          },
+                          gap: 2,
+                        }}
+                      >
+                        {displayedMedicalImages.map((item, index) => (
+                          <Box
+                            key={item.id || index}
+                            onClick={() => handleImageClick(item)}
+                            ref={(el) => {
+                              if (
+                                el &&
+                                isDicomFile(item.fileType, item.fileName) &&
+                                item.viewerUrl &&
+                                !item.id?.startsWith("demo-") // ✅ متحاولش تحمل الـ demo images
+                              ) {
+                                loadDicomOnElement(el, item.viewerUrl, {
+                                  baseUrl:
+                                    import.meta.env.VITE_ORTHANC_URL ||
+                                    "http://localhost:8042",
+                                  fitToWindow: true,
+                                  onError: (err) =>
+                                    console.error(
+                                      `❌ Failed to load ${item.fileName}:`,
+                                      err
+                                    ),
+                                });
+                              }
+                            }}
+                            className="appointment-dicom-element"
+                            sx={{
+                              width: "100%",
+                              paddingTop: "100%",
+                              position: "relative",
+                              overflow: "hidden",
+                              borderRadius: "12px",
+                              cursor: "pointer",
+                              transition: "all 0.3s ease",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                              bgcolor: isDicomFile(item.fileType, item.fileName)
+                                ? "#000"
+                                : "#f5f5f5",
+                              "&:hover": {
+                                transform: "scale(1.05)",
+                                boxShadow: "0 4px 16px rgba(82, 172, 140, 0.3)",
+                              },
+                            }}
+                          >
+                            {/* ✅ عرض الصورة حسب النوع */}
+                            {isDicomFile(item.fileType, item.fileName) &&
+                            !item.id?.startsWith("demo-") ? (
+                              <Box
+                                sx={{
+                                  position: "absolute",
+                                  top: 0,
+                                  left: 0,
+                                  width: "100%",
+                                  height: "100%",
+                                  bgcolor: "#000",
+                                  zIndex: 1,
+                                }}
+                              />
+                            ) : (
+                              <img
+                                src={
+                                  item.viewerUrl?.startsWith("http") ||
+                                  item.viewerUrl?.startsWith("/")
+                                    ? item.viewerUrl
+                                    : `${
+                                        import.meta.env.VITE_ORTHANC_URL ||
+                                        "http://localhost:8042"
+                                      }/${item.viewerUrl}`
+                                }
+                                alt={item.fileName || item.description}
+                                style={{
+                                  position: "absolute",
+                                  top: 0,
+                                  left: 0,
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                }}
+                              />
+                            )}
+
+                            {/* ✅ Badge للـ DICOM */}
+                            {isDicomFile(item.fileType, item.fileName) &&
+                              !item.id?.startsWith("demo-") && (
+                                <Box
+                                  sx={{
+                                    position: "absolute",
+                                    top: 8,
+                                    left: 8,
+                                    bgcolor: "#5cb998",
+                                    color: "white",
+                                    px: 1,
+                                    py: 0.3,
+                                    borderRadius: "4px",
+                                    fontSize: "10px",
+                                    fontWeight: 600,
+                                    zIndex: 2,
+                                  }}
+                                >
+                                  DICOM
+                                </Box>
+                              )}
+
+                            {/* ✅ Badge للـ Demo Mode */}
+                            {item.id?.startsWith("demo-") && (
+                              <Box
+                                sx={{
+                                  position: "absolute",
+                                  top: 8,
+                                  right: 8,
+                                  bgcolor: "primary.main",
+                                  color: "white",
+                                  px: 1,
+                                  py: 0.3,
+                                  borderRadius: "4px",
+                                  fontSize: "10px",
+                                  fontWeight: 700,
+                                  zIndex: 2,
+                                }}
+                              >
+                                Demo
+                              </Box>
+                            )}
+
+                            {/* ✅ الوصف */}
+                            {item.description && (
+                              <Box
+                                sx={{
+                                  position: "absolute",
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  background:
+                                    "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
+                                  color: "white",
+                                  padding: "8px",
+                                  fontSize: { xs: "9px", sm: "10px" },
+                                  fontWeight: 600,
+                                  zIndex: 2,
+                                }}
+                              >
+                                {item.description}
+                              </Box>
+                            )}
+                          </Box>
+                        ))}
+
+                        {/* زر إضافة صورة */}
                         <Box
-                          key={item.id}
-                          onClick={() => handleImageClick(item)}
-                          // ✅ أضف الـ ref callback ده (هنا التحميل هيحصل)
-                          ref={(el) => {
-                            if (
-                              el &&
-                              isDicomFile(item.fileType, item.fileName) &&
-                              item.viewerUrl
-                            ) {
-                              loadDicomOnElement(el, item.viewerUrl, {
-                                baseUrl:
-                                  import.meta.env.VITE_ORTHANC_URL ||
-                                  "http://localhost:8042",
-                                fitToWindow: true,
-                                onError: (err) =>
-                                  console.error(
-                                    `❌ Failed to load ${item.fileName}:`,
-                                    err
-                                  ),
-                              });
-                            }
-                          }}
-                          // ✅ أضف الكلاس ده عشان الـ cleanup يشتغل
-                          className="appointment-dicom-element"
+                          onClick={() => navigate("/medicalimaging")}
                           sx={{
                             width: "100%",
                             paddingTop: "100%",
                             position: "relative",
-                            overflow: "hidden",
                             borderRadius: "12px",
+                            border: "2px dashed rgba(82, 172, 140, 0.3)",
+                            backgroundColor: "rgba(82, 172, 140, 0.05)",
                             cursor: "pointer",
                             transition: "all 0.3s ease",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                            // ✅ خلفية ديناميكية حسب نوع الملف
-                            bgcolor: isDicomFile(item.fileType, item.fileName)
-                              ? "#000"
-                              : "#f5f5f5",
                             "&:hover": {
+                              backgroundColor: "rgba(82, 172, 140, 0.1)",
+                              borderColor: "rgba(82, 172, 140, 0.5)",
                               transform: "scale(1.05)",
-                              boxShadow: "0 4px 16px rgba(82, 172, 140, 0.3)",
                             },
                           }}
                         >
-                          {/* ✅ عرض الصورة حسب النوع */}
-                          {isDicomFile(item.fileType, item.fileName) ? (
-                            <Box
-                              sx={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                width: "100%",
-                                height: "100%",
-                                bgcolor: "#000",
-                                zIndex: 1, // ✅ عشان الوصف يظهر فوق الصورة
-                              }}
-                            />
-                          ) : (
-                            <img
-                              src={item.viewerUrl}
-                              alt={item.fileName || item.description}
-                              style={{
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover",
-                              }}
-                            />
-                          )}
-
-                          {/* ✅ الوصف */}
-                          {item.description && (
-                            <Box
-                              sx={{
-                                position: "absolute",
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                background:
-                                  "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
-                                color: "white",
-                                padding: "8px",
-                                fontSize: { xs: "9px", sm: "10px" },
-                                fontWeight: 600,
-                                zIndex: 2, // ✅ عشان يظهر فوق الصورة
-                              }}
-                            >
-                              {item.description}
-                            </Box>
-                          )}
-                        </Box>
-                      ))}
-                      <Box
-                        onClick={() => navigate("/medicalimaging")}
-                        sx={{
-                          width: "100%",
-                          paddingTop: "100%",
-                          position: "relative",
-                          borderRadius: "12px",
-                          border: "2px dashed rgba(82, 172, 140, 0.3)",
-                          backgroundColor: "rgba(82, 172, 140, 0.05)",
-                          cursor: "pointer",
-                          transition: "all 0.3s ease",
-                          "&:hover": {
-                            backgroundColor: "rgba(82, 172, 140, 0.1)",
-                            borderColor: "rgba(82, 172, 140, 0.5)",
-                            transform: "scale(1.05)",
-                          },
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            position: "absolute",
-                            top: "50%",
-                            left: "50%",
-                            transform: "translate(-50%, -50%)",
-                            textAlign: "center",
-                          }}
-                        >
-                          <AddAPhotoIcon
+                          <Box
                             sx={{
-                              fontSize: { xs: 24, sm: 32 },
-                              color: "primary.main",
-                              mb: 0.5,
-                            }}
-                          />
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: "primary.main",
-                              fontWeight: 600,
-                              display: "block",
-                              fontSize: { xs: "10px", sm: "12px" },
+                              position: "absolute",
+                              top: "50%",
+                              left: "50%",
+                              transform: "translate(-50%, -50%)",
+                              textAlign: "center",
                             }}
                           >
-                            Add Image
-                          </Typography>
+                            <AddAPhotoIcon
+                              sx={{
+                                fontSize: { xs: 24, sm: 32 },
+                                color: "primary.main",
+                                mb: 0.5,
+                              }}
+                            />
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: "primary.main",
+                                fontWeight: 600,
+                                display: "block",
+                                fontSize: { xs: "10px", sm: "12px" },
+                              }}
+                            >
+                              Add Image
+                            </Typography>
+                          </Box>
                         </Box>
                       </Box>
-                    </Box>
+                    )}
                   </Card>
                   {/* Prescriptions */}
                   <Card sx={{ ...cardStyle, mt: 3, overflow: "auto" }}>

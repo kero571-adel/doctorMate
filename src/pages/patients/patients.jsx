@@ -57,7 +57,7 @@ import MedicalRecord from "../schedule/medicalRecord";
 import AddPrescription from "../schedule/Modal/prescriptionModal";
 import MedicalModal from "../schedule/Modal/MedicalModal";
 import AddDiagnosis from "../schedule/Modal/diagnosis";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { getPatientDetals } from "../../redux/schedule/appoinmantDetals";
 import { getPatientDetals2 } from "../../redux/schedule/appoinmantDetals";
@@ -103,6 +103,44 @@ const statusConfig = {
     color: "#EF4444",
   },
 };
+const defaultMedicalImages = [
+  {
+    id: "demo-ct-1",
+    viewerUrl:
+      "/assets/default-dicom/concurrent-adrenal-phaeochromocytoma-and-adrenal-adenoma.jpeg",
+    fileName: "ct-head.jpg",
+    fileType: ".jpg",
+    description: "CT Head Scan",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "demo-mri-1",
+    viewerUrl:
+      "/assets/default-dicom/patellar-resurfacing-heterotopic-ossification (1).jpeg",
+    fileName: "mri-brain.jpg",
+    fileType: ".jpg",
+    description: "MRI Brain Scan",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "demo-xray-1",
+    viewerUrl:
+      "/assets/default-dicom/patellar-resurfacing-heterotopic-ossification.jpeg",
+    fileName: "xray-chest.jpg",
+    fileType: ".jpg",
+    description: "Chest X-Ray",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "demo-xray-2",
+    viewerUrl:
+      "/assets/default-dicom/proximal-interphalangeal-dislocation-ulnarmedial.jpeg",
+    fileName: "xray-chest2.jpg",
+    fileType: ".jpg",
+    description: "Chest X-Ray",
+    createdAt: new Date().toISOString(),
+  },
+];
 
 const getStatusColor = (status, theme) => {
   switch (status) {
@@ -146,6 +184,8 @@ export default function Patients() {
   const [showAllRecords, setShowAllRecords] = useState(false);
   const [showAllDiagnoses, setShowAllDiagnoses] = useState(false);
   const [showAllPrescriptions, setShowAllPrescriptions] = useState(false);
+  const [medicalImagesLoadingFailed, setMedicalImagesLoadingFailed] =
+    useState(false);
   const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
   const ITEM_LIMIT = 4;
   const pateintDet = useSelector((state) => state.patients.patientDet);
@@ -232,6 +272,59 @@ export default function Patients() {
       });
     };
   }, []);
+
+  const displayedMedicalImages = useMemo(() => {
+    const backendImages = patientDetails?.data?.medicalImages || [];
+
+    if (!backendImages.length) {
+      return []; // 1️⃣ مفيش صور من الـ Backend
+    }
+
+    if (medicalImagesLoadingFailed) {
+      return defaultMedicalImages; // 2️⃣ التحميل فشل → استخدم الـ default
+    }
+
+    return backendImages; // 3️⃣ التحميل نجح → استخدم صور الـ Backend
+  }, [patientDetails?.data?.medicalImages, medicalImagesLoadingFailed]);
+  useEffect(() => {
+    // لو مفيش صور من الـ Backend، متحاولش تحمل
+    if (!patientDetails?.data?.medicalImages?.length) {
+      return;
+    }
+
+    const elements = document.querySelectorAll(".dicom-thumbnail");
+
+    elements.forEach((el, index) => {
+      const image = patientDetails?.data?.medicalImages?.[index];
+      if (!image || !el) return;
+
+      // ✅ لو الصورة من الـ default، متحاولش تحملها من السيرفر
+      if (image.id?.startsWith("demo-")) {
+        return;
+      }
+
+      const isDicom = isDicomFile(image.fileType, image.fileName);
+      if (isDicom && image.viewerUrl) {
+        loadDicomOnElement(el, image.viewerUrl, {
+          baseUrl: import.meta.env.VITE_ORTHANC_URL || "http://localhost:8042",
+          fitToWindow: true,
+          onLoading: () => console.log("🔄 Loading medical image..."),
+          onSuccess: () => {
+            console.log("✅ Medical image loaded");
+            setMedicalImagesLoadingFailed(false); // ✅ التحميل نجح
+          },
+          onError: (err) => {
+            console.error(`❌ Failed to load ${image.fileName}:`, err);
+            setMedicalImagesLoadingFailed(true); // ✅ التحميل فشل
+          },
+        });
+      }
+    });
+
+    return () => {
+      elements.forEach((el) => cleanupDicomElement(el));
+    };
+  }, [patientDetails?.data?.medicalImages]);
   return (
     <>
       <AddPrescription
@@ -1072,7 +1165,7 @@ export default function Patients() {
                         <Typography
                           fontWeight="700"
                           color="primary.main"
-                          fontSize={{ xs: "9px", sm: "12px", md: "18px" }}
+                          fontSize={{ xs: "12px", md: "18px" }}
                         >
                           Medical Images
                         </Typography>
@@ -1104,7 +1197,22 @@ export default function Patients() {
                         Upload
                       </Button> */}
                     </Stack>
-                    {displayImages.length > 0 ? (
+                    {displayedMedicalImages.length === 0 ? (
+    
+                      <Box
+                        sx={{
+                          color:"text.secondary",
+                          p: 4,
+                          textAlign: "center",
+                          bgcolor: "rgba(82, 172, 140, 0.05)",
+                          borderRadius: "12px",
+                        }}
+                      >
+                        <Typography fontWeight={600}>
+                          No medical images available
+                        </Typography>
+                      </Box>
+                    ) : (
                       <Box
                         sx={{
                           display: "grid",
@@ -1116,39 +1224,28 @@ export default function Patients() {
                           gap: 2,
                         }}
                       >
-                        {displayImages?.map((item) => (
+                        {displayedMedicalImages.map((item, index) => (
                           <Box
-                            key={item.id}
+                            key={item.id || index}
                             className="dicom-thumbnail"
-                            onClick={() => {
-                              handleImageClick(item);
-                              navigate("/dicom/imageViwer");
-                            }}
-                            // ✅ الـ ref اللي هيحاول يحمل أوتوماتيك
+                            onClick={() => handleImageClick(item)}
                             ref={(el) => {
                               if (
                                 el &&
                                 isDicomFile(item.fileType, item.fileName) &&
-                                item.viewerUrl
+                                item.viewerUrl &&
+                                !item.id?.startsWith("demo-")
                               ) {
                                 loadDicomOnElement(el, item.viewerUrl, {
                                   baseUrl:
                                     import.meta.env.VITE_ORTHANC_URL ||
                                     "http://localhost:8042",
                                   fitToWindow: true,
-                                  onSuccess: () => {
-                                    // ✅ لو نجح التحميل، اخفي الـ Placeholder
-                                    const placeholder =
-                                      el.querySelector(".dicom-placeholder");
-                                    if (placeholder)
-                                      placeholder.style.display = "none";
-                                  },
-                                  onError: () => {
-                                    // ✅ لو فشل التحميل، خلي الـ Placeholder ظاهر (من غير أخطاء)
-                                    console.warn(
-                                      `⚠️ Server unavailable, showing placeholder for ${item.fileName}`
-                                    );
-                                  },
+                                  onError: (err) =>
+                                    console.error(
+                                      `❌ Failed to load ${item.fileName}:`,
+                                      err
+                                    ),
                                 });
                               }
                             }}
@@ -1161,64 +1258,100 @@ export default function Patients() {
                               cursor: "pointer",
                               transition: "all 0.3s ease",
                               boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                              bgcolor: "#1a1a1a",
+                              bgcolor: isDicomFile(item.fileType, item.fileName)
+                                ? "#000"
+                                : "#f5f5f5",
                               "&:hover": {
                                 transform: "scale(1.05)",
                                 boxShadow: "0 4px 16px rgba(82, 172, 140, 0.3)",
                               },
                             }}
                           >
-                            {/* 🩻 الـ Placeholder اللي هيظهر لو السيرفر مش شغال */}
-                            {isDicomFile(item.fileType, item.fileName) && (
+                            {/* ✅ عرض الصورة حسب النوع */}
+                            {isDicomFile(item.fileType, item.fileName) &&
+                            !item.id?.startsWith("demo-") ? (
                               <Box
-                                className="dicom-placeholder" // ✅ كلاس عشان الـ JS يقدر يخفيه
                                 sx={{
                                   position: "absolute",
                                   top: 0,
                                   left: 0,
                                   width: "100%",
                                   height: "100%",
-                                  bgcolor: "#1a1a1a",
-                                  color: "white",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  flexDirection: "column",
-                                  gap: 1,
+                                  bgcolor: "#000",
                                   zIndex: 1,
                                 }}
-                              >
-                                <Typography fontSize="32px">🩻</Typography>
-                                <Typography fontSize="12px" fontWeight={600}>
-                                  DICOM
-                                </Typography>
-                                <Typography
-                                  fontSize="10px"
-                                  color="text.secondary"
-                                >
-                                  {item.fileName?.substring(0, 15)}...
-                                </Typography>
-                              </Box>
+                              />
+                            ) : (
+                              <img
+                                src={
+                                  (item.viewerUrl || item.src)?.startsWith(
+                                    "http"
+                                  ) ||
+                                  (item.viewerUrl || item.src)?.startsWith("/")
+                                    ? item.viewerUrl || item.src
+                                    : `${
+                                        import.meta.env.VITE_ORTHANC_URL ||
+                                        "http://localhost:8042"
+                                      }/${item.viewerUrl || item.src}`
+                                }
+                                alt={item.fileName || item.description}
+                                style={{
+                                  position: "absolute",
+                                  top: 0,
+                                  left: 0,
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                }}
+                                onError={(e) => {
+                                  console.error(
+                                    `❌ Failed to load image: ${item.fileName}`
+                                  );
+                                  e.target.style.display = "none";
+                                }}
+                              />
                             )}
 
                             {/* ✅ Badge للـ DICOM */}
-                            {isDicomFile(item.fileType, item.fileName) && (
+                            {isDicomFile(item.fileType, item.fileName) &&
+                              !item.id?.startsWith("demo-") && (
+                                <Box
+                                  sx={{
+                                    position: "absolute",
+                                    top: 8,
+                                    left: 8,
+                                    bgcolor: "#5cb998",
+                                    color: "white",
+                                    px: 1,
+                                    py: 0.3,
+                                    borderRadius: "4px",
+                                    fontSize: "10px",
+                                    fontWeight: 600,
+                                    zIndex: 2,
+                                  }}
+                                >
+                                  DICOM
+                                </Box>
+                              )}
+
+                            {/* ✅ Badge للـ Demo Mode */}
+                            {item.id?.startsWith("demo-") && (
                               <Box
                                 sx={{
                                   position: "absolute",
                                   top: 8,
-                                  left: 8,
-                                  bgcolor: "#5cb998",
+                                  right: 8,
+                                  bgcolor: "primary.main",
                                   color: "white",
                                   px: 1,
                                   py: 0.3,
                                   borderRadius: "4px",
                                   fontSize: "10px",
-                                  fontWeight: 600,
+                                  fontWeight: 700,
                                   zIndex: 2,
                                 }}
                               >
-                                DICOM
+                                Demo
                               </Box>
                             )}
 
@@ -1244,70 +1377,6 @@ export default function Patients() {
                             )}
                           </Box>
                         ))}
-                        {/* <Box
-                        onClick={() => navigate("/medicalimaging")}
-                        sx={{
-                          width: "100%",
-                          paddingTop: "100%",
-                          position: "relative",
-                          borderRadius: "12px",
-                          border: "2px dashed rgba(82, 172, 140, 0.3)",
-                          backgroundColor: "rgba(82, 172, 140, 0.05)",
-                          cursor: "pointer",
-                          transition: "all 0.3s ease",
-                          "&:hover": {
-                            backgroundColor: "rgba(82, 172, 140, 0.1)",
-                            borderColor: "rgba(82, 172, 140, 0.5)",
-                            transform: "scale(1.05)",
-                          },
-                        }}
-                      >
-                        {/* <Box
-                          sx={{
-                            position: "absolute",
-                            top: "50%",
-                            left: "50%",
-                            transform: "translate(-50%, -50%)",
-                            textAlign: "center",
-                          }}
-                        >
-                          <AddAPhotoIcon
-                            sx={{
-                              fontSize: { xs: 24, sm: 32 },
-                              color: "primary.main",
-                              mb: 0.5,
-                            }}
-                          />
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: "primary.main",
-                              fontWeight: 600,
-                              display: "block",
-                              fontSize: { xs: "10px", sm: "12px" },
-                            }}
-                          >
-                            Add Image
-                          </Typography> 
-                        </Box>
-                      </Box> */}
-                      </Box>
-                    ) : (
-                      <Box
-                        sx={{
-                          p: 3,
-                          textAlign: "center",
-                          backgroundColor: "rgba(82, 172, 140, 0.05)",
-                          borderRadius: "12px",
-                        }}
-                      >
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          fontSize={{ xs: "12px", sm: "14px" }}
-                        >
-                          No  Medical Images yet
-                        </Typography>
                       </Box>
                     )}
                   </Card>
@@ -1316,67 +1385,8 @@ export default function Patients() {
             </Grid>
             {/* RIGHT COLUMN */}
             <Grid size={{ xs: 12, md: 4 }}>
-              <Fade in timeout={700}>
-                <Stack spacing={3}>
-                  {/**NEXT PATIENT */}
-                  <Card sx={cardStyle}>
-                    <Typography
-                      sx={{
-                        color: "text.secondary",
-                        fontSize: { xs: "11px", sm: "12px" },
-                        fontWeight: "700",
-                        letterSpacing: "0.5px",
-                        mb: 2,
-                      }}
-                    >
-                      NEXT PATIENT
-                    </Typography>
-                    <Stack
-                      direction={{ xs: "column", sm: "row" }}
-                      spacing={2}
-                      alignItems="center"
-                    >
-                      <Avatar
-                        src={patientDetails2?.data?.basicInfo?.imageUrl}
-                        sx={{
-                          width: { xs: 48, sm: 56 },
-                          height: { xs: 48, sm: 56 },
-                          border: "3px solid rgba(82, 172, 140, 0.2)",
-                        }}
-                      />
-                      <Box flex={1} textAlign={{ xs: "center", sm: "left" }}>
-                        <Typography
-                          variant="body1"
-                          sx={{
-                            fontSize: { xs: "14px", sm: "15px" },
-                            fontWeight: "700",
-                            color: "primary.main",
-                          }}
-                        >
-                          {patientDetails2?.data?.basicInfo?.name}
-                        </Typography>
-                      </Box>
-                      <IconButton
-                        onClick={() => {
-                          handleNextPatientClick();
-                        }}
-                        sx={{
-                          backgroundColor: "rgba(82, 172, 140, 0.1)",
-                          "&:hover": {
-                            backgroundColor: "rgba(82, 172, 140, 0.2)",
-                          },
-                        }}
-                      >
-                        <ArrowForwardIcon
-                          sx={{ color: "primary.main", fontSize: 20 }}
-                        />
-                      </IconButton>
-                    </Stack>
-                  </Card>
-                </Stack>
-              </Fade>
               {/* Prescriptions */}
-              <Card sx={{ ...cardStyle, mt: 2 }}>
+              <Card sx={{ ...cardStyle, mt: 2,mb:2 }}>
                 {/* Header - Compact */}
                 <Stack
                   direction={{ xs: "column", sm: "row" }}
@@ -1419,6 +1429,7 @@ export default function Patients() {
                     border: "1px solid #e0e0e0",
                     borderRadius: 2,
                     overflowX: "auto",
+                   
                   }}
                 >
                   {visibleMedications.length > 0 ? (
@@ -1461,31 +1472,6 @@ export default function Patients() {
                           >
                             Frequency
                           </TableCell>
-                          {/* <TableCell
-                          sx={{
-                            py: 1,
-                            px: 1.5,
-                            fontWeight: 700,
-                            fontSize: "10px",
-                            color: "#6c757d",
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          Status
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            py: 1,
-                            px: 1,
-                            fontWeight: 700,
-                            fontSize: "10px",
-                            color: "#6c757d",
-                            textTransform: "uppercase",
-                          }}
-                          align="center"
-                        >
-                          Actions
-                        </TableCell> */}
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -1609,6 +1595,65 @@ export default function Patients() {
                   </Box>
                 )}
               </Card>
+              <Fade in timeout={700}>
+                <Stack spacing={3}>
+                  {/**NEXT PATIENT */}
+                  <Card sx={cardStyle}>
+                    <Typography
+                      sx={{
+                        color: "text.secondary",
+                        fontSize: { xs: "11px", sm: "12px" },
+                        fontWeight: "700",
+                        letterSpacing: "0.5px",
+                        mt: 2,
+                      }}
+                    >
+                      NEXT PATIENT
+                    </Typography>
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      spacing={2}
+                      alignItems="center"
+                    >
+                      <Avatar
+                        src={patientDetails2?.data?.basicInfo?.imageUrl}
+                        sx={{
+                          width: { xs: 48, sm: 56 },
+                          height: { xs: 48, sm: 56 },
+                          border: "3px solid rgba(82, 172, 140, 0.2)",
+                        }}
+                      />
+                      <Box flex={1} textAlign={{ xs: "center", sm: "left" }}>
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            fontSize: { xs: "14px", sm: "15px" },
+                            fontWeight: "700",
+                            color: "primary.main",
+                          }}
+                        >
+                          {patientDetails2?.data?.basicInfo?.name}
+                        </Typography>
+                      </Box>
+                      <IconButton
+                        onClick={() => {
+                          handleNextPatientClick();
+                        }}
+                        sx={{
+                          backgroundColor: "rgba(82, 172, 140, 0.1)",
+                          "&:hover": {
+                            backgroundColor: "rgba(82, 172, 140, 0.2)",
+                          },
+                        }}
+                      >
+                        <ArrowForwardIcon
+                          sx={{ color: "primary.main", fontSize: 20 }}
+                        />
+                      </IconButton>
+                    </Stack>
+                  </Card>
+                </Stack>
+              </Fade>
             </Grid>
           </Grid>
         </Box>

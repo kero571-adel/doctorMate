@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   isDicomFile,
   loadDicomOnElement,
@@ -40,6 +40,7 @@ import cornerstone from "cornerstone-core";
 import cornerstoneWADOImageLoader from "cornerstone-wado-image-loader";
 import dicomParser from "dicom-parser";
 import { useSnackbar } from "../../hooks/useSnackbar";
+import { useNavigate } from "react-router-dom";
 import GlobalSnackbar from "../../components/GlobalSnackbar";
 
 // ✅ Initialize Cornerstone with proper configuration
@@ -62,6 +63,7 @@ import GlobalSnackbar from "../../components/GlobalSnackbar";
 //   "dicomweb",
 //   cornerstoneWADOImageLoader.loadImage
 // );
+// ✅ دوال التعامل مع localStorage
 
 export default function MedicalImaging() {
   const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
@@ -75,7 +77,60 @@ export default function MedicalImaging() {
   const [imageDescription, setImageDescription] = useState("");
   const [itemsPerPage] = useState(4);
   const [currentPage, setCurrentPage] = useState(1);
+  const [localImages, setLocalImages] = useState([]);
   const appoinDetails = useSelector((state) => state.patientdet.dataApp);
+  const navigate = useNavigate();
+  console.log(
+    "🚀 ~ file: uploadImage.jsx:34 ~ MedicalImaging ~ appoinDetails:",
+    appoinDetails
+  );
+
+  const defaultMedicalImages = [
+    {
+      id: "demo-ct-1",
+      viewerUrl:
+        "/assets/default-dicom/concurrent-adrenal-phaeochromocytoma-and-adrenal-adenoma.jpeg",
+      src: "/assets/default-dicom/concurrent-adrenal-phaeochromocytoma-and-adrenal-adenoma.jpeg", // ✅ أضف ده
+      fileName: "ct-head.jpg",
+      fileType: ".jpg",
+      description: "CT Head Scan",
+      createdAt: new Date().toISOString(),
+      isDefault: true,
+    },
+    {
+      id: "demo-mri-1",
+      viewerUrl:
+        "/assets/default-dicom/patellar-resurfacing-heterotopic-ossification (1).jpeg",
+      src: "/assets/default-dicom/patellar-resurfacing-heterotopic-ossification (1).jpeg", // ✅ أضف ده
+      fileName: "mri-brain.jpg",
+      fileType: ".jpg",
+      description: "MRI Brain Scan",
+      createdAt: new Date().toISOString(),
+      isDefault: true,
+    },
+    {
+      id: "demo-xray-1",
+      viewerUrl:
+        "/assets/default-dicom/patellar-resurfacing-heterotopic-ossification.jpeg",
+      src: "/assets/default-dicom/patellar-resurfacing-heterotopic-ossification.jpeg", // ✅ أضف ده
+      fileName: "xray-chest.jpg",
+      fileType: ".jpg",
+      description: "Chest X-Ray",
+      createdAt: new Date().toISOString(),
+      isDefault: true,
+    },
+    {
+      id: "demo-xray-2",
+      viewerUrl:
+        "/assets/default-dicom/proximal-interphalangeal-dislocation-ulnarmedial.jpeg",
+      src: "/assets/default-dicom/proximal-interphalangeal-dislocation-ulnarmedial.jpeg", // ✅ أضف ده
+      fileName: "xray-chest2.jpg",
+      fileType: ".jpg",
+      description: "Chest X-Ray",
+      createdAt: new Date().toISOString(),
+      isDefault: true,
+    },
+  ];
   const selectedPatient = useSelector(
     (state) => state.schedule.selectedPatient
   );
@@ -83,34 +138,104 @@ export default function MedicalImaging() {
   const { data, images, error, loading } = useSelector(
     (state) => state.MedicalImg
   );
-  const allImages = images?.data || [];
-  const displayableImages =
-    displayedImages.length > 0 ? displayedImages : allImages;
-  const hasMoreImages = displayableImages.length < allImages.length;
 
+  // const backendImages = useMemo(() => {
+  //   if (images?.data?.length > 0) {
+  //     return images.data;
+  //   }
+  //   if (appoinDetails?.data?.medicalImages?.length > 0) {
+  //     return appoinDetails.data.medicalImages;
+  //   }
+  //   return defaultMedicalImages;
+  // }, [images?.data, appoinDetails?.data?.medicalImages]);
+
+  // ✅ الجديد:
+  // const displayableImages =
+  //   displayedImages.length > 0 ? displayedImages : backendImages;
+  // const hasMoreImages = displayableImages.length < backendImages.length;
+  const STORAGE_KEY = `medical_images_${appoinDetails?.data?.id || "default"}`;
+
+  const getStoredImages = () => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+      console.error("Error reading from localStorage:", error);
+      return [];
+    }
+  };
+
+  const saveToLocalStorage = (images) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(images));
+    } catch (error) {
+      console.error("Error saving to localStorage:", error);
+    }
+  };
+
+  const addImageToLocalStorage = (imageData) => {
+    const storedImages = getStoredImages();
+    const newImage = {
+      ...imageData,
+      id: `local-${Date.now()}`,
+      appointmentId: appoinDetails?.data?.id || "",
+      uploadedAt: new Date().toISOString(),
+      isLocal: true, // علامة إن الصورة من localStorage
+    };
+    const updatedImages = [newImage, ...storedImages];
+    saveToLocalStorage(updatedImages);
+    return newImage;
+  };
+
+  const removeImageFromLocalStorage = (imageId) => {
+    const storedImages = getStoredImages();
+    const updatedImages = storedImages.filter((img) => img.id !== imageId);
+    saveToLocalStorage(updatedImages);
+  };
   function handelDel(id) {
     dispatch(delMedicalImg(id));
   }
   // ✅ بناء رابط الصورة من API response
+  // ✅ بناء رابط الصورة من API response
   const getImageUrl = (image) => {
+    // لو الصورة محلية (من localStorage)
+    if (image.isLocal && image.src) {
+      return image.src;
+    }
+
+    // لو صورة افتراضية
+    if (image.isDefault && image.src) {
+      return image.src;
+    }
+
     // إذا كانت الصورة تحتوي على رابط مباشر كامل
     if (image.src && image.src.startsWith("http")) return image.src;
     if (image.url && image.url.startsWith("http")) return image.url;
     if (image.fileUrl && image.fileUrl.startsWith("http")) return image.fileUrl;
+    if (image.viewerUrl && image.viewerUrl.startsWith("http"))
+      return image.viewerUrl;
+
     // إذا كانت الصورة لها رابط نسبي
     if (image.src) return image.src;
     if (image.url) return image.url;
     if (image.fileUrl) return image.fileUrl;
+    if (image.viewerUrl) return image.viewerUrl;
+
     // بناء رابط من معرف الملف والمريض
-    // تأكد من أن API endpoint صحيح
     if (image.id) {
       const apiBaseUrl =
         import.meta.env.VITE_API_URL || "http://localhost:5000";
       return `${apiBaseUrl}/api/medical-images/${image.id}/download`;
     }
-    return null;
-  };
 
+    // لو مفيش رابط، استخدم placeholder خارجي
+    return "https://via.placeholder.com/200x200/5cb998/ffffff?text=No+Image";
+  };
+  // ✅ تحميل الصور من localStorage
+  useEffect(() => {
+    const stored = getStoredImages();
+    setLocalImages(stored);
+  }, [appoinDetails?.data?.id]);
   // ✅ دالة لعرض محتوى الصورة
   // const renderImageContent = (image) => {
   //   const isDicomFile =
@@ -211,8 +336,11 @@ export default function MedicalImaging() {
   // };
   // ✅ دالة عرض الصورة باستخدام utils
   // ✅ دالة عرض الصورة باستخدام utils
+  // ✅ دالة عرض الصورة باستخدام utils
+  // ✅ دالة عرض الصورة باستخدام utils
   const renderImageContent = (image) => {
     const isDicom = isDicomFile(image.fileType, image.fileName);
+    const imageUrl = getImageUrl(image);
 
     if (isDicom) {
       return (
@@ -243,26 +371,56 @@ export default function MedicalImaging() {
               zIndex: 2,
             }}
           >
-            {image.modality || "DICOM"}
+            DICOM
           </Box>
         </>
       );
     }
 
+    // للصور العادية
     return (
-      <CardMedia
-        component="img"
-        image={getImageUrl(image)}
-        alt={image.fileName}
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-        }}
-      />
+      <>
+        <CardMedia
+          component="img"
+          image={imageUrl}
+          alt={image.fileName || "Medical Image"}
+          onError={(e) => {
+            console.error(`❌ Failed to load image:`, imageUrl, image);
+            // ✅ لو الصورة مش تتحمل، اخفي الـ element واعرض النص بس
+            e.target.style.display = "none";
+          }}
+          onLoad={() => {
+            console.log(`✅ Image loaded successfully:`, imageUrl);
+          }}
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            bgcolor: "#f5f5f5",
+          }}
+        />
+        {/* ✅ عرض اسم الصورة */}
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
+            color: "white",
+            p: 1,
+            fontSize: "11px",
+            textAlign: "center",
+            zIndex: 1,
+          }}
+        >
+          {image.fileName?.substring(0, 25)}
+          {image.fileName?.length > 25 ? "..." : ""}
+        </Box>
+      </>
     );
   };
   // ✅ Improved file validation with clear messages
@@ -341,7 +499,6 @@ export default function MedicalImaging() {
     return "An error occurred while uploading the file. Please try again";
   };
 
-  // ✅ Upload file with improvements
   const uploadToRedux = async (file, description) => {
     const uploadId = Date.now() + Math.random();
     const newFile = {
@@ -352,12 +509,14 @@ export default function MedicalImaging() {
       status: "uploading",
     };
     setUploadingFiles((prev) => [...prev, newFile]);
+
     try {
       const formData = new FormData();
       formData.append("File", file);
       formData.append("Description", description || "");
       formData.append("AppointmentId", appoinDetails?.data?.id || "");
 
+      // ✅ أولاً: حاول ترفع للـ Backend
       await dispatch(
         addMedicalImg({
           formData,
@@ -372,6 +531,20 @@ export default function MedicalImaging() {
         })
       ).unwrap();
 
+      // ✅ ثانياً: لو نجح الـ Backend، احفظ في localStorage (مش قبل)
+      const localImage = addImageToLocalStorage({
+        fileName: file.name,
+        description: description || "",
+        src: URL.createObjectURL(file),
+        size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+        fileType: file.name.split(".").pop().toLowerCase(),
+        modality: "DX",
+      });
+
+      // ✅ حدّث الـ localImages state
+      setLocalImages((prev) => [localImage, ...prev]);
+
+      // نظّف الـ uploading files
       setUploadingFiles((prev) => prev.filter((f) => f.id !== uploadId));
 
       const newImage = {
@@ -383,7 +556,7 @@ export default function MedicalImaging() {
         isDicom: true,
         src: URL.createObjectURL(file),
         size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
-        modality: "DX", // Default modality
+        modality: "DX",
       };
 
       setDisplayedImages((prev) =>
@@ -399,10 +572,24 @@ export default function MedicalImaging() {
       console.error("❌ Upload error full details:", err);
 
       const serverErrorMessage = extractServerError(err);
+
+      // ✅ لو الـ Backend فشل، احفظ في localStorage كـ fallback
+      const localImage = addImageToLocalStorage({
+        fileName: file.name,
+        description: description || "",
+        src: URL.createObjectURL(file),
+        size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+        fileType: file.name.split(".").pop().toLowerCase(),
+        modality: "DX",
+      });
+
+      setLocalImages((prev) => [localImage, ...prev]);
+
       showSnackbar(
-        `Failed to upload ${file.name}: ${serverErrorMessage}`,
-        "error"
+        `Saved locally: ${file.name}. Server unavailable: ${serverErrorMessage}`,
+        "warning"
       );
+
       setTimeout(() => {
         setUploadingFiles((prev) => prev.filter((f) => f.id !== uploadId));
       }, 1500);
@@ -488,11 +675,16 @@ export default function MedicalImaging() {
   };
 
   const handleDeleteImage = (id) => {
+    // ✅ امسح من localStorage لو الصورة محلية
+    if (id.startsWith("local-")) {
+      removeImageFromLocalStorage(id);
+      setLocalImages((prev) => prev.filter((img) => img.id !== id));
+    }
+
     dispatch(delMedicalImg(id))
       .unwrap()
       .then(() => {
         showSnackbar("Image deleted successfully", "success");
-        // إعادة جلب الصور بدون loader
         if (selectedPatient?.id) {
           dispatch(getMedicalImg(selectedPatient?.id));
         }
@@ -503,19 +695,23 @@ export default function MedicalImaging() {
       });
   };
 
+  // ✅ الجديد:
   const handleViewImage = (image) => {
-    window.open(image.src, "_blank");
+    navigate("/dicom/imageViwer", {
+      state: {
+        image,
+        allImages: allGalleryImages, // ✅ مرّر كل الصور عشان تقدر تتنقل بينهم
+      },
+    });
   };
-
   const handleLoadMore = () => {
     const nextPage = currentPage + 1;
     const endIndex = nextPage * itemsPerPage;
-    const newDisplayedImages = allImages.slice(0, endIndex);
+    const newDisplayedImages = allGalleryImages.slice(0, endIndex); 
 
     setDisplayedImages(newDisplayedImages);
     setCurrentPage(nextPage);
   };
-
   // ✅ تنسيق التاريخ
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -550,7 +746,7 @@ export default function MedicalImaging() {
     if (selectedPatient?.id) {
       dispatch(getMedicalImg(selectedPatient?.id));
     }
-    
+
     // ✅ Cleanup: استخدام الـ utility function
     return () => {
       const elements = document.querySelectorAll(".cornerstone-element");
@@ -588,15 +784,19 @@ export default function MedicalImaging() {
       showSnackbar(message, "error");
     }
   }, [error, showSnackbar]);
-  // ✅ أضف الكود ده بعد:
-  // }, [error, showSnackbar]);
-
-  // ✅ تحميل وعرض صور الـ DICOM في الـ gallery
+  const allGalleryImages = useMemo(() => {
+    // ✅ استخدم الـ local images والـ default images بس
+    if (localImages.length > 0) {
+      return localImages;
+    }
+    return defaultMedicalImages;
+  }, [localImages]);
   useEffect(() => {
     const elements = document.querySelectorAll(".cornerstone-element");
 
     elements.forEach((el, index) => {
-      const image = images?.data?.[index];
+      
+      const image = allGalleryImages?.[index];
       if (!image || !el) return;
 
       const isDicom = isDicomFile(image.fileType, image.fileName);
@@ -617,7 +817,8 @@ export default function MedicalImaging() {
     return () => {
       elements.forEach((el) => cleanupDicomElement(el));
     };
-  }, [images?.data]);
+  }, [allGalleryImages]); // ✅ اعتمد على allGalleryImages
+
   return (
     <>
       <input
@@ -1087,17 +1288,12 @@ export default function MedicalImaging() {
 
           {/* Gallery Section */}
           <Box>
-            <Typography
-              variant="h6"
-              fontWeight={600}
-              mb={2.5}
-              fontSize={{ xs: "14px", sm: "16px", md: "18px" }}
-            >
-              Gallery ({images?.data?.length} image
-              {images?.data?.length !== 1 ? "s" : ""})
+            <Typography variant="h6" fontWeight={600} mb={2.5}>
+              Gallery ({allGalleryImages?.length} image
+              {allGalleryImages?.length !== 1 ? "s" : ""})
+            
             </Typography>
-
-            {images?.data?.length === 0 ? (
+            {allGalleryImages.length === 0 ? (
               <Box
                 sx={{
                   p: { xs: 4, sm: 6 },
@@ -1158,9 +1354,10 @@ export default function MedicalImaging() {
                     },
                   }}
                 >
-                  {images?.data?.map((image) => (
+                  {allGalleryImages.map((image) => (
                     <Box
                       key={image.id}
+                      onClick={() => handleViewImage(image)}
                       sx={{
                         flex: "0 0 auto",
                         width: { xs: 140, sm: 160, md: 180 },
@@ -1308,7 +1505,7 @@ export default function MedicalImaging() {
                     </Box>
                   ))}
                 </Box>
-
+{/* 
                 {hasMoreImages && (
                   <Box
                     display="flex"
@@ -1342,13 +1539,13 @@ export default function MedicalImaging() {
                       {loading ? "Loading..." : "Load More Images"}
                     </Button>
                   </Box>
-                )}
+                )} */}
               </>
             )}
           </Box>
         </Paper>
       </Box>
-      <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />
+      {/* <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} /> */}
     </>
   );
 }
