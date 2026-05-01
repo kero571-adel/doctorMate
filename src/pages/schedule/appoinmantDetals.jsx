@@ -120,18 +120,7 @@ export default function AppointmentsDetails() {
   const [showMoreRecords, setShowMoreRecords] = useState(false);
   const [showMoreDiagnoses, setShowMoreDiagnoses] = useState(false);
   const [showMorePrescriptions, setShowMorePrescriptions] = useState(false);
-
-  const handleClose = () => {
-    dispatch(clearSessionError());
-  };
-  // 🔹 Redux Selectors
-  const selectedPatient = useSelector(
-    (state) => state.schedule.selectedPatient
-  );
-  const selectedPatient2 = useSelector(
-    (state) => state.schedule.selectedPatient2
-  );
-  const { data } = useSelector((state) => state.schedule);
+  const [localMedicalImages, setLocalMedicalImages] = useState([]);
   const patientDetails = useSelector((state) => state.patientdet.datapatient);
   const appoinDetails = useSelector((state) => state.patientdet.dataApp);
   const appoinDetails2 = useSelector((state) => state.patientdet.dataApp2);
@@ -173,6 +162,38 @@ export default function AppointmentsDetails() {
       createdAt: new Date().toISOString(),
     },
   ];
+  // ✅ دالة قراءة الصور المحلية حسب الـ appointmentId
+  const getLocalImagesByAppointmentId = (appointmentId) => {
+    try {
+      const key = `medical_images_${appointmentId}`;
+      const stored = localStorage.getItem(key);
+      return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+      console.error("Error reading local images:", error);
+      return [];
+    }
+  };
+  // ✅ تحميل الصور المحلية لما الـ appointmentId يتغير
+  useEffect(() => {
+    const appointmentId = appoinDetails?.data?.id;
+    if (appointmentId) {
+      const localImages = getLocalImagesByAppointmentId(appointmentId);
+      setLocalMedicalImages(localImages);
+    }
+  }, [appoinDetails?.data?.id]);
+
+  const handleClose = () => {
+    dispatch(clearSessionError());
+  };
+  // 🔹 Redux Selectors
+  const selectedPatient = useSelector(
+    (state) => state.schedule.selectedPatient
+  );
+  const selectedPatient2 = useSelector(
+    (state) => state.schedule.selectedPatient2
+  );
+  const { data } = useSelector((state) => state.schedule);
+
   const {
     session: activeSession,
     sessionStatus,
@@ -317,7 +338,61 @@ export default function AppointmentsDetails() {
         : null,
     };
   };
+  // ✅ دالة لتحويل الصور القديمة من Blob إلى Base64
+  const migrateBlobImages = async (appointmentId) => {
+    if (!appointmentId) return;
 
+    const key = `medical_images_${appointmentId}`;
+    const stored = localStorage.getItem(key);
+    if (!stored) return;
+
+    const localImages = JSON.parse(stored);
+
+    // نفلتر بس الصور اللي عندها blob URL
+    const imagesToMigrate = localImages.filter((img) =>
+      img.src?.startsWith("blob:")
+    );
+    if (imagesToMigrate.length === 0) return;
+
+    console.log(
+      `🔄 Migrating ${imagesToMigrate.length} blob images to base64...`
+    );
+
+    const migratedImages = await Promise.all(
+      localImages.map(async (img) => {
+        if (img.src?.startsWith("blob:")) {
+          try {
+            const response = await fetch(img.src);
+            const blob = await response.blob();
+            const base64 = await fileToBase64(blob);
+            return { ...img, src: base64 };
+          } catch (error) {
+            console.error("❌ Failed to migrate image:", img.id, error);
+            return img;
+          }
+        }
+        return img;
+      })
+    );
+
+    // نحفظ الصور المُهاجرة
+    localStorage.setItem(key, JSON.stringify(migratedImages));
+    return migratedImages;
+  };
+  // ✅ تشغيل الـ migration للصور القديمة
+  useEffect(() => {
+    const appointmentId = appoinDetails?.data?.id;
+    if (appointmentId) {
+      migrateBlobImages(appointmentId).then((migrated) => {
+        if (migrated) {
+          setLocalMedicalImages(migrated);
+        } else {
+          const localImages = getLocalImagesByAppointmentId(appointmentId);
+          setLocalMedicalImages(localImages);
+        }
+      });
+    }
+  }, [appoinDetails?.data?.id]);
   const buttonState = getJoinButtonState();
 
   // ✅ NEW: Handle Start Communication (Join Chat) - Same logic as Schedule page
@@ -462,17 +537,25 @@ export default function AppointmentsDetails() {
   const displayedMedicalImages = useMemo(() => {
     const backendImages = appoinDetails?.data?.medicalImages || [];
 
-    if (!backendImages.length) {
-      return []; // 1️⃣ مفيش صور من الـ Backend
+    // ✅ 1️⃣ لو فيه صور محلية، اعرضها (مع منع التكرار مع الـ backend)
+    if (localMedicalImages.length > 0) {
+      const uniqueBackendImages = backendImages.filter(
+        (backendImg) =>
+          !localMedicalImages.some(
+            (localImg) => localImg.fileName === backendImg.fileName
+          )
+      );
+      return [...localMedicalImages, ...uniqueBackendImages];
     }
 
-    if (medicalImagesLoadingFailed) {
-      return defaultMedicalImages;
+    // ✅ 2️⃣ لو مفيش صور محلية وفيه صور من الـ Backend، اعرضها
+    if (backendImages.length > 0) {
+      return backendImages;
     }
 
-    return backendImages;
-  }, [appoinDetails?.data?.medicalImages, medicalImagesLoadingFailed]);
-
+    // ✅ 3️⃣ لو مفيش حاجة خالص (لا local ولا backend)، اعرض الـ default images
+    return defaultMedicalImages;
+  }, [appoinDetails?.data?.medicalImages, localMedicalImages]);
   useEffect(() => {
     if (!appoinDetails?.data?.medicalImages?.length) {
       return;
@@ -1640,13 +1723,12 @@ export default function AppointmentsDetails() {
                             ) : (
                               <img
                                 src={
-                                  item.viewerUrl?.startsWith("http") ||
-                                  item.viewerUrl?.startsWith("/")
-                                    ? item.viewerUrl
-                                    : `${
-                                        import.meta.env.VITE_ORTHANC_URL ||
-                                        "http://localhost:8042"
-                                      }/${item.viewerUrl}`
+                                  // ✅ لو الـ src ده Base64 أو رابط كامل، استخدمه زي ما هو
+                                  item.src?.startsWith("data:") ||
+                                  item.src?.startsWith("http") ||
+                                  item.src?.startsWith("/")
+                                    ? item.src
+                                    : item.viewerUrl
                                 }
                                 alt={item.fileName || item.description}
                                 style={{
@@ -1656,6 +1738,14 @@ export default function AppointmentsDetails() {
                                   width: "100%",
                                   height: "100%",
                                   objectFit: "cover",
+                                }}
+                                onError={(e) => {
+                                  console.error(
+                                    "❌ Failed to load image:",
+                                    item.src || item.viewerUrl
+                                  );
+                                  e.target.src =
+                                    "https://via.placeholder.com/150x150/5cb998/ffffff?text=No+Image";
                                 }}
                               />
                             )}

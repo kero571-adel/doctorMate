@@ -71,12 +71,12 @@ export default function DicomViewer() {
   const [inverted, setInverted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const imageRef = useRef(null);
+  const [localMedicalImages, setLocalMedicalImages] = useState([]);
   const medicalImages = useSelector(
     (state) => state.dataSliceImgViwer.mediclImage
   );
   const userInfo = useSelector((state) => state.dataSliceImgViwer.userInfo);
-  console.log("userInfo: ", userInfo);
-  console.log("medicalImages: ", medicalImages);
+
   const defaultDicomImages = [
     {
       src: "/assets/default-dicom/concurrent-adrenal-phaeochromocytoma-and-adrenal-adenoma.jpeg",
@@ -130,17 +130,36 @@ export default function DicomViewer() {
     id: "_",
     lastVisit: "_",
   };
-
+  // ✅ دالة مساعدة لجلب الـ appointmentId الصحيح من أي مصدر متاح
+  const getAppointmentId = () => {
+    return (
+      selectedImage?.appointmentId ||
+      location.state?.image?.appointmentId ||
+      location.state?.allImages?.[0]?.appointmentId ||
+      userInfo?.appointmentId ||
+      userInfo?.id // fallback لو مفيش حاجة تانية
+    );
+  };
   // Add DICOM file to default images
-
-  // Convert DICOM images to the format expected by the viewer
   const images = useMemo(() => {
-    // ✅ المنطق الجديد:
-    // 1️⃣ نبدأ بالـ default images فوراً (لأن loadingFailed = true)
+    const appointmentId = getAppointmentId();
 
-    // 2️⃣ لو التحميل نجح (loadingFailed = false) وفيه صور من الـ Backend → نعرضها
+    // ✅ 1️⃣ جهز الصور المحلية (من localStorage) لنفس الـ appointmentId
+    const localImagesForAppointment = localMedicalImages
+      .filter((img) => img.appointmentId === appointmentId)
+      .map((img) => ({
+        ...img,
+        type: img.type || img.fileType || ".jpg", // ✅ أضف type لو مفيش
+        thumbnail: img.thumbnail || img.src, // ✅ أضف thumbnail لو مفيش
+        uploadDate:
+          img.uploadDate || img.uploadedAt || new Date().toISOString(),
+      }));
+
+    let resultImages = [];
+
+    // ✅ 2️⃣ لو التحميل نجح (السيرفر شغال) وفيه صور من الـ Backend
     if (!loadingFailed && medicalImages?.length > 0) {
-      return medicalImages.map((img) => ({
+      const backendImages = medicalImages.map((img) => ({
         src: img.viewerUrl,
         thumbnail: img.viewerUrl,
         description: img.description || img.fileName || "Medical Image",
@@ -148,12 +167,46 @@ export default function DicomViewer() {
         fileName: img.fileName,
         uploadDate: img.createdAt,
         id: img.id,
+        appointmentId: img.appointmentId,
       }));
+
+      // منع التكرار (لو فيه صورة محلية بنفس الاسم)
+      const uniqueBackendImages = backendImages.filter(
+        (backendImg) =>
+          !localImagesForAppointment.some(
+            (localImg) => localImg.fileName === backendImg.fileName
+          )
+      );
+
+      // ✅ الصور المحلية تظهر الأول، وبعدين صور الـ Backend
+      resultImages = [...localImagesForAppointment, ...uniqueBackendImages];
+    }
+    // ✅ 3️⃣ لو التحميل فشل (السيرفر مش شغال) → اعرض الـ default images
+    else if (loadingFailed && medicalImages?.length > 0) {
+      // خلط الـ default images مع الصور المحلية
+      resultImages = [...localImagesForAppointment, ...defaultDicomImages];
+    }
+    // ✅ 4️⃣ لو مفيش صور من الـ Backend خالص
+    else {
+      resultImages = [...localImagesForAppointment, ...defaultDicomImages];
     }
 
-    // 3️⃣ لو مفيش صور من الـ Backend أو التحميل فشل → نعرض الـ default
-    return defaultDicomImages;
-  }, [medicalImages, loadingFailed]);
+    // ✅ لو مفيش صور خالص
+    if (resultImages.length === 0) {
+      return [];
+    }
+
+    console.log("📸 Final images array:", resultImages); // ✅ logging
+    return resultImages;
+  }, [
+    medicalImages,
+    loadingFailed,
+    localMedicalImages,
+    selectedImage?.appointmentId,
+    location.state?.image?.appointmentId,
+    userInfo?.appointmentId,
+    userInfo?.id,
+  ]);
 
   // Set initial image based on selected image
 
@@ -454,15 +507,105 @@ export default function DicomViewer() {
 
   const getImageSrc = (image) => {
     if (!image?.src) return null;
+
+    // ✅ لو الـ src ده Base64 → استخدمه زي ما هو
+    if (image.src.startsWith("data:")) {
+      return image.src;
+    }
+
     // لو الرابط كامل (بيبدأ بـ http) أو محلي (بيبدأ بـ /) → استخدمه زي ما هو
     if (image.src.startsWith("http") || image.src.startsWith("/")) {
       return image.src;
     }
+
     // لو رابط نسبي → اضف الـ base URL
     return `${import.meta.env.VITE_ORTHANC_URL || "http://localhost:8042"}/${
       image.src
     }`;
   };
+  // ✅ دالة لتحويل File أو Blob إلى Base64
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  // ✅ دالة قراءة الصور المحلية حسب الـ appointmentId
+  const getLocalImagesByAppointmentId = (appointmentId) => {
+    try {
+      const key = `medical_images_${appointmentId}`;
+      const stored = localStorage.getItem(key);
+      return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+      console.error("Error reading local images:", error);
+      return [];
+    }
+  };
+
+  // ✅ دالة لتحويل الصور القديمة من Blob إلى Base64
+  const migrateBlobImages = async (appointmentId) => {
+    if (!appointmentId) return [];
+
+    const key = `medical_images_${appointmentId}`;
+    const stored = localStorage.getItem(key);
+    if (!stored) return [];
+
+    const localImages = JSON.parse(stored);
+
+    // نفلتر بس الصور اللي عندها blob URL
+    const imagesToMigrate = localImages.filter((img) =>
+      img.src?.startsWith("blob:")
+    );
+    if (imagesToMigrate.length === 0) return localImages;
+
+    console.log(
+      `🔄 Migrating ${imagesToMigrate.length} blob images to base64...`
+    );
+
+    const migratedImages = await Promise.all(
+      localImages.map(async (img) => {
+        if (img.src?.startsWith("blob:")) {
+          try {
+            const response = await fetch(img.src);
+            const blob = await response.blob();
+            const base64 = await fileToBase64(blob);
+            return { ...img, src: base64 };
+          } catch (error) {
+            console.error("❌ Failed to migrate image:", img.id, error);
+            return img;
+          }
+        }
+        return img;
+      })
+    );
+
+    // نحفظ الصور المُهاجرة
+    localStorage.setItem(key, JSON.stringify(migratedImages));
+    return migratedImages;
+  };
+  // ✅ تحميل الصور المحلية والـ migration
+  // ✅ الجديد: يستخدم الـ appointmentId الصحيح
+  useEffect(() => {
+    const appointmentId = getAppointmentId();
+
+    if (appointmentId) {
+      migrateBlobImages(appointmentId).then((migrated) => {
+        // ✅ فلتر بس الصور اللي لنفس الـ appointmentId
+        const filteredImages = migrated.filter(
+          (img) => img.appointmentId === appointmentId
+        );
+        setLocalMedicalImages(filteredImages);
+      });
+    }
+  }, [
+    selectedImage?.appointmentId,
+    location.state?.image?.appointmentId,
+    userInfo?.appointmentId,
+    userInfo?.id,
+  ]);
   return (
     <Box
       sx={{
@@ -703,8 +846,8 @@ export default function DicomViewer() {
                                   position: "absolute",
                                   top: 8,
                                   right: 8,
-                                  bgcolor: "rgba(255, 193, 7, 0.95)",
-                                  color: "#000",
+                                  bgcolor: "primary.main",
+                                  color: "white",
                                   px: 1,
                                   py: 0.5,
                                   borderRadius: "4px",
@@ -714,11 +857,18 @@ export default function DicomViewer() {
                                   boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
                                 }}
                               >
-                                📷 Demo
+                                Demo
                               </Box>
                             )}
                           <img
-                            src={image.thumbnail}
+                            src={
+                              // ✅ لو الـ src ده Base64 أو رابط كامل، استخدمه زي ما هو
+                              image.src?.startsWith("data:") ||
+                              image.src?.startsWith("http") ||
+                              image.src?.startsWith("/")
+                                ? image.src
+                                : image.thumbnail
+                            }
                             alt={image.description}
                             style={{
                               width: "100%",
@@ -726,8 +876,15 @@ export default function DicomViewer() {
                               objectFit: "cover",
                               display: "block",
                             }}
+                            onError={(e) => {
+                              console.error(
+                                "❌ Failed to load thumbnail:",
+                                image.src || image.thumbnail
+                              );
+                              e.target.src =
+                                "https://via.placeholder.com/120x120/5cb998/ffffff?text=No+Image";
+                            }}
                           />
-
                           {currentImage === index && (
                             <Box
                               sx={{
@@ -793,7 +950,6 @@ export default function DicomViewer() {
                   width: "100%",
                 }}
               >
-                {/* ✅ Container واحد بس للعرض - بدون ref هنا */}
                 <Box
                   sx={{
                     bgcolor: "#000",
@@ -805,33 +961,87 @@ export default function DicomViewer() {
                     overflow: "hidden",
                   }}
                 >
-                  {images.length > 0 ? (
-                    isDicomFile(
-                      images[currentImage]?.type,
-                      images[currentImage]?.fileName
-                    ) && !images[currentImage]?.id?.startsWith("demo-") ? (
-                      // 🩻 Cornerstone للـ DICOM الحقيقية
-                      <Box
-                        ref={imageRef}
-                        className="dicom-viewer-element"
-                        sx={{ width: "100%", height: "100%", bgcolor: "#000" }}
-                      />
-                    ) : (
-                      // 🖼️ <img> للصور العادية والـ Default Images
-                      <img
-                        ref={imageRef}
-                        src={getImageSrc(images[currentImage])}
-                        alt={images[currentImage]?.description || "No image"}
-                        style={{
-                          maxWidth: "100%",
-                          maxHeight: "100%",
-                          objectFit: "contain",
-                          ...getImageStyle(),
-                        }}
-                      />
-                    )
+                  {images.length > 0 &&
+                  currentImage >= 0 &&
+                  currentImage < images.length ? (
+                    // ✅ الصورة موجودة والـ index صحيح
+                    (() => {
+                      const currentImg = images[currentImage];
+                      console.log("🖼️ Rendering image:", currentImg); // ✅ logging
+
+                      // ✅ تأكد إن فيه src
+                      if (!currentImg?.src) {
+                        return (
+                          <Box
+                            sx={{
+                              width: "100%",
+                              height: "100%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "white",
+                              flexDirection: "column",
+                            }}
+                          >
+                            <Typography fontSize="24px">⚠️</Typography>
+                            <Typography fontSize="16px">
+                              No image source available
+                            </Typography>
+                          </Box>
+                        );
+                      }
+
+                      // ✅ لو الصورة DICOM حقيقية (مش demo و مش local)
+                      if (
+                        isDicomFile(currentImg?.type, currentImg?.fileName) &&
+                        !currentImg?.id?.startsWith("demo-") &&
+                        !currentImg?.isLocal
+                      ) {
+                        return (
+                          <Box
+                            ref={imageRef}
+                            className="dicom-viewer-element"
+                            sx={{
+                              width: "100%",
+                              height: "100%",
+                              bgcolor: "#000",
+                            }}
+                          />
+                        );
+                      }
+
+                      // ✅ للصور العادية (بما فيها الـ local images والـ default)
+                      return (
+                        <img
+                          ref={imageRef}
+                          src={getImageSrc(currentImg)}
+                          alt={currentImg?.description || "No image"}
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: "100%",
+                            objectFit: "contain",
+                            ...getImageStyle(),
+                          }}
+                          onError={(e) => {
+                            console.error(
+                              "❌ Failed to load main image:",
+                              currentImg
+                            );
+                            console.error(
+                              "❌ Image src:",
+                              currentImg.src?.substring(0, 100)
+                            );
+                            e.target.src =
+                              "https://via.placeholder.com/400x400/5cb998/ffffff?text=Image+Not+Found";
+                          }}
+                          onLoad={() => {
+                            console.log("✅ Main image loaded successfully");
+                          }}
+                        />
+                      );
+                    })()
                   ) : (
-                    // ✅ لو مفيش صور، اعرض رسالة في الـ viewer كمان
+                    // ✅ لو مفيش صور أو الـ index غلط
                     <Box
                       sx={{
                         width: "100%",
@@ -846,9 +1056,19 @@ export default function DicomViewer() {
                       }}
                     >
                       <Typography fontSize="32px">🩻</Typography>
-                      <Typography fontSize="16px">No image selected</Typography>
+                      <Typography fontSize="16px">
+                        {images.length === 0
+                          ? "No images available"
+                          : "Invalid image index"}
+                      </Typography>
+                      <Typography fontSize="12px" color="text.secondary">
+                        {images.length === 0
+                          ? "Upload images to view them here"
+                          : `Current index: ${currentImage}, Total: ${images.length}`}
+                      </Typography>
                     </Box>
                   )}
+
                   {/* Image Overlay Info */}
                   <Box
                     sx={{
@@ -883,7 +1103,7 @@ export default function DicomViewer() {
                   </Box>
 
                   {/* Bottom Info */}
-                  {images[currentImage]?.uploadDate && ( // ✅ أضف ?.
+                  {images[currentImage]?.uploadDate && (
                     <Box
                       sx={{
                         position: "absolute",
@@ -899,7 +1119,7 @@ export default function DicomViewer() {
                       <Typography variant="caption">
                         Uploaded:{" "}
                         {new Date(
-                          images[currentImage]?.uploadDate // ✅ أضف ?.
+                          images[currentImage]?.uploadDate
                         )?.toLocaleDateString()}
                       </Typography>
                     </Box>

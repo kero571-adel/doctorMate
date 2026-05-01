@@ -80,6 +80,7 @@ export default function MedicalImaging() {
   const [localImages, setLocalImages] = useState([]);
   const appoinDetails = useSelector((state) => state.patientdet.dataApp);
   const [hiddenDefaultImages, setHiddenDefaultImages] = useState([]);
+  const [loadingFailed, setLoadingFailed] = useState(true);
   const navigate = useNavigate();
   console.log(
     "🚀 ~ file: uploadImage.jsx:34 ~ MedicalImaging ~ appoinDetails:",
@@ -165,7 +166,16 @@ export default function MedicalImaging() {
       return [];
     }
   };
-
+  // ✅ التحقق من حالة الـ Backend
+  useEffect(() => {
+    if (appoinDetails?.data?.medicalImages?.length > 0) {
+      // لو فيه صور من الـ Backend → التحميل نجح
+      setLoadingFailed(false);
+    } else {
+      // لو مفيش صور → التحميل فشل أو مفيش صور أصلاً
+      setLoadingFailed(true);
+    }
+  }, [appoinDetails?.data?.medicalImages]);
   const saveToLocalStorage = (images) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(images));
@@ -173,20 +183,52 @@ export default function MedicalImaging() {
       console.error("Error saving to localStorage:", error);
     }
   };
+  // ✅ دالة لتحويل File أو Blob إلى Base64
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result); // ده هيطلع: data:image/jpeg;base64,/9j/4AAQ...
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
-  const addImageToLocalStorage = (imageData) => {
+  // ✅ الجديد: استخدام Base64 عشان الصورة تفضل شغالة بعد الـ refresh وفي الصفحات التانية
+  const addImageToLocalStorage = async (imageData) => {
     const storedImages = getStoredImages();
+
+    // ✅ تحويل الصورة لـ Base64
+    let base64Src = imageData.src;
+
+    // لو فيه file ومش فيه src، أو الـ src ده blob URL → نحوله لـ Base64
+    if (imageData.file && (!base64Src || base64Src.startsWith("blob:"))) {
+      try {
+        base64Src = await fileToBase64(imageData.file);
+      } catch (error) {
+        console.error("❌ Failed to convert file to base64:", error);
+        base64Src = imageData.src; // نفضل على القديم لو فشلنا
+      }
+    }
+    // لو الـ src ده blob URL بس مفيش file → نحاول نجيب الـ blob من الـ URL
+    else if (base64Src?.startsWith("blob:")) {
+      try {
+        const response = await fetch(base64Src);
+        const blob = await response.blob();
+        base64Src = await fileToBase64(blob);
+      } catch (error) {
+        console.error("❌ Failed to convert blob URL to base64:", error);
+      }
+    }
+
     const newImage = {
       ...imageData,
       id: `local-${Date.now()}`,
       appointmentId: appoinDetails?.data?.id || "",
       uploadedAt: new Date().toISOString(),
       isLocal: true,
-      // ✅ تأكد إن الـ src موجود وصحيح
-      src:
-        imageData.src ||
-        (imageData.file ? URL.createObjectURL(imageData.file) : null),
+      src: base64Src, // ✅ ده هيبقى "data:image/jpeg;base64,/9j/4AAQ..."
     };
+
     const updatedImages = [newImage, ...storedImages];
     saveToLocalStorage(updatedImages);
     return newImage;
@@ -537,10 +579,11 @@ export default function MedicalImaging() {
       ).unwrap();
 
       // ✅ ثانياً: لو نجح الـ Backend، احفظ في localStorage (مش قبل)
-      const localImage = addImageToLocalStorage({
+      const localImage = await addImageToLocalStorage({
+        // ✅ أضف await هنا
         fileName: file.name,
         description: description || "",
-        src: URL.createObjectURL(file),
+        file: file, // ✅ ابعت الـ file عشان يتحول لـ Base64
         size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
         fileType: file.name.split(".").pop().toLowerCase(),
         modality: "DX",
@@ -802,26 +845,51 @@ export default function MedicalImaging() {
     }
   }, [error, showSnackbar]);
   const allGalleryImages = useMemo(() => {
-    // ✅ دمج الـ local images مع الـ default images (باستثناء المخفية)
+    const appointmentId = appoinDetails?.data?.id;
 
-    // 1️⃣ فلتر الـ default images: استبعد المكرر + استبعد المخفي
-    const visibleDefaultImages = defaultMedicalImages
-      .filter(
-        (defaultImg) =>
-          !localImages.some(
-            (localImg) => localImg.fileName === defaultImg.fileName
+    // ✅ 1️⃣ جهز الصور المحلية (من localStorage) لنفس الـ appointmentId
+    const localImagesForAppointment = localImages
+      .filter((img) => img.appointmentId === appointmentId)
+      .filter((img) => !hiddenDefaultImages.includes(img.id));
+
+    let resultImages = [];
+
+    // ✅ 2️⃣ لو التحميل نجح (السيرفر شغال) وفيه صور من الـ Backend
+    if (!loadingFailed && appoinDetails?.data?.medicalImages?.length > 0) {
+      const backendImages = appoinDetails.data.medicalImages.filter(
+        (backendImg) =>
+          !localImagesForAppointment.some(
+            (localImg) => localImg.fileName === backendImg.fileName
           )
-      )
-      .filter((defaultImg) => !hiddenDefaultImages.includes(defaultImg.id)); // ✅ استبعد المخفية
+      );
 
-    // 2️⃣ فلتر الـ local images: استبعد المخفية (لو في حاجة حصلت)
-    const visibleLocalImages = localImages.filter(
-      (img) => !hiddenDefaultImages.includes(img.id)
-    );
+      // ✅ الصور المحلية تظهر الأول، وبعدين صور الـ Backend
+      resultImages = [...localImagesForAppointment, ...backendImages];
+    }
+    // ✅ 3️⃣ لو التحميل فشل (السيرفر مش شغال) → اعرض الـ default images
+    else if (loadingFailed) {
+      // خلط الـ default images مع الصور المحلية
+      resultImages = [...localImagesForAppointment, ...defaultMedicalImages];
+    }
+    // ✅ 4️⃣ لو مفيش صور من الـ Backend خالص
+    else {
+      resultImages = [...localImagesForAppointment, ...defaultMedicalImages];
+    }
 
-    // 3️⃣ ارجع الاتنين مع بعض
-    return [...visibleLocalImages, ...visibleDefaultImages];
-  }, [localImages, hiddenDefaultImages]); // ✅ أضف hiddenDefaultImages للـ dependencies
+    // ✅ لو مفيش صور خالص
+    if (resultImages.length === 0) {
+      return [];
+    }
+
+    console.log("📸 Final images array:", resultImages); // ✅ logging
+    return resultImages;
+  }, [
+    localImages,
+    hiddenDefaultImages,
+    appoinDetails?.data?.medicalImages,
+    appoinDetails?.data?.id,
+    loadingFailed,
+  ]);
   useEffect(() => {
     const elements = document.querySelectorAll(".cornerstone-element");
 
@@ -1350,13 +1418,6 @@ export default function MedicalImaging() {
                   mb={0.5}
                 >
                   No images uploaded yet
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  fontSize={{ xs: "11px", sm: "12px" }}
-                >
-                  Start by uploading medical images in DICOM format
                 </Typography>
               </Box>
             ) : (
