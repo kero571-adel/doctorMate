@@ -189,10 +189,12 @@ export default function Patients() {
   const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
   const ITEM_LIMIT = 4;
   const pateintDet = useSelector((state) => state.patients.patientDet);
+
   const pateintDet2 = useSelector((state) => state.patients.patientDet2);
   const patientDetails = useSelector((state) => state.patientdet.datapatient);
   const patientDetails2 = useSelector((state) => state.patientdet.datapatient2);
   const { patients, error } = useSelector((state) => state.patients);
+
   function handleNextPatientClick() {
     dispatch(setpatientDet(patientDetails2.data.basicInfo));
     for (let index = 0; index < patients.length; index++) {
@@ -1198,10 +1200,9 @@ export default function Patients() {
                       </Button> */}
                     </Stack>
                     {displayedMedicalImages.length === 0 ? (
-    
                       <Box
                         sx={{
-                          color:"text.secondary",
+                          color: "text.secondary",
                           p: 4,
                           textAlign: "center",
                           bgcolor: "rgba(82, 172, 140, 0.05)",
@@ -1386,7 +1387,7 @@ export default function Patients() {
             {/* RIGHT COLUMN */}
             <Grid size={{ xs: 12, md: 4 }}>
               {/* Prescriptions */}
-              <Card sx={{ ...cardStyle, mt: 2,mb:2 }}>
+              <Card sx={{ ...cardStyle, mt: 2, mb: 2 }}>
                 {/* Header - Compact */}
                 <Stack
                   direction={{ xs: "column", sm: "row" }}
@@ -1429,7 +1430,6 @@ export default function Patients() {
                     border: "1px solid #e0e0e0",
                     borderRadius: 2,
                     overflowX: "auto",
-                   
                   }}
                 >
                   {visibleMedications.length > 0 ? (

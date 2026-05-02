@@ -206,7 +206,7 @@ export default function MedicalImaging() {
         base64Src = await fileToBase64(imageData.file);
       } catch (error) {
         console.error("❌ Failed to convert file to base64:", error);
-        base64Src = imageData.src; // نفضل على القديم لو فشلنا
+        base64Src = imageData.src;
       }
     }
     // لو الـ src ده blob URL بس مفيش file → نحاول نجيب الـ blob من الـ URL
@@ -226,14 +226,15 @@ export default function MedicalImaging() {
       appointmentId: appoinDetails?.data?.id || "",
       uploadedAt: new Date().toISOString(),
       isLocal: true,
-      src: base64Src, // ✅ ده هيبقى "data:image/jpeg;base64,/9j/4AAQ..."
+      src: base64Src,
     };
 
     const updatedImages = [newImage, ...storedImages];
     saveToLocalStorage(updatedImages);
-    return newImage;
-  };
 
+    // ✅ نرجع الـ newImage والـ updatedImages مع بعض
+    return { newImage, updatedImages };
+  };
   const removeImageFromLocalStorage = (imageId) => {
     const storedImages = getStoredImages();
     const updatedImages = storedImages.filter((img) => img.id !== imageId);
@@ -279,10 +280,10 @@ export default function MedicalImaging() {
     return "https://via.placeholder.com/200x200/5cb998/ffffff?text=No+Image";
   };
   // ✅ تحميل الصور من localStorage
-  useEffect(() => {
-    const stored = getStoredImages();
-    setLocalImages(stored);
-  }, [appoinDetails?.data?.id]);
+  // useEffect(() => {
+  //   const stored = getStoredImages();
+  //   setLocalImages(stored);
+  // }, [appoinDetails?.data?.id]);
   // ✅ دالة لعرض محتوى الصورة
   // const renderImageContent = (image) => {
   //   const isDicomFile =
@@ -556,14 +557,13 @@ export default function MedicalImaging() {
       status: "uploading",
     };
     setUploadingFiles((prev) => [...prev, newFile]);
-
+  
     try {
       const formData = new FormData();
       formData.append("File", file);
       formData.append("Description", description || "");
       formData.append("AppointmentId", appoinDetails?.data?.id || "");
-
-      // ✅ أولاً: حاول ترفع للـ Backend
+  
       await dispatch(
         addMedicalImg({
           formData,
@@ -577,67 +577,51 @@ export default function MedicalImaging() {
           },
         })
       ).unwrap();
-
-      // ✅ ثانياً: لو نجح الـ Backend، احفظ في localStorage (مش قبل)
-      const localImage = await addImageToLocalStorage({
-        // ✅ أضف await هنا
-        fileName: file.name,
-        description: description || "",
-        file: file, // ✅ ابعت الـ file عشان يتحول لـ Base64
-        size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
-        fileType: file.name.split(".").pop().toLowerCase(),
-        modality: "DX",
-      });
-
-      // ✅ حدّث الـ localImages state
-      setLocalImages((prev) => [localImage, ...prev]);
-
-      // نظّف الـ uploading files
+  
+      // ✅ البق الأول متصلح: addImageToLocalStorage بياخد await الأول
+      const { newImage: localStoredImage, updatedImages } =
+        await addImageToLocalStorage({
+          fileName: file.name,
+          description: description || "",
+          file: file,
+          size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+          fileType: file.name.split(".").pop().toLowerCase(),
+          modality: "DX",
+        });
+  
+      // ✅ دلوقتي updatedImages موجودة، نحدّث الـ state
+      setLocalImages(updatedImages);
+  
       setUploadingFiles((prev) => prev.filter((f) => f.id !== uploadId));
-
-      const newImage = {
-        id: uploadId,
-        name: file.name,
-        fileName: file.name,
-        description,
-        uploadedAt: "Just now",
-        isDicom: true,
-        src: URL.createObjectURL(file),
-        size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
-        modality: "DX",
-      };
-
-      setDisplayedImages((prev) =>
-        [newImage, ...prev].slice(0, currentPage * itemsPerPage)
-      );
+  
       showSnackbar(`${file.name} uploaded successfully`, "success");
-
-      // ✅ Refresh gallery section only
+  
       if (selectedPatient?.id) {
         dispatch(getMedicalImg(selectedPatient?.id));
       }
     } catch (err) {
       console.error("❌ Upload error full details:", err);
-
       const serverErrorMessage = extractServerError(err);
-
-      // ✅ لو الـ Backend فشل، احفظ في localStorage كـ fallback
-      const localImage = addImageToLocalStorage({
-        fileName: file.name,
-        description: description || "",
-        src: URL.createObjectURL(file),
-        size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
-        fileType: file.name.split(".").pop().toLowerCase(),
-        modality: "DX",
-      });
-
-      setLocalImages((prev) => [localImage, ...prev]);
-
+  
+      // ✅ البق الثاني متصلح: await + destructuring صح
+      const { newImage: localImage, updatedImages } =
+        await addImageToLocalStorage({
+          fileName: file.name,
+          description: description || "",
+          file: file,
+          size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+          fileType: file.name.split(".").pop().toLowerCase(),
+          modality: "DX",
+        });
+  
+      // ✅ البق الثالث متصلح: بنحدّث localImages مش displayedImages
+      setLocalImages(updatedImages);
+  
       showSnackbar(
         `Saved locally: ${file.name}. Server unavailable: ${serverErrorMessage}`,
         "warning"
       );
-
+  
       setTimeout(() => {
         setUploadingFiles((prev) => prev.filter((f) => f.id !== uploadId));
       }, 1500);
@@ -844,8 +828,16 @@ export default function MedicalImaging() {
       showSnackbar(message, "error");
     }
   }, [error, showSnackbar]);
+  useEffect(() => {
+    const appointmentId = appoinDetails?.data?.id;
+    if (appointmentId) {
+      const stored = getStoredImages();
+      setLocalImages(stored);
+    }
+  }, [appoinDetails?.data?.id]);
   const allGalleryImages = useMemo(() => {
     const appointmentId = appoinDetails?.data?.id;
+    const backendImages = appoinDetails?.data?.medicalImages || [];
 
     // ✅ 1️⃣ جهز الصور المحلية (من localStorage) لنفس الـ appointmentId
     const localImagesForAppointment = localImages
@@ -854,34 +846,52 @@ export default function MedicalImaging() {
 
     let resultImages = [];
 
-    // ✅ 2️⃣ لو التحميل نجح (السيرفر شغال) وفيه صور من الـ Backend
-    if (!loadingFailed && appoinDetails?.data?.medicalImages?.length > 0) {
-      const backendImages = appoinDetails.data.medicalImages.filter(
+    // ✅ 2️⃣ لو فيه صور من الـ Backend
+    if (backendImages.length > 0) {
+      // منع التكرار (لو فيه صورة محلية بنفس الاسم)
+      const uniqueBackendImages = backendImages.filter(
         (backendImg) =>
           !localImagesForAppointment.some(
             (localImg) => localImg.fileName === backendImg.fileName
           )
       );
 
-      // ✅ الصور المحلية تظهر الأول، وبعدين صور الـ Backend
-      resultImages = [...localImagesForAppointment, ...backendImages];
+      // ✅ 3️⃣ لو الـ Orthanc server مش شغال → اعرض الـ default images
+      if (loadingFailed) {
+        resultImages = [
+          ...localImagesForAppointment,
+          ...uniqueBackendImages,
+          ...defaultMedicalImages,
+        ];
+      }
+      // ✅ 4️⃣ لو الـ Orthanc server شغال → متعرضش الـ default images
+      else {
+        resultImages = [...localImagesForAppointment, ...uniqueBackendImages];
+      }
     }
-    // ✅ 3️⃣ لو التحميل فشل (السيرفر مش شغال) → اعرض الـ default images
-    else if (loadingFailed) {
-      // خلط الـ default images مع الصور المحلية
-      resultImages = [...localImagesForAppointment, ...defaultMedicalImages];
-    }
-    // ✅ 4️⃣ لو مفيش صور من الـ Backend خالص
+    // ✅ 5️⃣ لو مفيش صور من الـ Backend خالص → متظهرش الـ default images
+    // (مفيش Backend = مفيش Default)
     else {
-      resultImages = [...localImagesForAppointment, ...defaultMedicalImages];
+      resultImages = [...localImagesForAppointment];
     }
+
+    console.log("📸 Displayed Medical Images:", {
+      local: localImagesForAppointment.length,
+      backend: backendImages.length,
+      default:
+        backendImages.length > 0 && loadingFailed
+          ? defaultMedicalImages.length
+          : 0,
+      total: resultImages.length,
+      serverStatus: loadingFailed ? "FAILED" : "WORKING",
+      showDefault: backendImages.length > 0 && loadingFailed ? "YES" : "NO",
+    });
 
     // ✅ لو مفيش صور خالص
     if (resultImages.length === 0) {
       return [];
     }
 
-    console.log("📸 Final images array:", resultImages); // ✅ logging
     return resultImages;
   }, [
     localImages,
