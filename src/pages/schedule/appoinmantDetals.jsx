@@ -41,15 +41,12 @@ import MedicalServicesIcon from "@mui/icons-material/MedicalServices";
 import ImageIcon from "@mui/icons-material/Image";
 import AddAPhotoIcon from "@mui/icons-material/AddAPhoto";
 import LinkIcon from "@mui/icons-material/Link";
-import VideocamIcon from "@mui/icons-material/Videocam";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import StickyNote2Icon from "@mui/icons-material/StickyNote2";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PersonIcon from "@mui/icons-material/Person";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import MedicalRecord from "./medicalRecord";
 import AddPrescription from "./Modal/prescriptionModal";
 import MedicalModal from "./Modal/MedicalModal";
 import AddDiagnosis from "./Modal/diagnosis";
@@ -66,11 +63,9 @@ import { setSelectedPatient2 } from "../../redux/schedule/schedule";
 import { clearSessionError } from "../../redux/communication/communicationSlice";
 // ✅ NEW: Import startSession for communication
 import { startSession } from "../../redux/communication/communicationSlice";
-import Snackbar from "@mui/material/Snackbar";
 import { useSnackbar } from "../../hooks/useSnackbar";
 import GlobalSnackbar from "../../components/GlobalSnackbar";
-import CloseIcon from "@mui/icons-material/Close";
-import api from "../../utils/api"; // ✅ تأكد من استيراد api للتعامل مع الأخطاء
+import api from "../../utils/api";
 
 const cardStyle = {
   p: { xs: 2, sm: 3 },
@@ -123,6 +118,7 @@ export default function AppointmentsDetails() {
   const [localMedicalImages, setLocalMedicalImages] = useState([]);
   const patientDetails = useSelector((state) => state.patientdet.datapatient);
   const appoinDetails = useSelector((state) => state.patientdet.dataApp);
+  console.log("appoinDetails", appoinDetails);
   const appoinDetails2 = useSelector((state) => state.patientdet.dataApp2);
   const defaultMedicalImages = [
     {
@@ -535,27 +531,56 @@ export default function AppointmentsDetails() {
     : prescriptionsList.slice(0, 4);
 
   const displayedMedicalImages = useMemo(() => {
+    const appointmentId = appoinDetails?.data?.id;
     const backendImages = appoinDetails?.data?.medicalImages || [];
 
-    // ✅ 1️⃣ لو فيه صور محلية، اعرضها (مع منع التكرار مع الـ backend)
-    if (localMedicalImages.length > 0) {
+    const localImagesForAppointment = localMedicalImages.filter(
+      (img) => img.appointmentId === appointmentId
+    );
+
+    let resultImages = [...localImagesForAppointment];
+
+    if (backendImages.length > 0) {
       const uniqueBackendImages = backendImages.filter(
         (backendImg) =>
-          !localMedicalImages.some(
+          !localImagesForAppointment.some(
             (localImg) => localImg.fileName === backendImg.fileName
           )
       );
-      return [...localMedicalImages, ...uniqueBackendImages];
-    }
 
-    // ✅ 2️⃣ لو مفيش صور محلية وفيه صور من الـ Backend، اعرضها
-    if (backendImages.length > 0) {
-      return backendImages;
+      if (medicalImagesLoadingFailed) {
+        resultImages = [
+          ...localImagesForAppointment,
+          ...uniqueBackendImages,
+          ...defaultMedicalImages,
+        ];
+      } else {
+        resultImages = [...localImagesForAppointment, ...uniqueBackendImages];
+      }
     }
+    // ✅ 5️⃣ لو مفيش صور من الـ Backend خالص → متظهرش الـ default images
+    // (مفيش Backend = مفيش Default)
 
-    // ✅ 3️⃣ لو مفيش حاجة خالص (لا local ولا backend)، اعرض الـ default images
-    return defaultMedicalImages;
-  }, [appoinDetails?.data?.medicalImages, localMedicalImages]);
+    console.log("📸 Displayed Medical Images:", {
+      local: localImagesForAppointment.length,
+      backend: backendImages.length,
+      default:
+        backendImages.length > 0 && medicalImagesLoadingFailed
+          ? defaultMedicalImages.length
+          : 0,
+      total: resultImages.length,
+      serverStatus: medicalImagesLoadingFailed ? "FAILED" : "WORKING",
+      showDefault:
+        backendImages.length > 0 && medicalImagesLoadingFailed ? "YES" : "NO",
+    });
+
+    return resultImages;
+  }, [
+    localMedicalImages,
+    appoinDetails?.data?.medicalImages,
+    appoinDetails?.data?.id,
+    medicalImagesLoadingFailed,
+  ]);
   useEffect(() => {
     if (!appoinDetails?.data?.medicalImages?.length) {
       return;
