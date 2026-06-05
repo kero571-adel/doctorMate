@@ -33,10 +33,8 @@ export const subscribeToSessionMessages = (sessionId, onMessagesChange) => {
           id: doc.id,
           ...data,
 
-          // ✅ 2. تطبيع حقل النص: خذ النص من أي حقل موجود
           text: data.text || data.content || data.body || "",
 
-          // ✅ 3. تحويل Firebase Timestamp لـ ISO String عشان Redux
           timestamp: data.timestamp?.toDate
             ? data.timestamp.toDate() // Firebase Timestamp → Date
             : data.createdAt

@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../utils/api";
-import { clearData } from "../imageViwer/data";
 
 // ========================== overViewSec2 profile ==========================
 export const addmedical = createAsyncThunk(

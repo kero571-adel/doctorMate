@@ -263,7 +263,7 @@ export default function AppointmentsDetails() {
   };
 
   const handleImageClick = (image) => {
-    navigate("/dicom/imageViwer", {
+    navigate("/imageViwer", {
       state: { image, allImages: appoinDetails?.data?.medicalImages },
     });
   };
@@ -581,44 +581,44 @@ export default function AppointmentsDetails() {
     appoinDetails?.data?.id,
     medicalImagesLoadingFailed,
   ]);
-  useEffect(() => {
-    if (!appoinDetails?.data?.medicalImages?.length) {
-      return;
-    }
+  // useEffect(() => {
+  //   if (!appoinDetails?.data?.medicalImages?.length) {
+  //     return;
+  //   }
 
-    const elements = document.querySelectorAll(".appointment-dicom-element");
+  //   const elements = document.querySelectorAll(".appointment-dicom-element");
 
-    elements.forEach((el, index) => {
-      const image = appoinDetails?.data?.medicalImages?.[index];
-      if (!image || !el) return;
+  //   elements.forEach((el, index) => {
+  //     const image = appoinDetails?.data?.medicalImages?.[index];
+  //     if (!image || !el) return;
 
-      // ✅ لو الصورة من الـ default، متحاولش تحملها من السيرفر
-      if (image.id?.startsWith("demo-")) {
-        return;
-      }
+  //     // ✅ لو الصورة من الـ default، متحاولش تحملها من السيرفر
+  //     if (image.id?.startsWith("demo-")) {
+  //       return;
+  //     }
 
-      const isDicom = isDicomFile(image.fileType, image.fileName);
-      if (isDicom && image.viewerUrl) {
-        loadDicomOnElement(el, image.viewerUrl, {
-          baseUrl: import.meta.env.VITE_ORTHANC_URL || "http://localhost:8042",
-          fitToWindow: true,
-          onLoading: () => console.log("🔄 Loading medical image..."),
-          onSuccess: () => {
-            console.log("✅ Medical image loaded");
-            setMedicalImagesLoadingFailed(false); // ✅ التحميل نجح
-          },
-          onError: (err) => {
-            console.error(`❌ Failed to load ${image.fileName}:`, err);
-            setMedicalImagesLoadingFailed(true); // ✅ التحميل فشل
-          },
-        });
-      }
-    });
+  //     const isDicom = isDicomFile(image.fileType, image.fileName);
+  //     if (isDicom && image.viewerUrl) {
+  //       loadDicomOnElement(el, image.viewerUrl, {
+  //         baseUrl: import.meta.env.VITE_ORTHANC_URL || "http://localhost:8042",
+  //         fitToWindow: true,
+  //         onLoading: () => console.log("🔄 Loading medical image..."),
+  //         onSuccess: () => {
+  //           console.log("✅ Medical image loaded");
+  //           setMedicalImagesLoadingFailed(false); // ✅ التحميل نجح
+  //         },
+  //         onError: (err) => {
+  //           console.error(`❌ Failed to load ${image.fileName}:`, err);
+  //           setMedicalImagesLoadingFailed(true); // ✅ التحميل فشل
+  //         },
+  //       });
+  //     }
+  //   });
 
-    return () => {
-      elements.forEach((el) => cleanupDicomElement(el));
-    };
-  }, [appoinDetails?.data?.medicalImages]);
+  //   return () => {
+  //     elements.forEach((el) => cleanupDicomElement(el));
+  //   };
+  // }, [appoinDetails?.data?.medicalImages]);
 
   return (
     <>
@@ -1697,18 +1697,23 @@ export default function AppointmentsDetails() {
                                 el &&
                                 isDicomFile(item.fileType, item.fileName) &&
                                 item.viewerUrl &&
-                                !item.id?.startsWith("demo-") // ✅ متحاولش تحمل الـ demo images
+                                !item.id?.startsWith("demo-") &&
+                                !el.dataset.loaded // ← منع التحميل المكرر
                               ) {
+                                el.dataset.loaded = "true";
                                 loadDicomOnElement(el, item.viewerUrl, {
                                   baseUrl:
                                     import.meta.env.VITE_ORTHANC_URL ||
                                     "http://localhost:8042",
                                   fitToWindow: true,
-                                  onError: (err) =>
-                                    console.error(
-                                      `❌ Failed to load ${item.fileName}:`,
-                                      err
-                                    ),
+                                  onSuccess: () => {
+                                    setMedicalImagesLoadingFailed(false);
+                                  },
+                                  onError: (err) => {
+                                    console.error(`❌ Failed:`, err);
+                                    el.dataset.loaded = ""; // ← إعادة تعيين لو فشل
+                                    setMedicalImagesLoadingFailed(true);
+                                  },
                                 });
                               }
                             }}

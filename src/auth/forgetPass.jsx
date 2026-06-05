@@ -10,10 +10,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import EmailIcon from "@mui/icons-material/Email";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  forgotPass,
-  setForgotPasswordEmail,
-} from "../redux/auth/authSlice";
+import { forgotPass, setForgotPasswordEmail } from "../redux/auth/authSlice";
 import { useState, useEffect } from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useNavigate } from "react-router-dom";
@@ -48,11 +45,12 @@ export default function ForgetPass() {
     dispatch(forgotPass({ email: email, isForgetPass: true }))
       .unwrap()
       .then(() => {
-        navigate("/logIn/forgetpass/otp");
+        navigate("/otp");
       })
       .catch((error) => {
+        console.error("Error sending code:", error);
         showSnackbar(
-          error.message || "Failed to send code. Please try again.",
+          error.message || "the email is not found. Please try again.",
           "error"
         );
       });
@@ -217,7 +215,7 @@ export default function ForgetPass() {
               "Send code"
             )}
           </Button>
-
+          {/*
           <Stack
             direction={"row"}
             alignItems={"center"}
@@ -261,6 +259,7 @@ export default function ForgetPass() {
               </span>
             </Typography>
           </Stack>
+          */}
         </Stack>
       </Box>
       <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />

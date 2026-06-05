@@ -1,28 +1,33 @@
 // src/utils/dicomUtils.js
 import cornerstone from "cornerstone-core";
-import cornerstoneWADOImageLoader from "cornerstone-wado-image-loader";
+//import cornerstoneWADOImageLoader from "cornerstone-wado-image-loader";
 
-// ✅ 1. دالة للتحقق إن الملف نوعه DICOM
 export const isDicomFile = (fileType, fileName) => {
   const type = fileType?.toLowerCase();
   const name = fileName?.toLowerCase();
-  return type === ".dcm" || type === ".dicom" || name?.endsWith(".dcm");
+  return (
+    type === ".dcm" ||
+    type === "dcm" || 
+    type === ".dicom" ||
+    type === "dicom" || 
+    name?.endsWith(".dcm") ||
+    name?.endsWith(".dicom") 
+  );
 };
 
-// ✅ 2. دالة لبناء رابط الـ DICOM الصحيح
 export const buildDicomImageUrl = (
   viewerUrl,
   baseUrl = "http://localhost:8042"
 ) => {
   if (!viewerUrl) return null;
+  if (viewerUrl.startsWith("wadouri:")) return viewerUrl;
   const normalized = viewerUrl.replace(/\\/g, "/");
   const fullPath = normalized.startsWith("http")
     ? normalized
-    : `${baseUrl}/${normalized}`;
+    : `${baseUrl.replace(/\/$/, "")}/${normalized.replace(/^\//, "")}`;
   return `wadouri:${fullPath}`;
 };
 
-// ✅ 3. الدالة الأساسية: تحميل وعرض صورة DICOM
 export const loadDicomOnElement = async (element, viewerUrl, options = {}) => {
   const {
     baseUrl = "http://localhost:8042",
@@ -36,9 +41,13 @@ export const loadDicomOnElement = async (element, viewerUrl, options = {}) => {
     onError?.(new Error("Missing element or viewerUrl"));
     return;
   }
-
+  element._isUnmounted = false;
   try {
-    cornerstone.enable(element);
+    try {
+      cornerstone.getEnabledElement(element);
+    } catch {
+      cornerstone.enable(element);
+    }
     onLoading?.();
 
     const imageId = buildDicomImageUrl(viewerUrl, baseUrl);
@@ -55,7 +64,6 @@ export const loadDicomOnElement = async (element, viewerUrl, options = {}) => {
     onSuccess?.(image);
     return image;
   } catch (error) {
-   
     if (element && !element._isUnmounted) {
       element.innerHTML = `
         <div style="color:#fff;text-align:center;padding:20px;font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:#000;">
@@ -70,12 +78,10 @@ export const loadDicomOnElement = async (element, viewerUrl, options = {}) => {
     }
     onError?.(error);
 
-    // ✅ تم إزالة throw error واستبدالها بـ return null
     return null;
   }
 };
 
-// ✅ 4. دالة التنظيف (Cleanup)
 export const cleanupDicomElement = (element) => {
   if (!element) return;
   element._isUnmounted = true;
@@ -86,7 +92,6 @@ export const cleanupDicomElement = (element) => {
   }
 };
 
-// ✅ 5. Helper لـ React (اختياري)
 export const useDicomLoader = (elementRef, viewerUrl, options = {}) => {
   const { baseUrl, onLoading, onSuccess, onError } = options;
   return {
@@ -107,7 +112,6 @@ export const useDicomLoader = (elementRef, viewerUrl, options = {}) => {
   };
 };
 
-// ✅ 6. دالة لعرض الصور العادية (غير DICOM)
 export const getDisplayImageUrl = (
   viewerUrl,
   baseUrl = "http://localhost:8042"

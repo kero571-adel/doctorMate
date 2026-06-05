@@ -1,4 +1,3 @@
-//import { useState } from "react";
 import "./App.css";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import theme from "./theme";
@@ -21,11 +20,7 @@ import { Routes, Route } from "react-router-dom";
 import ImageViwer from "./pages/imageViwer/imageViwer";
 import PatientList from "./pages/pathientList/PatientList";
 import OverView from "./pages/overView/overView";
-import BasicModal from "./pages/schedule/Modal/MedicalModal";
-import AddPrescription from "./pages/schedule/Modal/prescriptionModal";
-import AddDiagnosis from "./pages/schedule/Modal/diagnosis";
 import AppointmentsDetails from "./pages/schedule/appoinmantDetals";
-//import Details1 from "./pages/schedule/details1";
 import MedicalImaging from "./pages/schedule/uploadImage";
 import AppointmentScheduleTable from "./pages/schedule/timeLineAppomint";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -38,9 +33,9 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/logIn" element={<LogIn />} />
         <Route path="/compeleteprofile" element={<ComPro />} />
-        <Route path="/logIn/forgetpass/otp/resetpass" element={<ResetPass />} />
-        <Route path="/logIn/forgetpass" element={<ForgetPass />} />
-        <Route path="/logIn/forgetpass/otp" element={<Otp />} />
+        <Route path="/resetpass" element={<ResetPass />} />
+        <Route path="/forgetpass" element={<ForgetPass />} />
+        <Route path="/otp" element={<Otp />} />
 
         {/* Protected Routes */}
         <Route
@@ -52,7 +47,7 @@ function App() {
           }
         />
         <Route
-          path="/patientlist/patient"
+          path="/patient"
           element={
             <ProtectedRoute>
               <Patients />
@@ -84,7 +79,7 @@ function App() {
           }
         />
         <Route
-          path="/schedule/appointmentsdetails"
+          path="/appointmentsdetails"
           element={
             <ProtectedRoute>
               <AppointmentsDetails />
@@ -100,7 +95,7 @@ function App() {
           }
         />
         <Route
-          path="/dicom/imageViwer"
+          path="/imageViwer"
           element={
             <ProtectedRoute>
               <ImageViwer />

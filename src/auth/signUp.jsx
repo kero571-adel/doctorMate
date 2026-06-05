@@ -34,7 +34,7 @@ export default function SignUp() {
   });
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.auth);
+  const { loading } = useSelector((state) => state.auth);
   // Dropdown State
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -74,6 +74,7 @@ export default function SignUp() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState("Doctor");
   const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
   const isValidEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
@@ -88,8 +89,6 @@ export default function SignUp() {
     handleCloseMenu();
   };
   const handleSignUp = () => {
-    // مفيش حاجة هنا، هنستخدم showSnackbar مباشرة
-
     if (
       !firstName ||
       !lastName ||
@@ -115,7 +114,13 @@ export default function SignUp() {
       showSnackbar("Please enter a valid email", "error");
       return;
     }
-
+    if (!agreeToTerms) {
+      showSnackbar(
+        "⚠️ You must agree to the Terms of Service and Privacy Policy",
+        "warning"
+      );
+      return;
+    }
     const fullName = `${firstName} ${lastName}`;
     const phoneNumber = `${phone}`;
     dispatch(signUp({ fullName, email, phoneNumber, password, role }))
@@ -124,9 +129,8 @@ export default function SignUp() {
         const user = data.data.user;
         if (user?.isVerified === false) {
           dispatch(forgotPass({ email, isForgetPass: false }));
-          navigate("/logIn/forgetpass/otp");
+          navigate("/otp");
         } else {
-          // ✅ لو نجح التسجيل، اعرض رسالة نجاح
           showSnackbar("Account created successfully!", "success");
           navigate("/completeProfile");
         }
@@ -134,10 +138,7 @@ export default function SignUp() {
       .catch((err) => {
         console.error("SignUp failed:", err);
         // ✅ لو فشل، اعرض الخطأ
-        showSnackbar(
-          err || "Sign up failed. Please try again.",
-          "error"
-        );
+        showSnackbar(err || "Sign up failed. Please try again.", "error");
       });
   };
   const getPasswordValidation = (password) => ({
@@ -519,6 +520,8 @@ export default function SignUp() {
             <FormControlLabel
               control={
                 <Checkbox
+                  checked={agreeToTerms}
+                  onChange={(e) => setAgreeToTerms(e.target.checked)}
                   sx={{
                     "& .MuiSvgIcon-root": {
                       color: "primary.main",

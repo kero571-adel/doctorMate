@@ -395,6 +395,7 @@ export default function MedicalImaging() {
         <>
           <Box
             className="cornerstone-element"
+            data-viewer-url={imageUrl}
             sx={{
               position: "absolute",
               top: 0,
@@ -557,13 +558,13 @@ export default function MedicalImaging() {
       status: "uploading",
     };
     setUploadingFiles((prev) => [...prev, newFile]);
-  
+
     try {
       const formData = new FormData();
       formData.append("File", file);
       formData.append("Description", description || "");
       formData.append("AppointmentId", appoinDetails?.data?.id || "");
-  
+
       await dispatch(
         addMedicalImg({
           formData,
@@ -577,7 +578,7 @@ export default function MedicalImaging() {
           },
         })
       ).unwrap();
-  
+
       // ✅ البق الأول متصلح: addImageToLocalStorage بياخد await الأول
       const { newImage: localStoredImage, updatedImages } =
         await addImageToLocalStorage({
@@ -588,21 +589,21 @@ export default function MedicalImaging() {
           fileType: file.name.split(".").pop().toLowerCase(),
           modality: "DX",
         });
-  
+
       // ✅ دلوقتي updatedImages موجودة، نحدّث الـ state
       setLocalImages(updatedImages);
-  
+
       setUploadingFiles((prev) => prev.filter((f) => f.id !== uploadId));
-  
+
       showSnackbar(`${file.name} uploaded successfully`, "success");
-  
+
       if (selectedPatient?.id) {
         dispatch(getMedicalImg(selectedPatient?.id));
       }
     } catch (err) {
       console.error("❌ Upload error full details:", err);
       const serverErrorMessage = extractServerError(err);
-  
+
       // ✅ البق الثاني متصلح: await + destructuring صح
       const { newImage: localImage, updatedImages } =
         await addImageToLocalStorage({
@@ -613,15 +614,15 @@ export default function MedicalImaging() {
           fileType: file.name.split(".").pop().toLowerCase(),
           modality: "DX",
         });
-  
+
       // ✅ البق الثالث متصلح: بنحدّث localImages مش displayedImages
       setLocalImages(updatedImages);
-  
+
       showSnackbar(
         `Saved locally: ${file.name}. Server unavailable: ${serverErrorMessage}`,
         "warning"
       );
-  
+
       setTimeout(() => {
         setUploadingFiles((prev) => prev.filter((f) => f.id !== uploadId));
       }, 1500);
@@ -739,19 +740,18 @@ export default function MedicalImaging() {
         showSnackbar(`Failed to delete image: ${errorMessage}`, "error");
       });
   };
-  // ✅ الجديد:
   const handleViewImage = (image) => {
-    navigate("/dicom/imageViwer", {
+    navigate("/imageViwer", {
       state: {
         image,
-        allImages: allGalleryImages, // ✅ مرّر كل الصور عشان تقدر تتنقل بينهم
+        allImages: allGalleryImages, 
       },
     });
   };
   const handleLoadMore = () => {
     const nextPage = currentPage + 1;
     const endIndex = nextPage * itemsPerPage;
-    const newDisplayedImages = allGalleryImages.slice(0, endIndex); // ✅ استخدم allGalleryImages
+    const newDisplayedImages = allGalleryImages.slice(0, endIndex); 
 
     setDisplayedImages(newDisplayedImages);
     setCurrentPage(nextPage);
@@ -798,27 +798,22 @@ export default function MedicalImaging() {
     };
   }, [selectedPatient?.id, dispatch]);
 
-  // تهيئة الـ WADO Image Loader
-  cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
-  cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
-
-  // إعدادات الـ Loader
-  cornerstoneWADOImageLoader.configure({
-    useWebWorkers: true,
-    decodeConfig: {
-      convertFloatPixelDataToInt: true,
-    },
-  });
-
-  // تسجيل الـ image loaders
-  cornerstone.registerImageLoader(
-    "wadouri",
-    cornerstoneWADOImageLoader.loadImage
-  );
-  cornerstone.registerImageLoader(
-    "dicomweb",
-    cornerstoneWADOImageLoader.loadImage
-  );
+  useEffect(() => {
+    cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+    cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
+    cornerstoneWADOImageLoader.configure({
+      useWebWorkers: true,
+      decodeConfig: { convertFloatPixelDataToInt: true },
+    });
+    cornerstone.registerImageLoader(
+      "wadouri",
+      cornerstoneWADOImageLoader.loadImage
+    );
+    cornerstone.registerImageLoader(
+      "dicomweb",
+      cornerstoneWADOImageLoader.loadImage
+    );
+  }, []);
   useEffect(() => {
     if (error) {
       const message =
@@ -900,33 +895,35 @@ export default function MedicalImaging() {
     appoinDetails?.data?.id,
     loadingFailed,
   ]);
+
   useEffect(() => {
     const elements = document.querySelectorAll(".cornerstone-element");
 
-    elements.forEach((el, index) => {
-      // ✅ استخدم allGalleryImages بدل backendImages
-      const image = allGalleryImages?.[index];
-      if (!image || !el) return;
+    elements.forEach((el) => {
+      if (el.dataset.loaded) return;
 
-      const isDicom = isDicomFile(image.fileType, image.fileName);
-      if (isDicom) {
-        const imageUrl = getImageUrl(image);
-        if (imageUrl) {
-          loadDicomOnElement(el, imageUrl, {
-            baseUrl:
-              import.meta.env.VITE_ORTHANC_URL || "http://localhost:8042",
-            fitToWindow: true,
-            onError: (err) =>
-              console.error(`❌ Failed to load ${image.fileName}:`, err),
-          });
-        }
-      }
+      const viewerUrl = el.dataset.viewerUrl;
+      if (!viewerUrl) return;
+
+      el.dataset.loaded = "true";
+      loadDicomOnElement(el, viewerUrl, {
+        baseUrl: import.meta.env.VITE_ORTHANC_URL || "http://localhost:8042",
+        fitToWindow: true,
+        onSuccess: () => {
+          setLoadingFailed(false);
+        },
+        onError: (err) => {
+          console.error(`❌ Failed to load DICOM:`, err);
+          el.dataset.loaded = "";
+          setLoadingFailed(true);
+        },
+      });
     });
 
     return () => {
       elements.forEach((el) => cleanupDicomElement(el));
     };
-  }, [allGalleryImages]); // ✅ اعتمد على allGalleryImages
+  }, [allGalleryImages]);
 
   return (
     <>

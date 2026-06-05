@@ -180,12 +180,11 @@ export default function Patients() {
   const [openAddPrescription, setopenAddPrescription] = useState(false);
   const [openMedicalModal, setOpenMedicalModal] = useState(false);
   const [openDiagnosis, setOpenDiagnosis] = useState(false);
-  // ✅ States for Show More/Less (Maximum 6 items)
+  // States for Show More/Less (Maximum 6 items)
   const [showAllRecords, setShowAllRecords] = useState(false);
   const [showAllDiagnoses, setShowAllDiagnoses] = useState(false);
   const [showAllPrescriptions, setShowAllPrescriptions] = useState(false);
-  const [medicalImagesLoadingFailed, setMedicalImagesLoadingFailed] =
-    useState(false);
+  const [failedImages, setFailedImages] = useState(new Set());
   const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
   const ITEM_LIMIT = 4;
   const pateintDet = useSelector((state) => state.patients.patientDet);
@@ -194,6 +193,7 @@ export default function Patients() {
   const patientDetails = useSelector((state) => state.patientdet.datapatient);
   const patientDetails2 = useSelector((state) => state.patientdet.datapatient2);
   const { patients, error } = useSelector((state) => state.patients);
+  console.log("patients", patientDetails);
 
   function handleNextPatientClick() {
     dispatch(setpatientDet(patientDetails2.data.basicInfo));
@@ -204,7 +204,6 @@ export default function Patients() {
       }
     }
   }
-  // المريض الحالي
   useEffect(() => {
     if (pateintDet?.id) {
       dispatch(getPatientDetals({ id: pateintDet.id }));
@@ -215,7 +214,6 @@ export default function Patients() {
       showSnackbar(error, "error");
     }
   }, [error, showSnackbar]);
-  // المريض التالي
   useEffect(() => {
     if (pateintDet2?.id) {
       dispatch(getPatientDetals2({ id: pateintDet2.id }));
@@ -241,7 +239,7 @@ export default function Patients() {
     return isToday ? `Today, ${formatted}` : formatted;
   };
 
-  // ✅ Prepare Data with Limits
+  //  Prepare Data with Limits
   const records = patientDetails?.data?.medicalRecords || [];
   const visibleRecords = showAllRecords
     ? records
@@ -261,72 +259,104 @@ export default function Patients() {
 
   const displayImages = patientDetails?.data?.medicalImages;
   const handleImageClick = (image) => {
-    navigate("/dicom/imageViwer", {
+    navigate("/imageViwer", {
       state: { image, allImages: displayImages },
     });
   };
-  // ✅ Cleanup لصور الـ DICOM عند الخروج من الصفحة
+
   useEffect(() => {
     return () => {
-      // تنظيف كل العناصر اللي فيها صور طبية
       document.querySelectorAll(".dicom-thumbnail").forEach((el) => {
         cleanupDicomElement(el);
       });
     };
   }, []);
+  const localStorageImages = useMemo(() => {
+    const appointments = patientDetails?.data?.appointments || [];
+    const images = [];
+
+    appointments.forEach((apt) => {
+      const stored = localStorage.getItem(`medical_images_${apt.id}`);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((img) => {
+              images.push({
+                ...img,
+                fromLocalStorage: true,
+                appointmentId: apt.id,
+              });
+            });
+          }
+        } catch (e) {
+          console.error(
+            `❌ Failed to parse images for appointment ${apt.id}:`,
+            e
+          );
+        }
+      }
+    });
+
+    return images;
+  }, [patientDetails?.data?.appointments]);
 
   const displayedMedicalImages = useMemo(() => {
     const backendImages = patientDetails?.data?.medicalImages || [];
 
-    if (!backendImages.length) {
-      return []; // 1️⃣ مفيش صور من الـ Backend
+    // ✅ شيل من localStorage أي صورة موجودة في Backend بالـ id
+    const uniqueLocalImages = localStorageImages.filter(
+      (localImg) =>
+        !backendImages.some((backendImg) => backendImg.id === localImg.id)
+    );
+
+    if (!backendImages.length && !uniqueLocalImages.length) {
+      return [];
     }
-
-    if (medicalImagesLoadingFailed) {
-      return defaultMedicalImages; // 2️⃣ التحميل فشل → استخدم الـ default
+    if (failedImages.size > 0) {
+      return [...defaultMedicalImages, ...uniqueLocalImages];
     }
+    return [...backendImages, ...uniqueLocalImages];
+  }, [patientDetails?.data?.medicalImages, failedImages, localStorageImages]);
+  // useEffect(() => {
+  //   // لو مفيش صور من الـ Backend، متحاولش تحمل
+  //   if (!patientDetails?.data?.medicalImages?.length) {
+  //     return;
+  //   }
 
-    return backendImages; // 3️⃣ التحميل نجح → استخدم صور الـ Backend
-  }, [patientDetails?.data?.medicalImages, medicalImagesLoadingFailed]);
-  useEffect(() => {
-    // لو مفيش صور من الـ Backend، متحاولش تحمل
-    if (!patientDetails?.data?.medicalImages?.length) {
-      return;
-    }
+  //   const elements = document.querySelectorAll(".dicom-thumbnail");
 
-    const elements = document.querySelectorAll(".dicom-thumbnail");
+  //   elements.forEach((el, index) => {
+  //     const image = patientDetails?.data?.medicalImages?.[index];
+  //     if (!image || !el) return;
 
-    elements.forEach((el, index) => {
-      const image = patientDetails?.data?.medicalImages?.[index];
-      if (!image || !el) return;
+  //     // ✅ لو الصورة من الـ default، متحاولش تحملها من السيرفر
+  //     if (image.id?.startsWith("demo-")) {
+  //       return;
+  //     }
 
-      // ✅ لو الصورة من الـ default، متحاولش تحملها من السيرفر
-      if (image.id?.startsWith("demo-")) {
-        return;
-      }
+  //     const isDicom = isDicomFile(image.fileType, image.fileName);
+  //     if (isDicom && image.viewerUrl) {
+  //       loadDicomOnElement(el, image.viewerUrl, {
+  //         baseUrl: import.meta.env.VITE_ORTHANC_URL || "http://localhost:8042",
+  //         fitToWindow: true,
+  //         onLoading: () => console.log("🔄 Loading medical image..."),
+  //         onSuccess: () => {
+  //           console.log("✅ Medical image loaded");
+  //           setMedicalImagesLoadingFailed(false); // ✅ التحميل نجح
+  //         },
+  //         onError: (err) => {
+  //           console.error(`❌ Failed to load ${image.fileName}:`, err);
+  //           setMedicalImagesLoadingFailed(true); // ✅ التحميل فشل
+  //         },
+  //       });
+  //     }
+  //   });
 
-      const isDicom = isDicomFile(image.fileType, image.fileName);
-      if (isDicom && image.viewerUrl) {
-        loadDicomOnElement(el, image.viewerUrl, {
-          baseUrl: import.meta.env.VITE_ORTHANC_URL || "http://localhost:8042",
-          fitToWindow: true,
-          onLoading: () => console.log("🔄 Loading medical image..."),
-          onSuccess: () => {
-            console.log("✅ Medical image loaded");
-            setMedicalImagesLoadingFailed(false); // ✅ التحميل نجح
-          },
-          onError: (err) => {
-            console.error(`❌ Failed to load ${image.fileName}:`, err);
-            setMedicalImagesLoadingFailed(true); // ✅ التحميل فشل
-          },
-        });
-      }
-    });
-
-    return () => {
-      elements.forEach((el) => cleanupDicomElement(el));
-    };
-  }, [patientDetails?.data?.medicalImages]);
+  //   return () => {
+  //     elements.forEach((el) => cleanupDicomElement(el));
+  //   };
+  // }, [patientDetails?.data?.medicalImages]);
   return (
     <>
       <AddPrescription
@@ -1165,9 +1195,10 @@ export default function Patients() {
                           <ImageIcon sx={{ color: "white", fontSize: 20 }} />
                         </Box>
                         <Typography
+                          variant="h6"
                           fontWeight="700"
                           color="primary.main"
-                          fontSize={{ xs: "12px", md: "18px" }}
+                          fontSize={{ xs: "16px", sm: "18px" }}
                         >
                           Medical Images
                         </Typography>
@@ -1230,26 +1261,26 @@ export default function Patients() {
                             key={item.id || index}
                             className="dicom-thumbnail"
                             onClick={() => handleImageClick(item)}
-                            ref={(el) => {
-                              if (
-                                el &&
-                                isDicomFile(item.fileType, item.fileName) &&
-                                item.viewerUrl &&
-                                !item.id?.startsWith("demo-")
-                              ) {
-                                loadDicomOnElement(el, item.viewerUrl, {
-                                  baseUrl:
-                                    import.meta.env.VITE_ORTHANC_URL ||
-                                    "http://localhost:8042",
-                                  fitToWindow: true,
-                                  onError: (err) =>
-                                    console.error(
-                                      `❌ Failed to load ${item.fileName}:`,
-                                      err
-                                    ),
-                                });
-                              }
-                            }}
+                            // ref={(el) => {
+                            //   if (
+                            //     el &&
+                            //     isDicomFile(item.fileType, item.fileName) &&
+                            //     item.viewerUrl &&
+                            //     !item.id?.startsWith("demo-")
+                            //   ) {
+                            //     loadDicomOnElement(el, item.viewerUrl, {
+                            //       baseUrl:
+                            //         import.meta.env.VITE_ORTHANC_URL ||
+                            //         "http://localhost:8042",
+                            //       fitToWindow: true,
+                            //       onError: (err) =>
+                            //         console.error(
+                            //           `❌ Failed to load ${item.fileName}:`,
+                            //           err
+                            //         ),
+                            //     });
+                            //   }
+                            // }}
                             sx={{
                               width: "100%",
                               paddingTop: "100%",
@@ -1272,6 +1303,39 @@ export default function Patients() {
                             {isDicomFile(item.fileType, item.fileName) &&
                             !item.id?.startsWith("demo-") ? (
                               <Box
+                                ref={(el) => {
+                                  // ← الـ ref ينزل هنا
+                                  if (
+                                    el &&
+                                    item.viewerUrl &&
+                                    !el.dataset.loaded
+                                  ) {
+                                    el.dataset.loaded = "true";
+                                    loadDicomOnElement(el, item.viewerUrl, {
+                                      baseUrl:
+                                        import.meta.env.VITE_ORTHANC_URL ||
+                                        "http://localhost:8042",
+                                      fitToWindow: true,
+                                      onSuccess: () => {
+                                        setFailedImages((prev) => {
+                                          const s = new Set(prev);
+                                          s.delete(item.id);
+                                          return s;
+                                        });
+                                      },
+                                      onError: (err) => {
+                                        console.error(
+                                          `❌ Failed: ${item.fileName}`,
+                                          err
+                                        );
+                                        el.dataset.loaded = "";
+                                        setFailedImages(
+                                          (prev) => new Set([...prev, item.id])
+                                        );
+                                      },
+                                    });
+                                  }
+                                }}
                                 sx={{
                                   position: "absolute",
                                   top: 0,
@@ -1288,7 +1352,12 @@ export default function Patients() {
                                   (item.viewerUrl || item.src)?.startsWith(
                                     "http"
                                   ) ||
-                                  (item.viewerUrl || item.src)?.startsWith("/")
+                                  (item.viewerUrl || item.src)?.startsWith(
+                                    "/"
+                                  ) ||
+                                  (item.viewerUrl || item.src)?.startsWith(
+                                    "data:"
+                                  )
                                     ? item.viewerUrl || item.src
                                     : `${
                                         import.meta.env.VITE_ORTHANC_URL ||
@@ -1313,7 +1382,7 @@ export default function Patients() {
                               />
                             )}
 
-                            {/* ✅ Badge للـ DICOM */}
+                            {/*  Badge للـ DICOM */}
                             {isDicomFile(item.fileType, item.fileName) &&
                               !item.id?.startsWith("demo-") && (
                                 <Box
@@ -1335,7 +1404,7 @@ export default function Patients() {
                                 </Box>
                               )}
 
-                            {/* ✅ Badge للـ Demo Mode */}
+                            {/*  Badge للـ Demo Mode */}
                             {item.id?.startsWith("demo-") && (
                               <Box
                                 sx={{

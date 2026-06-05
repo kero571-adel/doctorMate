@@ -60,7 +60,7 @@ import { useSnackbar } from "../../hooks/useSnackbar";
 import GlobalSnackbar from "../../components/GlobalSnackbar";
 
 export default function DicomViewer() {
-  const [loadingFailed, setLoadingFailed] = useState(true);
+  const [loadingFailed, setLoadingFailed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const [currentImage, setCurrentImage] = useState(0);
@@ -130,34 +130,30 @@ export default function DicomViewer() {
     id: "_",
     lastVisit: "_",
   };
-  // ✅ دالة مساعدة لجلب الـ appointmentId الصحيح من أي مصدر متاح
+  //  دالة مساعدة لجلب الـ appointmentId الصحيح من أي مصدر متاح
   const getAppointmentId = () => {
     return (
       selectedImage?.appointmentId ||
       location.state?.image?.appointmentId ||
       location.state?.allImages?.[0]?.appointmentId ||
-      userInfo?.appointmentId ||
-      userInfo?.id // fallback لو مفيش حاجة تانية
+      userInfo?.appointmentId
     );
   };
   // Add DICOM file to default images
   const images = useMemo(() => {
     const appointmentId = getAppointmentId();
 
-    // ✅ 1️⃣ جهز الصور المحلية (من localStorage) لنفس الـ appointmentId
     const localImagesForAppointment = localMedicalImages
       .filter((img) => img.appointmentId === appointmentId)
       .map((img) => ({
         ...img,
-        type: img.type || img.fileType || ".jpg", // ✅ أضف type لو مفيش
-        thumbnail: img.thumbnail || img.src, // ✅ أضف thumbnail لو مفيش
+        type: img.type || img.fileType || ".jpg",
+        thumbnail: img.thumbnail || img.src,
         uploadDate:
           img.uploadDate || img.uploadedAt || new Date().toISOString(),
       }));
 
-    let resultImages = [];
-
-    // ✅ 2️⃣ لو التحميل نجح (السيرفر شغال) وفيه صور من الـ Backend
+    //  Backend نجح وفيه صور
     if (!loadingFailed && medicalImages?.length > 0) {
       const backendImages = medicalImages.map((img) => ({
         src: img.viewerUrl,
@@ -170,7 +166,6 @@ export default function DicomViewer() {
         appointmentId: img.appointmentId,
       }));
 
-      // منع التكرار (لو فيه صورة محلية بنفس الاسم)
       const uniqueBackendImages = backendImages.filter(
         (backendImg) =>
           !localImagesForAppointment.some(
@@ -178,26 +173,13 @@ export default function DicomViewer() {
           )
       );
 
-      // ✅ الصور المحلية تظهر الأول، وبعدين صور الـ Backend
-      resultImages = [...localImagesForAppointment, ...uniqueBackendImages];
-    }
-    // ✅ 3️⃣ لو التحميل فشل (السيرفر مش شغال) → اعرض الـ default images
-    else if (loadingFailed && medicalImages?.length > 0) {
-      // خلط الـ default images مع الصور المحلية
-      resultImages = [...localImagesForAppointment, ...defaultDicomImages];
-    }
-    // ✅ 4️⃣ لو مفيش صور من الـ Backend خالص
-    else {
-      resultImages = [...localImagesForAppointment, ...defaultDicomImages];
+      return [...localImagesForAppointment, ...uniqueBackendImages];
     }
 
-    // ✅ لو مفيش صور خالص
-    if (resultImages.length === 0) {
-      return [];
-    }
-
-    console.log("📸 Final images array:", resultImages); // ✅ logging
-    return resultImages;
+    // Backend فشل أو مفيش صور → localStorage لو فيه، default لو مفيش
+    return localImagesForAppointment.length > 0
+      ? localImagesForAppointment
+      : defaultDicomImages;
   }, [
     medicalImages,
     loadingFailed,
@@ -207,35 +189,31 @@ export default function DicomViewer() {
     userInfo?.appointmentId,
     userInfo?.id,
   ]);
-
   // Set initial image based on selected image
 
   useEffect(() => {
-    if (selectedImage && medicalImages?.length > 0) {
-      const index = medicalImages.findIndex(
-        (img) => img.id === selectedImage.id
-      );
+    if (selectedImage && images?.length > 0) {
+      const index = images.findIndex((img) => img.id === selectedImage.id);
       if (index !== -1) {
-        setCurrentImage(index); // ✅ من غير +1
+        setCurrentImage(index);
       }
     }
-  }, [selectedImage, medicalImages]);
+  }, [selectedImage, images]);
 
   const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
 
-  // ✅ تحميل وعرض صورة DICOM عند تغيير الصورة الحالية
   useEffect(() => {
     const current = images[currentImage];
     const element = imageRef.current;
 
     if (!element || !current?.src) return;
 
-    // ✅ لو الصورة من الـ default، متحاولش تحملها من السيرفر
+    //  لو الصورة من الـ default، متحاولش تحملها من السيرفر
     if (current.id?.startsWith("demo-")) {
       return;
     }
 
-    // ✅ نظّف فقط لو الصورة السابقة كانت DICOM
+    // نظّف فقط لو الصورة السابقة كانت DICOM
     if (isDicomFile(current.type, current.fileName)) {
       cleanupDicomElement(element);
 
@@ -244,14 +222,14 @@ export default function DicomViewer() {
         fitToWindow: false,
         onLoading: () => console.log("🔄 Loading DICOM from backend..."),
         onSuccess: () => {
-          console.log("✅ Backend DICOM loaded successfully");
-          // ✅ التحميل نجح → نغير loadingFailed لـ false عشان نعرض صور الـ Backend
+          console.log(" Backend DICOM loaded successfully");
+          // التحميل نجح → نغير loadingFailed لـ false عشان نعرض صور الـ Backend
           setLoadingFailed(false);
           setTimeout(() => applyCornerstoneTransforms(), 100);
         },
         onError: (err) => {
           console.error("❌ Backend DICOM failed:", err);
-          // ✅ التحميل فشل → نفضل على الـ default images (loadingFailed = true)
+          //  التحميل فشل → نفضل على الـ default images (loadingFailed = true)
           // مفيش حاجة نتغير هنا لأننا بدأنا بـ true أصلاً
         },
       });
@@ -263,16 +241,16 @@ export default function DicomViewer() {
       }
     };
   }, [currentImage, images]);
-  // ✅ useEffect جديد: يطبق الـ transforms لما الـ controls تتغير
+  //  useEffect جديد: يطبق الـ transforms لما الـ controls تتغير
   useEffect(() => {
     const current = images[currentImage];
-    // ✅ يطبق الـ transforms فقط لو الصورة الحالية نوعها DICOM
+    //  يطبق الـ transforms فقط لو الصورة الحالية نوعها DICOM
     if (isDicomFile(current?.type, current?.fileName)) {
       applyCornerstoneTransforms();
     }
-  }, [zoom, brightness, contrast, rotation, inverted, currentImage]); // ✅ يعتمد على كل الـ controls
+  }, [zoom, brightness, contrast, rotation, inverted, currentImage]); //  يعتمد على كل الـ controls
 
-  // ✅ Cleanup عند الـ unmount
+  //  Cleanup عند الـ unmount
   useEffect(() => {
     return () => {
       document.querySelectorAll(".dicom-viewer-element").forEach((el) => {
@@ -321,7 +299,7 @@ export default function DicomViewer() {
     const newInverted = !inverted;
     setInverted(newInverted);
 
-    // ✅ لو الصورة الحالية DICOM، طبق الـ invert فوراً
+    //  لو الصورة الحالية DICOM، طبق الـ invert فوراً
     if (
       isDicomFile(images[currentImage]?.type, images[currentImage]?.fileName)
     ) {
@@ -359,7 +337,7 @@ export default function DicomViewer() {
       if (viewport) {
         cornerstone.setViewport(element, {
           ...viewport,
-          scale: zoom / 100, // ✅ الزوم هنا بدل setZoom
+          scale: zoom / 100,
           voi: {
             windowWidth: (contrast / 100) * 4096,
             windowCenter: (brightness - 100) * 20,
@@ -373,17 +351,18 @@ export default function DicomViewer() {
     }
   };
 
-  // ✅ دوال التحكم المعدلة عشان تشتغل مع DICOM فوراً
-
   const handleZoomIn = () => {
     const newZoom = Math.min(zoom + 10, 300);
     setZoom(newZoom);
-    // ✅ لو الصورة الحالية DICOM، طبق الـ zoom فوراً
     if (
       isDicomFile(images[currentImage]?.type, images[currentImage]?.fileName)
     ) {
       const element = imageRef.current;
-      if (element) cornerstone.setZoom(element, newZoom / 100);
+      if (element) {
+        const vp = cornerstone.getViewport(element);
+        if (vp)
+          cornerstone.setViewport(element, { ...vp, scale: newZoom / 100 });
+      }
     }
   };
 
@@ -394,7 +373,11 @@ export default function DicomViewer() {
       isDicomFile(images[currentImage]?.type, images[currentImage]?.fileName)
     ) {
       const element = imageRef.current;
-      if (element) cornerstone.setZoom(element, newZoom / 100);
+      if (element) {
+        const vp = cornerstone.getViewport(element);
+        if (vp)
+          cornerstone.setViewport(element, { ...vp, scale: newZoom / 100 });
+      }
     }
   };
 
@@ -477,7 +460,7 @@ export default function DicomViewer() {
     setContrast(100);
     setInverted(false);
 
-    // ✅ لو الصورة الحالية DICOM، طبق الـ reset فوراً
+    //  لو الصورة الحالية DICOM، طبق الـ reset فوراً
     if (
       isDicomFile(images[currentImage]?.type, images[currentImage]?.fileName)
     ) {
@@ -488,14 +471,14 @@ export default function DicomViewer() {
     }
   };
   const getImageStyle = () => {
-    // ✅ لو الصورة الحالية DICOM، مرجعش أي ستايل (لأن Cornerstone هيمسكها)
+    //  لو الصورة الحالية DICOM، مرجعش أي ستايل (لأن Cornerstone هيمسكها)
     if (
       isDicomFile(images[currentImage]?.type, images[currentImage]?.fileName)
     ) {
       return {};
     }
 
-    // ✅ للصور العادية، طبق الـ CSS transforms زي ما هو
+    //  للصور العادية، طبق الـ CSS transforms زي ما هو
     return {
       transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
       filter: `brightness(${brightness}%) contrast(${contrast}%) ${
@@ -508,7 +491,7 @@ export default function DicomViewer() {
   const getImageSrc = (image) => {
     if (!image?.src) return null;
 
-    // ✅ لو الـ src ده Base64 → استخدمه زي ما هو
+    //  لو الـ src ده Base64 → استخدمه زي ما هو
     if (image.src.startsWith("data:")) {
       return image.src;
     }
@@ -523,7 +506,7 @@ export default function DicomViewer() {
       image.src
     }`;
   };
-  // ✅ دالة لتحويل File أو Blob إلى Base64
+  //  دالة لتحويل File أو Blob إلى Base64
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -533,7 +516,7 @@ export default function DicomViewer() {
     });
   };
 
-  // ✅ دالة قراءة الصور المحلية حسب الـ appointmentId
+  //  دالة قراءة الصور المحلية حسب الـ appointmentId
   const getLocalImagesByAppointmentId = (appointmentId) => {
     try {
       const key = `medical_images_${appointmentId}`;
@@ -545,7 +528,7 @@ export default function DicomViewer() {
     }
   };
 
-  // ✅ دالة لتحويل الصور القديمة من Blob إلى Base64
+  //  دالة لتحويل الصور القديمة من Blob إلى Base64
   const migrateBlobImages = async (appointmentId) => {
     if (!appointmentId) return [];
 
@@ -586,14 +569,14 @@ export default function DicomViewer() {
     localStorage.setItem(key, JSON.stringify(migratedImages));
     return migratedImages;
   };
-  // ✅ تحميل الصور المحلية والـ migration
-  // ✅ الجديد: يستخدم الـ appointmentId الصحيح
+  //  تحميل الصور المحلية والـ migration
+  //  الجديد: يستخدم الـ appointmentId الصحيح
   useEffect(() => {
     const appointmentId = getAppointmentId();
 
     if (appointmentId) {
       migrateBlobImages(appointmentId).then((migrated) => {
-        // ✅ فلتر بس الصور اللي لنفس الـ appointmentId
+        //  فلتر بس الصور اللي لنفس الـ appointmentId
         const filteredImages = migrated.filter(
           (img) => img.appointmentId === appointmentId
         );
@@ -862,7 +845,7 @@ export default function DicomViewer() {
                             )}
                           <img
                             src={
-                              // ✅ لو الـ src ده Base64 أو رابط كامل، استخدمه زي ما هو
+                              //  لو الـ src ده Base64 أو رابط كامل، استخدمه زي ما هو
                               image.src?.startsWith("data:") ||
                               image.src?.startsWith("http") ||
                               image.src?.startsWith("/")
@@ -964,12 +947,12 @@ export default function DicomViewer() {
                   {images.length > 0 &&
                   currentImage >= 0 &&
                   currentImage < images.length ? (
-                    // ✅ الصورة موجودة والـ index صحيح
+                    //  الصورة موجودة والـ index صحيح
                     (() => {
                       const currentImg = images[currentImage];
-                      console.log("🖼️ Rendering image:", currentImg); // ✅ logging
+                      console.log("🖼️ Rendering image:", currentImg); //  logging
 
-                      // ✅ تأكد إن فيه src
+                      //  تأكد إن فيه src
                       if (!currentImg?.src) {
                         return (
                           <Box
@@ -991,7 +974,7 @@ export default function DicomViewer() {
                         );
                       }
 
-                      // ✅ لو الصورة DICOM حقيقية (مش demo و مش local)
+                      //  لو الصورة DICOM حقيقية (مش demo و مش local)
                       if (
                         isDicomFile(currentImg?.type, currentImg?.fileName) &&
                         !currentImg?.id?.startsWith("demo-") &&
@@ -1010,7 +993,7 @@ export default function DicomViewer() {
                         );
                       }
 
-                      // ✅ للصور العادية (بما فيها الـ local images والـ default)
+                      //  للصور العادية (بما فيها الـ local images والـ default)
                       return (
                         <img
                           ref={imageRef}
@@ -1035,13 +1018,13 @@ export default function DicomViewer() {
                               "https://via.placeholder.com/400x400/5cb998/ffffff?text=Image+Not+Found";
                           }}
                           onLoad={() => {
-                            console.log("✅ Main image loaded successfully");
+                            console.log(" Main image loaded successfully");
                           }}
                         />
                       );
                     })()
                   ) : (
-                    // ✅ لو مفيش صور أو الـ index غلط
+                    //  لو مفيش صور أو الـ index غلط
                     <Box
                       sx={{
                         width: "100%",
@@ -1214,7 +1197,6 @@ export default function DicomViewer() {
                       value={zoom}
                       onChange={(e, val) => {
                         setZoom(val);
-                        // ✅ لو الصورة الحالية DICOM، طبق الـ zoom فوراً
                         if (
                           isDicomFile(
                             images[currentImage]?.type,
@@ -1223,9 +1205,12 @@ export default function DicomViewer() {
                         ) {
                           const element = imageRef.current;
                           if (element) {
-                            cornerstone.setViewport(element, {
-                              scale: val / 100,
-                            });
+                            const vp = cornerstone.getViewport(element);
+                            if (vp)
+                              cornerstone.setViewport(element, {
+                                ...vp,
+                                scale: val / 100,
+                              });
                           }
                         }
                       }}
@@ -1261,7 +1246,7 @@ export default function DicomViewer() {
                     </Stack>
                     <Slider
                       value={brightness}
-                      onChange={handleBrightnessChange} // ✅ غيّر من (e, val) => setBrightness(val) للدالة الجديدة
+                      onChange={handleBrightnessChange} //  غيّر من (e, val) => setBrightness(val) للدالة الجديدة
                       min={0}
                       max={200}
                       sx={{ color: "primary.main" }}
@@ -1293,7 +1278,7 @@ export default function DicomViewer() {
                     </Stack>
                     <Slider
                       value={contrast}
-                      onChange={handleContrastChange} // ✅ غيّر من (e, val) => setContrast(val) للدالة الجديدة
+                      onChange={handleContrastChange} //  غيّر من (e, val) => setContrast(val) للدالة الجديدة
                       min={0}
                       max={200}
                       sx={{ color: "primary.main" }}
@@ -1420,64 +1405,71 @@ export default function DicomViewer() {
                     icon: <Badge />,
                     color: "#9c27b0",
                   },
-                ].map((item, index) => (
-                  <Card
-                    key={item.id || index}
-                    sx={{
-                      width: "200px",
-                      minWidth: "200px",
-                      borderRadius: "16px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                      transition: "all 0.3s ease",
-                      flexShrink: 0,
-                      "&:hover": {
-                        transform: "translateY(-4px)",
-                        boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-                      },
-                    }}
-                  >
-                    <CardContent
+                ]
+                  .filter(
+                    (item) =>
+                      item.value &&
+                      item.value !== "_" &&
+                      item.value !== "undefined years"
+                  )
+                  .map((item, index) => (
+                    <Card
+                      key={item.id || index}
                       sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        justifyContent: "space-between",
-                        textAlign: { xs: "center", sm: "left" },
+                        width: "200px",
+                        minWidth: "200px",
+                        borderRadius: "16px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                        transition: "all 0.3s ease",
+                        flexShrink: 0,
+                        "&:hover": {
+                          transform: "translateY(-4px)",
+                          boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+                        },
                       }}
                     >
-                      <Box
+                      <CardContent
                         sx={{
-                          width: 45,
-                          height: 45,
-                          borderRadius: "12px",
                           display: "flex",
                           alignItems: "center",
-                          justifyContent: "center",
-                          bgcolor: item.color + "20",
-                          color: item.color,
+                          gap: 2,
+                          justifyContent: "space-between",
+                          textAlign: { xs: "center", sm: "left" },
                         }}
                       >
-                        {item.icon}
-                      </Box>
+                        <Box
+                          sx={{
+                            width: 45,
+                            height: 45,
+                            borderRadius: "12px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            bgcolor: item.color + "20",
+                            color: item.color,
+                          }}
+                        >
+                          {item.icon}
+                        </Box>
 
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
-                          {item.label}
-                        </Typography>
-                        <Typography variant="body1" fontWeight={600}>
-                          {item.value}
-                        </Typography>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            {item.label}
+                          </Typography>
+                          <Typography variant="body1" fontWeight={600}>
+                            {item.value}
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  ))}
               </Stack>
 
               <Divider sx={{ my: 3 }} />
 
               <Button
                 onClick={() => {
-                  navigate("/patientlist/patient");
+                  navigate("/patient");
                 }}
                 fullWidth
                 variant="contained"

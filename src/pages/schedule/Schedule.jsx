@@ -1073,7 +1073,7 @@ export default function Schedule() {
                               null;
                             dispatch(setSelectedPatient2(nextPatient));
                             dispatch(setSelectedPatient(session));
-                            navigate("/schedule/appointmentsdetails");
+                            navigate("/appointmentsdetails");
                           }}
                           sx={{
                             borderColor: "primary.main",

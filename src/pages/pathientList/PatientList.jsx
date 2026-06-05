@@ -21,8 +21,6 @@ import {
   CardContent,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
-import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import RefreshIcon from "@mui/icons-material/Refresh";
@@ -490,7 +488,7 @@ export default function PatientList() {
                             const nextPatient =
                               patients[currentIndex + 1] || null;
                             dispatch(setpatientDet2(nextPatient));
-                            navigate("/patientlist/patient");
+                            navigate("/patient");
                           }}
                           size="small"
                           sx={{

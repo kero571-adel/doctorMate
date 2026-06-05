@@ -70,7 +70,7 @@ export default function Otp() {
         showSnackbar("Code verified successfully!", "success");
 
         if (forgotPass) {
-          navigate("/logIn/forgetpass/otp/resetpass");
+          navigate("/resetpass");
           return;
         }
         if (!user.isCompletedProfile) {
@@ -290,7 +290,7 @@ export default function Otp() {
           </Button>
 
         
-          <Typography
+          {/* <Typography
             sx={{
               fontSize: "12px",
               fontWeight: "400",
@@ -325,7 +325,7 @@ export default function Otp() {
             <span style={{ color: "#52AC8C", cursor: "pointer" }}>
               Privacy Policy
             </span>
-          </Typography>
+          </Typography> */}
         </Stack>
       </Box>
       <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />

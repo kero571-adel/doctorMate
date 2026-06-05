@@ -150,7 +150,7 @@ export default function DoctorProfile() {
             <Box position="relative" zIndex={1}>
               <Grid container spacing={4}>
                 {/* Profile Header Section */}
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Stack
                     direction={{ xs: "column", sm: "row" }}
                     spacing={3}
@@ -232,7 +232,7 @@ export default function DoctorProfile() {
 
                       <Grid container spacing={{ xs: 2, sm: 2, md: 3 }} mt={2}>
                         {/* 📍 Location Card */}
-                        <Grid item xs={12} sm={6} md={4} lg={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                           <Box
                             sx={{
                               p: { xs: 1.5, sm: 2 },
@@ -291,7 +291,7 @@ export default function DoctorProfile() {
                         </Grid>
 
                         {/* 📧 Email Card */}
-                        <Grid item xs={12} sm={6} md={4} lg={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                           <Box
                             sx={{
                               p: { xs: 1.5, sm: 2 },
@@ -352,7 +352,7 @@ export default function DoctorProfile() {
                         </Grid>
 
                         {/* 📞 Phone Card */}
-                        <Grid item xs={12} sm={6} md={4} lg={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                           <Box
                             sx={{
                               p: { xs: 1.5, sm: 2 },
@@ -413,7 +413,7 @@ export default function DoctorProfile() {
                         </Grid>
 
                         {/* ⭐ Rating Card */}
-                        <Grid item xs={12} sm={6} md={4} lg={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                           <Box
                             sx={{
                               p: { xs: 1.5, sm: 2 },
@@ -473,15 +473,15 @@ export default function DoctorProfile() {
                   </Stack>
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Divider />
                 </Grid>
 
                 {/* Professional Information Grid */}
-                <Grid item xs={12} lg={8}>
+                <Grid size={{ xs: 12, lg: 8 }}>
                   <Grid container spacing={3}>
                     {/* Qualifications Card */}
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Card sx={cardStyle}>
                         <CardContent>
                           <Stack
@@ -527,7 +527,7 @@ export default function DoctorProfile() {
                     </Grid>
 
                     {/* License Number Card */}
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Card sx={cardStyle}>
                         <CardContent>
                           <Stack
@@ -573,7 +573,7 @@ export default function DoctorProfile() {
                     </Grid>
 
                     {/* Consultation Fee Card */}
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Card sx={cardStyle}>
                         <CardContent>
                           <Stack
@@ -621,7 +621,7 @@ export default function DoctorProfile() {
                     </Grid>
 
                     {/* Working Hours Card */}
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Card sx={cardStyle}>
                         <CardContent>
                           <Stack
@@ -668,7 +668,7 @@ export default function DoctorProfile() {
                     </Grid>
 
                     {/* Working Days Card */}
-                    <Grid item xs={12}>
+                    <Grid size={{ xs: 12 }}>
                       <Card sx={cardStyle}>
                         <CardContent>
                           <Stack
@@ -738,7 +738,7 @@ export default function DoctorProfile() {
                     </Grid>
 
                     {/* Biography Card */}
-                    <Grid item xs={12}>
+                    <Grid size={{ xs: 12 }}>
                       <Card sx={cardStyle}>
                         <CardContent>
                           <Typography
@@ -773,7 +773,7 @@ export default function DoctorProfile() {
                 </Grid>
 
                 {/* Patient List Section */}
-                <Grid item xs={12} lg={4}>
+                <Grid size={{ xs: 12, lg: 4 }}>
                   <Card sx={cardStyle}>
                     <CardContent>
                       <Stack
@@ -782,7 +782,7 @@ export default function DoctorProfile() {
                         alignItems={{ xs: "center", sm: "center" }}
                         flexWrap="wrap"
                         gap={{ xs: 1, sm: 1.5, md: 2 }}
-                        mb={{ xs: 2, sm: 3, md: 3.5 }} 
+                        mb={{ xs: 2, sm: 3, md: 3.5 }}
                       >
                         <Typography
                           variant="h6"
@@ -813,11 +813,11 @@ export default function DoctorProfile() {
                               "linear-gradient(135deg, #52AC8C 0%, #45988F 100%)",
                             color: "white",
                             fontWeight: 600,
-                            fontSize: { xs: "0.7rem", sm: "0.8rem" }, 
-                            height: { xs: 28, sm: 32, md: 34 }, 
+                            fontSize: { xs: "0.7rem", sm: "0.8rem" },
+                            height: { xs: 28, sm: 32, md: 34 },
                             borderRadius: "8px",
                             "& .MuiChip-label": {
-                              px: { xs: 1, sm: 2 }, 
+                              px: { xs: 1, sm: 2 },
                             },
                           }}
                         />
@@ -832,7 +832,7 @@ export default function DoctorProfile() {
                         }}
                       >
                         {data?.data?.patients?.map((p, i) => (
-                          <Fade in key={p.patientId}>
+                          <Fade in key={p.id}>
                             <Box
                               sx={{
                                 display: "flex",

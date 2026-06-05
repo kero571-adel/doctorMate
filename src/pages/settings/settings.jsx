@@ -16,16 +16,12 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
-import { Snackbar, Alert } from "@mui/material";
 import NavBar from "../../components/navBar";
 import { useNavigate } from "react-router-dom";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PersonIcon from "@mui/icons-material/Person";
-import PhoneIcon from "@mui/icons-material/Phone";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import SaveIcon from "@mui/icons-material/Save";
 import { LocalizationProvider, TimePicker } from "@mui/x-date-pickers";

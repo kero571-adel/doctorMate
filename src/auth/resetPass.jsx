@@ -52,7 +52,7 @@ export default function ResetPass() {
   // تحقق من وجود الإيميل
   useEffect(() => {
     if (!forgotPasswordEmail) {
-      navigate("/logIn/forgetpass", { replace: true });
+      navigate("/forgetpass", { replace: true });
     }
   }, [forgotPasswordEmail, navigate]);
 
@@ -112,7 +112,7 @@ export default function ResetPass() {
         navigate("/login");
       })
       .catch((error) => {
-        showSnackbar(error || "Failed to reset password. Please try again.", "error");
+        showSnackbar(error.message || "Failed to reset password. Please try again.", "error");
       });
   };
 
@@ -383,7 +383,7 @@ export default function ResetPass() {
           </Button>
 
           {/* Terms and Conditions */}
-          <Typography
+          {/* <Typography
             sx={{
               fontSize: "12px",
               fontWeight: "400",
@@ -417,7 +417,7 @@ export default function ResetPass() {
             <span style={{ color: "#52AC8C", cursor: "pointer" }}>
               Privacy Policy
             </span>
-          </Typography>
+          </Typography> */}
         </Stack>
       </Box>
       <GlobalSnackbar snackbar={snackbar} onClose={hideSnackbar} />

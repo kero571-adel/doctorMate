@@ -61,12 +61,10 @@ export default function LogIn() {
       .then((response) => {
         if (response.data.user.isVerified == false) {
           dispatch(forgotPass({ email, isForgetPass: false }));
-          navigate("/logIn/forgetpass/otp");
+          navigate("/otp");
         } else if (response.data.user.isCompletedProfile == false) {
           navigate("/compeleteprofile");
         } else {
-          // ✅ لو نجح اللوجين، اعرض رسالة نجاح
-          showSnackbar("Welcome back!", "success");
           navigate("/");
         }
       })
@@ -298,7 +296,7 @@ export default function LogIn() {
               sx={{ color: "#555555" }}
               label="Remember me"
             />
-            <Link to="/logIn/forgetpass" style={{ textDecoration: "none" }}>
+            <Link to="/forgetpass" style={{ textDecoration: "none" }}>
               <Typography
                 sx={{
                   fontWeight: "600",
@@ -350,7 +348,7 @@ export default function LogIn() {
           </Button>
 
           {/* Divider */}
-          <Stack
+          {/* <Stack
             direction="row"
             alignItems="center"
             spacing={2}
@@ -367,10 +365,10 @@ export default function LogIn() {
               Or
             </Typography>
             <Divider sx={{ flexGrow: 1 }} />
-          </Stack>
+          </Stack> */}
 
           {/* Social Login */}
-          <Stack direction={"row"} spacing={2} sx={{ width: "90%" }}>
+          {/* <Stack direction={"row"} spacing={2} sx={{ width: "90%" }}>
             <Button
               variant="outlined"
               sx={{
@@ -411,7 +409,7 @@ export default function LogIn() {
             >
               Google
             </Button>
-          </Stack>
+          </Stack> */}
 
           <Typography
             sx={{
