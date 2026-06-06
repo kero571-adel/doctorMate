@@ -175,7 +175,7 @@ The dashboard leverages **Agora Real-Time Communication (RTC)** platform to deli
 - **Error Boundaries** - Graceful error handling and recovery
 
 ### Project Folder Structure
-
+```
 📁 dashpord_doctor/
 ├── 📁 public/
 │   ├── 📁 assets/
@@ -222,7 +222,7 @@ The dashboard leverages **Agora Real-Time Communication (RTC)** platform to deli
 ├── vercel.json
 ├── vite.config.js
 └── README.md
----
+```
 
 ## 🛠️ Tech Stack
 
