@@ -9,29 +9,25 @@ export default defineConfig({
     target: "es2020",
     rollupOptions: {
       output: {
-        manualChunks: {
-          "react-vendor": [
-            "react",
-            "react-dom",
-            "react-router",
-            "react-router-dom",
-          ],
-          "mui-core": ["@mui/material", "@emotion/react", "@emotion/styled"],
-          "mui-icons": ["@mui/icons-material"],
-          redux: ["@reduxjs/toolkit", "react-redux", "redux-persist"],
-          charts: ["recharts", "@mui/x-charts"],
-          dicom: [
-            "cornerstone-core",
-            "cornerstone-wado-image-loader",
-            "dicom-parser",
-          ],
-          agora: ["agora-rtc-react", "agora-rtc-sdk-ng"],
 
-          "firebase-app": ["firebase/app"],
-          "firebase-auth": ["firebase/auth"],
-          "firebase-firestore": ["firebase/firestore"],
-          "firebase-messaging": ["firebase/messaging"],
-          "firebase-storage": ["firebase/storage"],
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("firebase"))         return "firebase-vendor";
+            if (id.includes("@mui/icons-material")) return "mui-icons";
+            if (id.includes("@mui/material") ||
+                id.includes("@emotion"))         return "mui-core";
+            if (id.includes("@reduxjs") ||
+                id.includes("react-redux") ||
+                id.includes("redux-persist"))    return "redux";
+            if (id.includes("recharts") ||
+                id.includes("@mui/x-charts"))   return "charts";
+            if (id.includes("cornerstone") ||
+                id.includes("dicom-parser"))     return "dicom";
+            if (id.includes("agora"))            return "agora";
+            if (id.includes("react-router") ||
+                id.includes("react-dom") ||
+                id.includes("/react/"))          return "react-vendor";
+          }
         },
       },
     },
