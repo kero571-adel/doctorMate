@@ -1019,7 +1019,7 @@ export default function Schedule() {
                               py: { xs: 1, md: 1.2 },
                               borderRadius: "12px",
                               textTransform: "none",
-                              fontSize: { xs: "11px", md: "15px" },
+                              fontSize: { xs: "11px", md: "12px" },
                               boxShadow: "0 4px 12px rgba(82, 172, 140, 0.3)",
                             }}
                           >
@@ -1051,7 +1051,7 @@ export default function Schedule() {
                                 py: { xs: 1, md: 1.2 },
                                 borderRadius: "12px",
                                 textTransform: "none",
-                                fontSize: { xs: "11px", md: "13px" },
+                                fontSize: { xs: "11px", md: "10px" },
                               }}
                             >
                               {isActive
@@ -1082,7 +1082,7 @@ export default function Schedule() {
                             py: { xs: 1, md: 1.2 },
                             borderRadius: "12px",
                             textTransform: "none",
-                            fontSize: { xs: "11px", md: "15px" },
+                            fontSize: { xs: "11px", md: "12px" },
                             borderWidth: "2px",
                           }}
                         >

@@ -126,10 +126,23 @@ const Message = () => {
       sessionId &&
       (sessionStatus === "active" || sessionStatus === "ended")
     ) {
+      // ✅ بعد
       const unsubscribe = subscribeToSessionMessages(
         sessionId,
         (fetchedMessages) => {
-          dispatch(setMessages(fetchedMessages));
+          dispatch(
+            setMessages(
+              fetchedMessages.map((msg) => ({
+                ...msg,
+                timestamp:
+                  msg.timestamp instanceof Date
+                    ? msg.timestamp.toISOString()
+                    : msg.timestamp?.toDate?.()
+                    ? msg.timestamp.toDate().toISOString()
+                    : msg.timestamp ?? null,
+              }))
+            )
+          );
         }
       );
 
@@ -658,70 +671,6 @@ const Message = () => {
       return "Session Time";
     }
   };
-
-  const formattedTime = formatSessionTime();
-  const isExpired = session?.expiresAt
-    ? new Date(session.expiresAt) <= new Date()
-    : false;
-
-  // 🔹 No Session State
-  if (!session && sessionStatus === "idle") {
-    return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          bgcolor: "#F9FAFB",
-          alignItems: "center",
-          justifyContent: "center",
-          display: "flex",
-        }}
-      >
-        <Alert severity="warning" sx={{ maxWidth: 500, mb: 2 }}>
-          No Active Session
-        </Alert>
-        <Button
-          variant="contained"
-          onClick={handleBackToDashboard}
-          sx={{ color: "white", textTransform: "none" }}
-        >
-          Back to Schedule
-        </Button>
-      </Box>
-    );
-  }
-
-  // ✅ دالة لتنسيق وقت الرسالة
-  const formatMessageTime = (timestamp) => {
-    if (!timestamp) return "Just now";
-
-    try {
-      let date;
-
-      if (timestamp?.toDate && typeof timestamp.toDate === "function") {
-        date = timestamp.toDate();
-      } else if (typeof timestamp === "string") {
-        date = new Date(timestamp);
-      } else if (timestamp instanceof Date) {
-        date = timestamp;
-      } else {
-        return "Just now";
-      }
-
-      if (isNaN(date.getTime())) {
-        return "Just now";
-      }
-
-      return date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      });
-    } catch (error) {
-      console.error("❌ Error formatting time:", error);
-      return "Just now";
-    }
-  };
-
   // ✅ FIX: Cleanup effect - runs on unmount to prevent memory leaks
   useEffect(() => {
     return () => {
@@ -798,6 +747,62 @@ const Message = () => {
       }
     };
   }, [session?.expiresAt, isInCall]);
+
+  const formattedTime = formatSessionTime();
+  const isExpired = session?.expiresAt
+    ? new Date(session.expiresAt) <= new Date()
+    : false;
+
+  // 🔹 No Session State
+  if (!session && sessionStatus === "idle") {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          bgcolor: "#F9FAFB",
+          alignItems: "center",
+          justifyContent: "center",
+          display: "flex",
+        }}
+      >
+        <Alert severity="warning" sx={{ maxWidth: 500, mb: 2 }}>
+          No Active Session
+        </Alert>
+      </Box>
+    );
+  }
+
+  const formatMessageTime = (timestamp) => {
+    if (!timestamp) return "Just now";
+
+    try {
+      let date;
+
+      if (timestamp?.toDate && typeof timestamp.toDate === "function") {
+        date = timestamp.toDate();
+      } else if (typeof timestamp === "string") {
+        date = new Date(timestamp);
+      } else if (timestamp instanceof Date) {
+        date = timestamp;
+      } else {
+        return "Just now";
+      }
+
+      if (isNaN(date.getTime())) {
+        return "Just now";
+      }
+
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch (error) {
+      console.error("❌ Error formatting time:", error);
+      return "Just now";
+    }
+  };
+
   const responsiveStyles = {
     videoContainer: {
       position: "fixed",
@@ -1673,13 +1678,6 @@ const Message = () => {
                         },
                       }}
                       InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <IconButton size={isMobile ? "small" : "medium"}>
-                              <AttachFileIcon sx={{ color: "primary.main" }} />
-                            </IconButton>
-                          </InputAdornment>
-                        ),
                         endAdornment: (
                           <InputAdornment position="end">
                             <IconButton

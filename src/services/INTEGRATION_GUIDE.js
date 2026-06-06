@@ -219,7 +219,6 @@ const Message = () => {
       const callResult = await dispatch(
         startCall({ sessionId: session.id })
       ).unwrap();
-      console.log("Call initiated with token:", callResult);
       // Agora integration would go here
     } catch (error) {
       console.error("Failed to start call:", error);

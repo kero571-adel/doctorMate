@@ -7,7 +7,6 @@ export const fetchDoctorDashboard = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get("/doctor/dashboard");
-      console.log("Doctor Dashboard Data:", response.data);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(

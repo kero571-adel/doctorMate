@@ -82,10 +82,6 @@ export default function MedicalImaging() {
   const [hiddenDefaultImages, setHiddenDefaultImages] = useState([]);
   const [loadingFailed, setLoadingFailed] = useState(true);
   const navigate = useNavigate();
-  console.log(
-    "🚀 ~ file: uploadImage.jsx:34 ~ MedicalImaging ~ appoinDetails:",
-    appoinDetails
-  );
 
   const defaultMedicalImages = [
     {
@@ -435,11 +431,7 @@ export default function MedicalImaging() {
           alt={image.fileName || "Medical Image"}
           onError={(e) => {
             console.error(`❌ Failed to load image:`, imageUrl, image);
-            // ✅ لو الصورة مش تتحمل، اخفي الـ element واعرض النص بس
             e.target.style.display = "none";
-          }}
-          onLoad={() => {
-            console.log(`✅ Image loaded successfully:`, imageUrl);
           }}
           sx={{
             position: "absolute",
@@ -744,14 +736,14 @@ export default function MedicalImaging() {
     navigate("/imageViwer", {
       state: {
         image,
-        allImages: allGalleryImages, 
+        allImages: allGalleryImages,
       },
     });
   };
   const handleLoadMore = () => {
     const nextPage = currentPage + 1;
     const endIndex = nextPage * itemsPerPage;
-    const newDisplayedImages = allGalleryImages.slice(0, endIndex); 
+    const newDisplayedImages = allGalleryImages.slice(0, endIndex);
 
     setDisplayedImages(newDisplayedImages);
     setCurrentPage(nextPage);
@@ -851,38 +843,19 @@ export default function MedicalImaging() {
           )
       );
 
-      // ✅ 3️⃣ لو الـ Orthanc server مش شغال → اعرض الـ default images
       if (loadingFailed) {
         resultImages = [
           ...localImagesForAppointment,
           ...uniqueBackendImages,
           ...defaultMedicalImages,
         ];
-      }
-      // ✅ 4️⃣ لو الـ Orthanc server شغال → متعرضش الـ default images
-      else {
+      } else {
         resultImages = [...localImagesForAppointment, ...uniqueBackendImages];
       }
-    }
-    // ✅ 5️⃣ لو مفيش صور من الـ Backend خالص → متظهرش الـ default images
-    // (مفيش Backend = مفيش Default)
-    else {
+    } else {
       resultImages = [...localImagesForAppointment];
     }
 
-    console.log("📸 Displayed Medical Images:", {
-      local: localImagesForAppointment.length,
-      backend: backendImages.length,
-      default:
-        backendImages.length > 0 && loadingFailed
-          ? defaultMedicalImages.length
-          : 0,
-      total: resultImages.length,
-      serverStatus: loadingFailed ? "FAILED" : "WORKING",
-      showDefault: backendImages.length > 0 && loadingFailed ? "YES" : "NO",
-    });
-
-    // ✅ لو مفيش صور خالص
     if (resultImages.length === 0) {
       return [];
     }

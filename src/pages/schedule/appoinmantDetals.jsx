@@ -28,7 +28,6 @@ import {
   Paper,
   TableRow,
 } from "@mui/material";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import PhoneIcon from "@mui/icons-material/Phone";
 import EmailIcon from "@mui/icons-material/Email";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
@@ -118,7 +117,6 @@ export default function AppointmentsDetails() {
   const [localMedicalImages, setLocalMedicalImages] = useState([]);
   const patientDetails = useSelector((state) => state.patientdet.datapatient);
   const appoinDetails = useSelector((state) => state.patientdet.dataApp);
-  console.log("appoinDetails", appoinDetails);
   const appoinDetails2 = useSelector((state) => state.patientdet.dataApp2);
   const defaultMedicalImages = [
     {
@@ -294,46 +292,18 @@ export default function AppointmentsDetails() {
   };
 
   // ✅ NEW: Helper - Get button state for Join Chat (same logic as Schedule page)
-  const getJoinButtonState = () => {
-    const status = appoinDetails?.data?.status?.toLowerCase();
-    const appointmentDate = appoinDetails?.data?.appointmentDate;
-    const appointmentTime = appoinDetails?.data?.appointmentTime;
-    const appointmentId = appoinDetails?.data?.id;
+  const appt = appoinDetails?.data;
 
-    const isStatusEligible = ["confirmed", "inprogress"].includes(status);
-    const isTimeEligible = hasSessionStarted(appointmentDate, appointmentTime);
-    const hasActiveSession =
-      activeSession &&
-      (activeSession.appointmentId === appointmentId ||
-        activeSession.sessionId === appointmentId);
+  const isActive =
+    activeSession &&
+    (activeSession.appointmentId === appt?.id ||
+      activeSession.sessionId === appt?.id);
 
-    const isEligible = isStatusEligible && (isTimeEligible || hasActiveSession);
-
-    return {
-      isEligible,
-      isStatusEligible,
-      isTimeEligible,
-      hasActiveSession,
-      label: !isStatusEligible
-        ? "Chat Not Available"
-        : !isTimeEligible && !hasActiveSession
-        ? "Waiting for Session Time"
-        : hasActiveSession
-        ? "Join Session"
-        : "Start Communication",
-      helperText: !isEligible
-        ? status === "completed"
-          ? "This session has ended. Chat is no longer available."
-          : status === "scheduled"
-          ? "Chat will be available when appointment is confirmed."
-          : status === "cancelled"
-          ? "This appointment was cancelled."
-          : !isTimeEligible && !hasActiveSession
-          ? "Chat available from 10 min before to 1 hour after scheduled time."
-          : "Chat is not available for this status."
-        : null,
-    };
-  };
+  const shouldShowChatButton =
+    (appt?.status?.toLowerCase() === "confirmed" ||
+      appt?.status?.toLowerCase() === "inprogress") &&
+    (hasSessionStarted(appt?.appointmentDate, appt?.appointmentTime) ||
+      isActive);
   // ✅ دالة لتحويل الصور القديمة من Blob إلى Base64
   const migrateBlobImages = async (appointmentId) => {
     if (!appointmentId) return;
@@ -349,10 +319,6 @@ export default function AppointmentsDetails() {
       img.src?.startsWith("blob:")
     );
     if (imagesToMigrate.length === 0) return;
-
-    console.log(
-      `🔄 Migrating ${imagesToMigrate.length} blob images to base64...`
-    );
 
     const migratedImages = await Promise.all(
       localImages.map(async (img) => {
@@ -389,61 +355,48 @@ export default function AppointmentsDetails() {
       });
     }
   }, [appoinDetails?.data?.id]);
-  const buttonState = getJoinButtonState();
 
   // ✅ NEW: Handle Start Communication (Join Chat) - Same logic as Schedule page
   // ✅ NEW: Handle Start Communication (Join Chat) - Fixed Version
   const handleJoinChat = async () => {
-    if (!appoinDetails?.data?.id) {
-      console.error("❌ No appointment ID found");
+    if (!appt?.id) return;
+
+    if (
+      activeSession &&
+      (activeSession.appointmentId === appt.id ||
+        activeSession.sessionId === appt.id)
+    ) {
+      dispatch(setSelectedPatient(selectedPatient)); // ✅ مش appt
+      navigate("/message");
       return;
     }
 
-    const appointmentId = appoinDetails.data.id;
-
     try {
-      // 1. Try to start session via API/Redux
-
-      const result = await dispatch(startSession({ appointmentId })).unwrap();
-
-      // Success: Session created
-
-      dispatch(setSelectedPatient(appoinDetails.data));
+      await dispatch(startSession({ appointmentId: appt.id })).unwrap();
+      dispatch(setSelectedPatient(selectedPatient)); // ✅ مش appt
       navigate("/message");
     } catch (error) {
-      console.error("❌ Failed to start session:", error);
-
-      // Handle "session already exists" gracefully (409 Conflict or similar)
       const errorMessage =
         typeof error === "string"
           ? error
           : error?.message || JSON.stringify(error);
-
       if (
         errorMessage?.includes?.("already exists") ||
-        errorMessage?.includes?.("active chat session") ||
-        errorMessage?.includes?.("409")
+        errorMessage?.includes?.("active chat session")
       ) {
         dispatch({
           type: "communication/startSession/fulfilled",
           payload: {
-            id: appointmentId,
-            sessionId: appointmentId, // Adjust based on your API response structure
-            appointmentId: appointmentId,
+            id: appt.id,
+            sessionId: appt.id,
+            appointmentId: appt.id,
             status: "active",
-            //  Add any other fields your UI expects
-            patientId: appoinDetails?.data?.patientId,
-            doctorId: appoinDetails?.data?.doctorId,
-            createdAt: new Date().toISOString(),
           },
         });
-
-        // Set patient context and navigate
-        dispatch(setSelectedPatient(appoinDetails.data));
+        dispatch(setSelectedPatient(selectedPatient)); // ✅ مش appt
         navigate("/message");
       } else {
-        console.error("❌ Unhandled error:", error);
-        showSnackbar(`Failed to join chat: ${errorMessage}`, "error");
+        showSnackbar(`Failed to start communication: ${errorMessage}`, "error");
       }
     }
   };
@@ -558,21 +511,6 @@ export default function AppointmentsDetails() {
         resultImages = [...localImagesForAppointment, ...uniqueBackendImages];
       }
     }
-    // ✅ 5️⃣ لو مفيش صور من الـ Backend خالص → متظهرش الـ default images
-    // (مفيش Backend = مفيش Default)
-
-    console.log("📸 Displayed Medical Images:", {
-      local: localImagesForAppointment.length,
-      backend: backendImages.length,
-      default:
-        backendImages.length > 0 && medicalImagesLoadingFailed
-          ? defaultMedicalImages.length
-          : 0,
-      total: resultImages.length,
-      serverStatus: medicalImagesLoadingFailed ? "FAILED" : "WORKING",
-      showDefault:
-        backendImages.length > 0 && medicalImagesLoadingFailed ? "YES" : "NO",
-    });
 
     return resultImages;
   }, [
@@ -2195,52 +2133,51 @@ export default function AppointmentsDetails() {
                     )}
 
                     {/* ✅ Join Chat Button - Same logic as Schedule page */}
-                    <Button
-                      fullWidth
-                      startIcon={<ChatBubbleOutlineIcon />}
-                      onClick={() => {
-                        if (buttonState.isEligible) {
-                          handleJoinChat();
-                        }
-                      }}
-                      disabled={!buttonState.isEligible}
-                      sx={{
-                        py: { xs: 1.5, sm: 1.8 },
-                        borderRadius: "12px",
-                        textTransform: "none",
-                        fontSize: { xs: "13px", sm: "15px" },
-                        fontWeight: 600,
-                        border: "2px solid #52AC8C",
-                        color: !buttonState.isEligible
-                          ? "#999"
-                          : buttonState.hasActiveSession
-                          ? "#667EEA"
-                          : "primary.main",
-                        backgroundColor: "white",
-                        cursor: !buttonState.isEligible
-                          ? "not-allowed"
-                          : "pointer",
-                        "&:hover": {
-                          backgroundColor: !buttonState.isEligible
-                            ? "white"
-                            : "rgba(82, 172, 140, 0.05)",
-                          borderColor: !buttonState.isEligible
-                            ? "#ddd"
-                            : "#3D8B6F",
-                        },
-                        transition: "all 0.3s ease",
-                        "&:disabled": {
-                          background: "#f5f5f5",
-                          color: "#999",
-                          borderColor: "#ddd",
-                        },
-                      }}
-                    >
-                      {buttonState.label}
-                    </Button>
+                    {shouldShowChatButton ? (
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        startIcon={<ChatBubbleOutlineIcon />}
+                        onClick={handleJoinChat}
+                        sx={{
+                          background: isActive
+                            ? "linear-gradient(135deg, #10B981 0%, #059669 100%)"
+                            : "linear-gradient(135deg, #667EEA 0%, #764BA2 100%)",
+                          color: "white",
+                          fontWeight: 600,
+                          py: { xs: 1.5, sm: 1.8 },
+                          borderRadius: "12px",
+                          textTransform: "none",
+                          fontSize: { xs: "13px", sm: "15px" },
+                        }}
+                      >
+                        {isActive ? "Join Session" : "Start Communication"}
+                      </Button>
+                    ) : (
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        startIcon={<ChatBubbleOutlineIcon />}
+                        disabled
+                        sx={{
+                          py: { xs: 1.5, sm: 1.8 },
+                          borderRadius: "12px",
+                          textTransform: "none",
+                          fontSize: { xs: "13px", sm: "15px" },
+                          fontWeight: 600,
+                          "&:disabled": {
+                            background: "#f5f5f5",
+                            color: "#999",
+                            borderColor: "#ddd",
+                          },
+                        }}
+                      >
+                        Chat Not Available
+                      </Button>
+                    )}
 
                     {/* ✅ Helper Text - Shows why button is disabled */}
-                    {!buttonState.isEligible && (
+                    {/* {!buttonState.isEligible && (
                       <Box
                         sx={{
                           mt: 1,
@@ -2264,7 +2201,7 @@ export default function AppointmentsDetails() {
                           {buttonState.helperText}
                         </Typography>
                       </Box>
-                    )}
+                    )} */}
                   </Card>
 
                   {/* Quick Notes */}

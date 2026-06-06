@@ -36,9 +36,6 @@ cornerstoneWADOImageLoader.configure({
 cornerstone.registerImageLoader("wadouri", cornerstoneWADOImageLoader.loadImage);
 cornerstone.registerImageLoader("dicomweb", cornerstoneWADOImageLoader.loadImage);
 
-// ✅ 4. (اختياري) 로그 للتأكد إن التهيئة نجحت
-console.log("🩻 Cornerstone initialized successfully");
-
 // 🚀 Render the App
 createRoot(document.getElementById("root")).render(
   <StrictMode>

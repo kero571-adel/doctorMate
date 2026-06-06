@@ -208,29 +208,23 @@ export default function DicomViewer() {
 
     if (!element || !current?.src) return;
 
-    //  لو الصورة من الـ default، متحاولش تحملها من السيرفر
     if (current.id?.startsWith("demo-")) {
       return;
     }
 
-    // نظّف فقط لو الصورة السابقة كانت DICOM
     if (isDicomFile(current.type, current.fileName)) {
       cleanupDicomElement(element);
 
       loadDicomOnElement(element, current.src, {
         baseUrl: import.meta.env.VITE_ORTHANC_URL || "http://localhost:8042",
         fitToWindow: false,
-        onLoading: () => console.log("🔄 Loading DICOM from backend..."),
+
         onSuccess: () => {
-          console.log(" Backend DICOM loaded successfully");
-          // التحميل نجح → نغير loadingFailed لـ false عشان نعرض صور الـ Backend
           setLoadingFailed(false);
           setTimeout(() => applyCornerstoneTransforms(), 100);
         },
         onError: (err) => {
           console.error("❌ Backend DICOM failed:", err);
-          //  التحميل فشل → نفضل على الـ default images (loadingFailed = true)
-          // مفيش حاجة نتغير هنا لأننا بدأنا بـ true أصلاً
         },
       });
     }
@@ -543,10 +537,6 @@ export default function DicomViewer() {
       img.src?.startsWith("blob:")
     );
     if (imagesToMigrate.length === 0) return localImages;
-
-    console.log(
-      `🔄 Migrating ${imagesToMigrate.length} blob images to base64...`
-    );
 
     const migratedImages = await Promise.all(
       localImages.map(async (img) => {
@@ -950,7 +940,6 @@ export default function DicomViewer() {
                     //  الصورة موجودة والـ index صحيح
                     (() => {
                       const currentImg = images[currentImage];
-                      console.log("🖼️ Rendering image:", currentImg); //  logging
 
                       //  تأكد إن فيه src
                       if (!currentImg?.src) {
@@ -1016,9 +1005,6 @@ export default function DicomViewer() {
                             );
                             e.target.src =
                               "https://via.placeholder.com/400x400/5cb998/ffffff?text=Image+Not+Found";
-                          }}
-                          onLoad={() => {
-                            console.log(" Main image loaded successfully");
                           }}
                         />
                       );

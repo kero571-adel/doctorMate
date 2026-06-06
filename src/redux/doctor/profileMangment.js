@@ -16,9 +16,7 @@ export const profileManagement = createAsyncThunk(
       if (form.profilePhoto instanceof File) {
         formData.append("imageFile", form.profilePhoto);
       }
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
+  
       const response = await api.put(
         "/Profile_Management/update",
         formData

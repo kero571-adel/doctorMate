@@ -80,9 +80,6 @@ export const verfyOtp = createAsyncThunk(
 export const resetPass = createAsyncThunk(
   "auth/logoutUser",
   async ({ email, password, confirmPassword }, { rejectWithValue }) => {
-    console.log("resetPass email = ", email);
-    console.log("resetPass password = ", password);
-    console.log("resetPass confirmPassword = ", confirmPassword);
     try {
       const getEmail = email.email;
       const response = await axios.post(

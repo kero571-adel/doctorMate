@@ -7,7 +7,6 @@ class AgoraService {
     this.isInitialized = false;
     this.localTracks = { audio: null, video: null };
     this.eventListenersSetup = false; // Track if listeners are already set up (prevents duplicates)
-    console.log("🔹 [AGORA] Service initialized");
   }
 
   // ================= INIT =================
@@ -16,8 +15,6 @@ class AgoraService {
    * @param {string} appId - معرف تطبيق Agora
    */
   async initializeClient(appId) {
-    console.log("🔹 [AGORA] initializeClient called");
-
     try {
       const appIdToUse =
         appId ||
@@ -40,11 +37,6 @@ class AgoraService {
       });
 
       this.isInitialized = true;
-
-      console.log(
-        "✅ [AGORA] Client initialized with appId:",
-        this.appId?.substring(0, 8) + "..."
-      );
     } catch (error) {
       console.error("❌ [AGORA] Initialization failed:", error);
       this.isInitialized = false;
@@ -69,18 +61,11 @@ class AgoraService {
 
     // Prevent duplicate listener registration (avoids memory leaks & duplicate callbacks)
     if (this.eventListenersSetup) {
-      console.log(
-        "⚠️ [AGORA] Event listeners already setup, skipping duplicate registration"
-      );
       return;
     }
 
-    console.log("🔹 [AGORA] Setting up event listeners...");
-
-    // ✅ 1. عندما ينضم مستخدم جديد للقناة
-    // Note: user-joined fires when a remote user joins, but they may not have published tracks yet
+    // have published tracks yet
     this.client.on("user-joined", async (user) => {
-      console.log("👤 User joined channel:", user.uid);
       if (onUserJoined) {
         try {
           await onUserJoined(user);
@@ -97,7 +82,7 @@ class AgoraService {
     // - Users who were ALREADY in channel with published tracks when YOU join (Agora auto-fires these)
     // This is WHY setupEventListeners must be called before joinChannel
     this.client.on("user-published", async (user, mediaType) => {
-      console.log("📤 User published:", mediaType, "for user:", user.uid);
+     
       if (onUserPublished) {
         try {
           await onUserPublished(user, mediaType);
@@ -109,13 +94,13 @@ class AgoraService {
 
     // ✅ 3. عندما يوقف المستخدم البث
     this.client.on("user-unpublished", (user, mediaType) => {
-      console.log("🔇 User unpublished:", mediaType, "user:", user.uid);
+    
       // UI should handle removing/hiding the track
     });
 
     // ✅ 4. عندما يغادر المستخدم
     this.client.on("user-left", (user) => {
-      console.log("🚪 User left:", user.uid);
+
       if (onUserLeft) {
         try {
           onUserLeft(user);
@@ -152,7 +137,7 @@ class AgoraService {
     });
 
     this.eventListenersSetup = true;
-    console.log("✅ [AGORA] Event listeners setup complete");
+  
   }
 
   // ================= JOIN =================
@@ -165,7 +150,7 @@ class AgoraService {
    * @returns {Promise<number>} الـ UID المعين للمستخدم
    */
   async joinChannel(token, channelName, uid = 0) {
-    console.log("🔹 [AGORA] joinChannel called");
+  
 
     if (!this.isInitialized || !this.client) {
       throw new Error(
@@ -182,11 +167,7 @@ class AgoraService {
     }
 
     try {
-      console.log("🔹 Joining channel:", {
-        appId: this.appId?.substring(0, 8) + "...",
-        channelName,
-        uid: uid || "auto",
-      });
+     
 
       // ✅ Join the channel - returns the assigned UID
       // After successful join, Agora SDK will automatically fire "user-published" events
@@ -199,12 +180,6 @@ class AgoraService {
         uid
       );
 
-      console.log(
-        "✅ Joined successfully:",
-        channelName,
-        "with UID:",
-        uidAssigned
-      );
       return uidAssigned;
     } catch (error) {
       console.error("❌ Join failed:", error);
@@ -227,7 +202,7 @@ class AgoraService {
    * @returns {Promise<Object>} { audio: LocalTrack, video: LocalTrack }
    */
   async publishLocalStream(options = {}) {
-    console.log("🔹 [AGORA] publishLocalStream - Options:", options);
+    
 
     if (!this.client || !this.isInitialized) {
       throw new Error(
@@ -370,8 +345,6 @@ class AgoraService {
    * @param {boolean} muted - true للكتم، false للإعادة
    */
   async muteLocalAudio(muted) {
-
-
     if (!this.localTracks?.audio) {
       console.warn("⚠️ [AGORA] Audio track not available");
       throw new Error(
@@ -382,7 +355,6 @@ class AgoraService {
     try {
       // ✅ Agora SDK: setEnabled(false) = mute, setEnabled(true) = unmute
       await this.localTracks.audio.setEnabled(!muted);
-
     } catch (error) {
       console.error("❌ [AGORA] muteLocalAudio failed:", error);
       throw error;

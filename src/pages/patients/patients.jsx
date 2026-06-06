@@ -193,7 +193,6 @@ export default function Patients() {
   const patientDetails = useSelector((state) => state.patientdet.datapatient);
   const patientDetails2 = useSelector((state) => state.patientdet.datapatient2);
   const { patients, error } = useSelector((state) => state.patients);
-  console.log("patients", patientDetails);
 
   function handleNextPatientClick() {
     dispatch(setpatientDet(patientDetails2.data.basicInfo));

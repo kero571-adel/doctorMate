@@ -4,9 +4,7 @@ export const getPatientDetals = createAsyncThunk(
   "patientdet/getPatientDetals",
   async ({ id }, { rejectWithValue }) => {
     try {
-      console.log("id: ", id);
       const response = await api.get(`/doctor/patients/${id}/details`);
-      console.log("getPatientDetals response.data: ", response.data.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data || "حدث خطأ");
