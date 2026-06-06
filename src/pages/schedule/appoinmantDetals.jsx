@@ -14,11 +14,7 @@ import {
   Fade,
   IconButton,
 } from "@mui/material";
-import {
-  isDicomFile,
-  loadDicomOnElement,
-  cleanupDicomElement,
-} from "../../utils/dicomUtils";
+import { isDicomFile, loadDicomOnElement } from "../../utils/dicomUtils";
 import {
   Table,
   TableBody,
@@ -60,7 +56,6 @@ import { setMediclImage } from "../../redux/imageViwer/data";
 import { setSelectedPatient } from "../../redux/schedule/schedule";
 import { setSelectedPatient2 } from "../../redux/schedule/schedule";
 import { clearSessionError } from "../../redux/communication/communicationSlice";
-// ✅ NEW: Import startSession for communication
 import { startSession } from "../../redux/communication/communicationSlice";
 import { useSnackbar } from "../../hooks/useSnackbar";
 import GlobalSnackbar from "../../components/GlobalSnackbar";
@@ -223,7 +218,9 @@ export default function AppointmentsDetails() {
     }
   }, [appoinDetails, dispatch]);
   const { snackbar, showSnackbar, hideSnackbar } = useSnackbar();
-  // ✅ أضف ده بعد الـ useEffect الحالي:
+  useEffect(() => {
+    dispatch(clearSessionError());
+  }, [dispatch]);
   useEffect(() => {
     if (sessionError) {
       const message = sessionError?.includes("Communication window has closed")

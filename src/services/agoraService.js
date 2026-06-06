@@ -12,7 +12,7 @@ class AgoraService {
   // ================= INIT =================
   /**
    * تهيئة عميل Agora
-   * @param {string} appId - معرف تطبيق Agora
+   * @param {string} appId 
    */
   async initializeClient(appId) {
     try {
