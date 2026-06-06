@@ -547,30 +547,31 @@ export default function HelpSupport() {
               {[
                 {
                   icon: (
-                    <ForumOutlinedIcon
-                      sx={{ color: "primary.main", fontSize: {xs:"30px", md:"40px"} }}
-                    />
-                  ),
-                  title: "Live Chat",
-                  dec: "Get instant help from our support team",
-                },
-                {
-                  icon: (
                     <EmailIcon
-                      sx={{ color: "primary.main", fontSize: {xs:"30px", md:"40px"} }}
+                      sx={{
+                        color: "primary.main",
+                        fontSize: { xs: "30px", md: "40px" },
+                      }}
                     />
                   ),
                   title: "Email Support",
                   dec: "Send us a detailed message",
+                  action: "mailto:doctormate630@gmail.com",
+                  btnText: "Send Email",
                 },
                 {
                   icon: (
                     <PhoneIcon
-                      sx={{ color: "primary.main", fontSize: {xs:"30px", md:"40px"} }}
+                      sx={{
+                        color: "primary.main",
+                        fontSize: { xs: "30px", md: "40px" },
+                      }}
                     />
                   ),
                   title: "Phone Support",
                   dec: "Call us during business hours",
+                  action: "tel:+201062898267",
+                  btnText: "Call Now",
                 },
               ].map((item, index) => (
                 <Stack
@@ -612,41 +613,44 @@ export default function HelpSupport() {
                     <Typography sx={{ fontSize: 13.77, fontWeight: 400 }}>
                       {item.dec}
                     </Typography>
+
                     <Button
                       variant="contained"
+                      component="a"
+                      href={item.action}
                       sx={{
                         backgroundColor: "primary.main",
                         textTransform: "none",
                         color: "white",
-                        fontSize: {xs:"16px", md:"22.03px"},
+                        fontSize: { xs: "16px", md: "22.03px" },
                         fontWeight: "400",
                       }}
                     >
-                      Start Chat
+                      {item.btnText}
                     </Button>
                   </Stack>
                 </Stack>
               ))}
             </Stack>
           </Paper>
-          <Typography sx={{ mt: 2, fontSize: 20 }}>
-            <p>
+          <Box sx={{ mt: 2, fontSize: 20 }}>
+            <Box>
               <strong style={{ fontWeight: "600", marginRight: "10px" }}>
                 Support Hours:
               </strong>
               <span style={{ fontWeight: "400" }}>
                 Monday - Friday, 8:00 AM - 6:00 PM
               </span>
-            </p>
-            <p>
+            </Box>
+            <Box>
               <strong style={{ fontWeight: "600", marginRight: "10px" }}>
                 Emergency Support:
               </strong>
               <span style={{ fontWeight: "400" }}>
                 Available 24/7 for critical system issues
               </span>
-            </p>
-          </Typography>
+            </Box>
+          </Box>
         </Box>
       </Box>
     </Stack>

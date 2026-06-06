@@ -10,7 +10,6 @@ import {
   Chip,
   Fade,
   Skeleton,
-  Alert,
   IconButton,
 } from "@mui/material";
 import Table from "@mui/material/Table";
@@ -33,7 +32,6 @@ import NavBar from "../../components/navBar";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchDoctorDashboard } from "../../redux/overViews/overView";
 import { getDataDoctor } from "../../redux/doctor/doctor";
-// ✅ أضف ده بعد باقي الـ imports
 import { useSnackbar } from "../../hooks/useSnackbar";
 import GlobalSnackbar from "../../components/GlobalSnackbar";
 export default function Dashboard() {
@@ -234,7 +232,7 @@ export default function Dashboard() {
         >
           {loading
             ? Array.from({ length: 5 }).map((_, index) => (
-                <Grid item xs={12} sm={6} md={2.4} key={index}>
+                <Grid size={{ xs: 12, sm: 6, md: 2.4 }} key={index}>
                   <Skeleton
                     variant="rectangular"
                     height={140}
@@ -366,11 +364,10 @@ export default function Dashboard() {
                 </Stack>
               ))}
         </Stack>
-
         {/* Two Column Layout */}
         <Grid container spacing={3}>
           {/* Today's Appointments */}
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card
               sx={{
                 borderRadius: "20px",
@@ -625,7 +622,7 @@ export default function Dashboard() {
           </Grid>
 
           {/* Urgent Alerts */}
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card
               sx={{
                 borderRadius: "20px",

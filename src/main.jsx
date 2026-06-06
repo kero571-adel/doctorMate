@@ -10,23 +10,20 @@ import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { store, persistor } from "./redux/store";
 
-// 🩻 Cornerstone Initialization (لعرض صور DICOM)
+// 🩻 Cornerstone Initialization (  DICOM)
 import cornerstone from "cornerstone-core";
 import cornerstoneWADOImageLoader from "cornerstone-wado-image-loader";
 import dicomParser from "dicom-parser";
 
-// ✅ 1. ربط المكتبات ببعض
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
 cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
 
-// ✅ 2. إعدادات الـ Loader (مهم جداً للـ Auth & CORS)
 cornerstoneWADOImageLoader.configure({
-  useWebWorkers: true,  // ✅ تحسين الأداء باستخدام Web Workers
+  useWebWorkers: true,  
   decodeConfig: {
-    convertFloatPixelDataToInt: true,  // ✅ توافق أفضل مع أنواع البكسل المختلفة
+    convertFloatPixelDataToInt: true,  
   },
   
-  // ✅ إضافة الـ Authorization Token تلقائياً لكل طلبات الصور
   beforeSend: function(xhr) {
     const token = localStorage.getItem("token");
     if (token) {

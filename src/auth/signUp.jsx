@@ -44,7 +44,6 @@ export default function SignUp() {
     flag: "/assets/auth/Flag_of_Egypt.svg.webp",
     placeholder: "+20 100 000 0000",
   });
-
   const countries = [
     {
       name: "Egypt",
@@ -55,13 +54,13 @@ export default function SignUp() {
     {
       name: "Italy",
       code: "+39",
-      flag: "/assets/italiaFlag.png",
+      flag: "https://flagcdn.com/w40/it.png",
       placeholder: "+39 333 123 4567",
     },
     {
       name: "Spain",
       code: "+34",
-      flag: "/assets/spanishFlag.png",
+      flag: "https://flagcdn.com/w40/es.png",
       placeholder: "+34 612 345 678",
     },
   ];
@@ -150,6 +149,7 @@ export default function SignUp() {
   });
   return (
     <Stack
+      component="main"
       spacing={4}
       sx={{
         height: { xs: "auto", md: "100vh" },
@@ -401,7 +401,12 @@ export default function SignUp() {
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton onClick={handleTogglePassword}>
+                  <IconButton
+                    onClick={handleTogglePassword}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                  >
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
@@ -480,7 +485,14 @@ export default function SignUp() {
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton onClick={handleToggleConfirmPassword}>
+                  <IconButton
+                    onClick={handleToggleConfirmPassword}
+                    aria-label={
+                      showConfirmPassword
+                        ? "Hide confirm password"
+                        : "Show confirm password"
+                    }
+                  >
                     {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>

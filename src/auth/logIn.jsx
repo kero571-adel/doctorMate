@@ -74,6 +74,7 @@ export default function LogIn() {
   };
   return (
     <Stack
+      component="main"
       spacing={4}
       sx={{
         height: "100vh",
@@ -93,7 +94,8 @@ export default function LogIn() {
       >
         <img
           src="/assets/auth/Group 1.png"
-          alt=""
+          alt="Left Side image"
+          loading="lazy"
           style={{
             position: "absolute",
             zIndex: "1",
@@ -141,8 +143,12 @@ export default function LogIn() {
         >
           <img
             src="/assets/auth/H-Logo 1.png"
-            alt=""
+            alt="Doctor Mate Logo"
+            width={98}
+            height={86}
             style={{ width: "98px", height: "86px" }}
+            loading="eager"
+            fetchPriority="high"
           />
 
           <Typography
@@ -244,6 +250,9 @@ export default function LogIn() {
                   <IconButton
                     onClick={handleTogglePassword}
                     edge="end"
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                     sx={{
                       color: "action.disabled",
                       "&:hover": {

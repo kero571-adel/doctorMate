@@ -371,26 +371,21 @@ export default function PatientList() {
                 }}
               >
                 <TableRow>
-                  {[
-                    "PATIENT",
-                    "AGE",
-                    "PHONE",
-                    "LAST VISIT",
-                    "STATUS",
-                    "ACTIONS",
-                  ].map((header) => (
-                    <TableCell
-                      key={header}
-                      sx={{
-                        fontWeight: 700,
-                        color: "primary.main",
-                        fontSize: "0.95rem",
-                        py: 2,
-                      }}
-                    >
-                      {header}
-                    </TableCell>
-                  ))}
+                  {["PATIENT", "AGE", "PHONE", "STATUS", "ACTIONS"].map(
+                    (header) => (
+                      <TableCell
+                        key={header}
+                        sx={{
+                          fontWeight: 700,
+                          color: "primary.main",
+                          fontSize: "0.95rem",
+                          py: 2,
+                        }}
+                      >
+                        {header}
+                      </TableCell>
+                    )
+                  )}
                 </TableRow>
               </TableHead>
 
@@ -419,36 +414,22 @@ export default function PatientList() {
                       }}
                     >
                       <TableCell>
-                        <Stack direction="row" spacing={2} alignItems="center">
-                          <Avatar
-                            src={patient.imageUrl}
-                            sx={{
-                              width: 44,
-                              height: 44,
-                              border: "2px solid",
-                              borderColor: "primary.main",
-                              boxShadow: "0 2px 8px rgba(82, 172, 140, 0.2)",
-                            }}
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            fontWeight="700"
+                            color="primary.main"
                           >
-                            {patient.name?.charAt(0) || "?"}
-                          </Avatar>
-                          <Box>
-                            <Typography
-                              variant="subtitle2"
-                              fontWeight="700"
-                              color="primary.main"
-                            >
-                              {patient.name || "N/A"}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              fontWeight="500"
-                            >
-                              ID: {patient.id?.slice(0, 8)}...
-                            </Typography>
-                          </Box>
-                        </Stack>
+                            {patient.name || "N/A"}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight="500"
+                          >
+                            ID: {patient.id?.slice(0, 8)}...
+                          </Typography>
+                        </Box>
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" fontWeight="600">
@@ -458,11 +439,6 @@ export default function PatientList() {
                       <TableCell>
                         <Typography variant="body2" fontWeight="500">
                           {patient.phone || "N/A"}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="500">
-                          {formatDate(patient.lastVisit)}
                         </Typography>
                       </TableCell>
                       <TableCell>
