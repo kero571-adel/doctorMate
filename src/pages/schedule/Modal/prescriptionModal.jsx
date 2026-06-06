@@ -196,13 +196,6 @@ export default function AddPrescription({
               </Alert>
             )}
 
-            {/* Show success message */}
-            {data && (
-              <Alert severity="success" sx={{ mb: 2 }}>
-                Prescription saved successfully!
-              </Alert>
-            )}
-
             {/* Medication Cards */}
             {medications.map((med, index) => (
               <Card
